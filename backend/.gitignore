@@ -1,17 +1,27 @@
-HELP.md
-   target/
-   !.mvn/wrapper/maven-wrapper.jar
-   !**/src/main/**/target/
-   !**/src/test/**/target/
-   
-   ### IntelliJ IDEA ###
-   .idea
-   *.iws
-   *.iml
-   *.ipr
-   
-   ### VS Code ###
-   .vscode/
-   
-   ### DB ###
-   *.db
+# Gradle
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Application properties con credenciales reales
+application-local.properties
+application-prod.properties
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

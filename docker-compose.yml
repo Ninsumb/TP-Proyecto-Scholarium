@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: backend_scholarium_sql
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=Scholarium.kt
+    ports:
+      - '5433:5432'
+    volumes:
+      - scholarium_db:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: scholarium_pgadmin4
+    restart: always
+    ports:
+      - "5051:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@Scholarium.kt.edu.ar
+      PGADMIN_DEFAULT_PASSWORD: admin
+    volumes:
+      - scholarium_pgadmin-data:/var/lib/pgadmin
+
+volumes:
+  scholarium_db:
+  scholarium_pgadmin-data:
+

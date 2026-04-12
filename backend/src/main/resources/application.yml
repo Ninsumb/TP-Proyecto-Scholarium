@@ -1,0 +1,30 @@
+server:
+  port: 9001
+  error:
+    whitelabel:
+      enabled: false
+    include-message: always
+
+spring:
+  #   base de datos posta
+  datasource:
+    url: jdbc:postgresql://0.0.0.0:5433/Scholarium.kt
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# Para activar el Trace
+logging:
+  level:
+    root: INFO

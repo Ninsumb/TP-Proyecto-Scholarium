@@ -1,0 +1,21 @@
+# Backend (Gradle/Kotlin)
+backend/.gradle/
+backend/build/
+backend/out/
+backend/.idea/
+backend/*.iml
+backend/.DS_Store
+# Frontend
+(Node/React)
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.vite/
+frontend/.DS_Store
+# IDEs
+.idea/
+.vscode/
+*.iml
+# Sistema
+.DS_Store Thumbs.db
