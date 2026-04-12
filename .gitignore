@@ -1,21 +1,35 @@
-# Backend (Gradle/Kotlin)
+# ===== BACKEND (Gradle/Kotlin) =====
 backend/.gradle/
 backend/build/
 backend/out/
 backend/.idea/
 backend/*.iml
-backend/.DS_Store
-# Frontend
-(Node/React)
+backend/*.iws
+backend/*.ipr
+
+# Backend environment
+backend/application-local.properties
+backend/application-prod.properties
+backend/application-dev.properties
+
+# ===== FRONTEND (Node/React) =====
 frontend/node_modules/
 frontend/dist/
 frontend/.env
 frontend/.env.local
 frontend/.vite/
-frontend/.DS_Store
-# IDEs
+
+# ===== IDEs =====
 .idea/
 .vscode/
 *.iml
-# Sistema
-.DS_Store Thumbs.db
+*.iws
+*.ipr
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Other =====
+*.log
+.env.local
