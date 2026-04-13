@@ -8,7 +8,7 @@ server:
 spring:
   #   base de datos posta
   datasource:
-    url: jdbc:postgresql://0.0.0.0:5433/Scholarium.kt
+    url: jdbc:postgresql://localhost:5433/scholarium
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
