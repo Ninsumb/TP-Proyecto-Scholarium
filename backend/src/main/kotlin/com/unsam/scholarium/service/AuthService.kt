@@ -1,7 +1,7 @@
 package com.unsam.scholarium.service
 
-import com.unsam.scholarium.DTO.LoginRequest
-import com.unsam.scholarium.DTO.RegisterRequest
+import com.unsam.scholarium.dto.LoginRequest
+import com.unsam.scholarium.dto.RegisterRequest
 import com.unsam.scholarium.model.Usuario
 import com.unsam.scholarium.repository.UsuarioRepository
 import org.springframework.security.crypto.password.PasswordEncoder

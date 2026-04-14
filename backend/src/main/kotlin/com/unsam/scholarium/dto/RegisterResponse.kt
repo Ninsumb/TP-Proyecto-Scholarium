@@ -1,4 +1,4 @@
-package com.unsam.scholarium.DTO
+package com.unsam.scholarium.dto
 
 data class RegisterResponse(
     val id: Long?,

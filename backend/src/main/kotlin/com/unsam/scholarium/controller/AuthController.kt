@@ -1,10 +1,9 @@
 package com.unsam.scholarium.controller
 
-import com.unsam.scholarium.DTO.LoginRequest
-import com.unsam.scholarium.DTO.LoginResponse
-import com.unsam.scholarium.DTO.RegisterRequest
-import com.unsam.scholarium.DTO.RegisterResponse
-import com.unsam.scholarium.model.Usuario
+import com.unsam.scholarium.dto.LoginRequest
+import com.unsam.scholarium.dto.LoginResponse
+import com.unsam.scholarium.dto.RegisterRequest
+import com.unsam.scholarium.dto.RegisterResponse
 import com.unsam.scholarium.service.AuthService
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
