@@ -11,7 +11,6 @@ backend/*.ipr
 backend/application-local.properties
 backend/application-prod.properties
 backend/application-dev.properties
-backend/application-local-yml
 
 # ===== FRONTEND (Node/React) =====
 frontend/node_modules/
