@@ -1,6 +1,6 @@
 package com.unsam.scholarium.dto
 
-data class CreatePortalRequest(
+data class PortalRequest(
     var universidad: String,
     var carrera: String,
     var descripcion: String?,
