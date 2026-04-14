@@ -44,8 +44,6 @@ class Portal(
         if ((descripcion?.length ?: 0) > 1000) throw BusinessException("La descripción no puede tener más de 1000 caracteres")
     }
 
-    fun usuarioPuedeCrear(usuario: Usuario) = usuario.rolGlobal == RolGlobal.ADMIN
-
     fun addMembresia(membresia: Membresia) {
         membresias.add(membresia)
         membresia.portal = this
