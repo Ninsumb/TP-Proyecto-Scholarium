@@ -33,3 +33,19 @@ Thumbs.db
 # ===== Other =====
 *.log
 .env.local
+
+# Ignorar todas las carpetas node_modules del proyecto
+**/node_modules/
+node_modules/
+
+# Ignorar archivos de construcción de Java/Kotlin (Gradle/Maven)
+**/build/
+.gradle/
+build/
+bin/
+out/
+
+# Archivos de configuración de IDE
+.idea/
+*.iml
+.vscode/
