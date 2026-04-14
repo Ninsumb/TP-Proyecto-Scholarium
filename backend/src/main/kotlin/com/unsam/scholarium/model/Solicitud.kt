@@ -1,0 +1,40 @@
+package com.unsam.scholarium.model
+
+
+import jakarta.persistence.*
+
+enum class Estado{
+    PENDIENTE,
+    ACEPTADA,
+    RECHAZADA
+}
+
+
+
+@Entity
+@Table(name = "solicitudes")
+class Solicitud(
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long? = null,
+
+    @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    val usuario: Usuario,
+
+    @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    val portal: Portal,
+
+    @Column(nullable = false, length = 255)
+    val titulo: String,
+
+    @Enumerated(EnumType.ORDINAL)
+    var estado: Estado,
+
+    @Column(columnDefinition = "TEXT")
+    val descripcion: String,
+
+    @Column(nullable = false)
+    val fechaSolicitud: LocalDateTime = LocalDateTime.now()
+){
+
+}
