@@ -17,7 +17,7 @@ data class Usuario(
     val email: String,
 
     @Column(nullable = false)
-    val contraseña: String, // Debe estar hasheada (BCrypt) dsp
+    var password: String, // Debe estar hasheada (BCrypt) dsp
 
     @Column(name = "fecha_registro", nullable = false)
     val fechaRegistro: LocalDateTime = LocalDateTime.now(),
