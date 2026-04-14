@@ -11,7 +11,7 @@ import kotlin.jvm.optionals.getOrNull
 @Service
 class PortalService (
     private val portalRepository: PortalRepository,
-    private val usuarioService: UsuarioService
+    // private val usuarioService: UsuarioService
 ) {
     fun getById(id: Long): Portal {
         val portal = portalRepository.findById(id).getOrNull()
@@ -23,13 +23,14 @@ class PortalService (
     @Transactional(rollbackOn = [Exception::class])
     fun create(portal: Portal, adminId: Long) {
         portal.validar()
-        val admin = usuarioService.buscar(adminId)
+        /*val admin = usuarioService.buscar(adminId)
 
         if (portal.usuarioPuedeCrear(admin)) {
             portalRepository.save(portal)
         } else {
             throw NotAdminException("Faltan permisos de administrador")
         }
+        */
     }
 
     @Transactional(rollbackOn = [Exception::class])

@@ -38,5 +38,5 @@ class Membresia(
     @Column(nullable = false)
     val activo: Boolean = true,
 ) {
-    fun getRol() = rol
+    //fun getRol() = rol
 }
