@@ -1,5 +1,7 @@
 package com.unsam.scholarium.controller
 
+import com.unsam.scholarium.dto.PortalResponse
+import com.unsam.scholarium.mapper.PortalMapper
 import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.service.PortalService
 import org.springframework.web.bind.annotation.CrossOrigin
@@ -19,7 +21,7 @@ class PortalController (
     private val portalService: PortalService
 ) {
     @GetMapping("/{id}")
-    fun obtenerPortal(@PathVariable id: Long): Portal {
+    fun obtenerPortal(@PathVariable id: Long): PortalResponse {
         val portal = portalService.getById(id)
 
         return PortalMapper.toDTO(portal)
