@@ -1,9 +1,14 @@
 package com.unsam.scholarium.service
 
+import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.NotAdminException
+import com.unsam.scholarium.model.Membresia
 import com.unsam.scholarium.model.Portal
+import com.unsam.scholarium.model.RolMembresia
+import com.unsam.scholarium.repository.MembresiaRepository
 import com.unsam.scholarium.repository.PortalRepository
+import com.unsam.scholarium.repository.UsuarioRepository
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import kotlin.jvm.optionals.getOrNull
@@ -11,7 +16,8 @@ import kotlin.jvm.optionals.getOrNull
 @Service
 class PortalService (
     private val portalRepository: PortalRepository,
-    // private val usuarioService: UsuarioService
+    private val membresiaRepository: MembresiaRepository,
+    private val usuarioRepository: UsuarioRepository
 ) {
     fun getById(id: Long): Portal {
         val portal = portalRepository.findById(id).getOrNull()
@@ -21,16 +27,25 @@ class PortalService (
     }
 
     @Transactional(rollbackOn = [Exception::class])
-    fun create(portal: Portal, adminId: Long) {
+    fun create(portal: Portal, email: String) {
         portal.validar()
-        /*val admin = usuarioService.buscar(adminId)
 
-        if (portal.usuarioPuedeCrear(admin)) {
-            portalRepository.save(portal)
-        } else {
-            throw NotAdminException("Faltan permisos de administrador")
+        if (portalRepository.existsByUniversidadAndCarrera(portal.universidad, portal.carrera)) {
+            throw BusinessException("Ya existe un portal para esa universidad y carrera")
         }
-        */
+
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        val membresiaAdmin = Membresia(
+            usuario = usuario,
+            portal = portal,
+            rol = RolMembresia.ADMIN
+        )
+
+        portal.addMembresia(membresiaAdmin)
+
+        portalRepository.save(portal)
     }
 
     @Transactional(rollbackOn = [Exception::class])
