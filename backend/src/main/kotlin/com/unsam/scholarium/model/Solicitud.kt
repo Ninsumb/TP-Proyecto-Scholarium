@@ -2,6 +2,7 @@ package com.unsam.scholarium.model
 
 
 import jakarta.persistence.*
+import java.time.LocalDateTime
 
 enum class Estado{
     PENDIENTE,
