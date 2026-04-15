@@ -2,6 +2,7 @@ package com.unsam.scholarium.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
@@ -26,9 +27,18 @@ class SecurityConfig {
                     .requestMatchers(
                         "/api/health",
                         "/api/auth/login",
-                        "/api/auth/register"
+                        "/api/auth/register",
+                        "/error",
                     ).permitAll()
+                    //.requestMatchers(HttpMethod.POST, "/api/portales").permitAll()
+                    //.requestMatchers(HttpMethod.GET, "/api/portales", "/api/portales/{id}").permitAll()
+                    // permisos temporales hasta que tengamos los tokens
                     .anyRequest().authenticated() // El resto requiere auth
+            }
+            .exceptionHandling {
+                it.authenticationEntryPoint { _, response, _ ->
+                    response.sendError(401, "No autorizado")
+                }
             }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
 

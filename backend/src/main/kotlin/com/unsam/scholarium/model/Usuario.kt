@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "usuarios")
-data class Usuario(
+class Usuario(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
@@ -19,9 +19,20 @@ data class Usuario(
     @Column(nullable = false)
     var password: String, // Debe estar hasheada (BCrypt) dsp
 
+    @OneToMany(mappedBy = "usuario", cascade = [CascadeType.ALL], orphanRemoval = true)
+    val membresias: MutableList<Membresia> = mutableListOf(),
+
     @Column(name = "fecha_registro", nullable = false)
     val fechaRegistro: LocalDateTime = LocalDateTime.now(),
 
     @Column(nullable = false)
-    val activo: Boolean = true
-)
+    val activo: Boolean = true,
+) {
+    fun addMembresia(membresia: Membresia) {
+        membresias.add(membresia)
+    }
+
+    fun removeMembresia(membresia: Membresia) {
+        membresias.remove(membresia)
+    }
+}
