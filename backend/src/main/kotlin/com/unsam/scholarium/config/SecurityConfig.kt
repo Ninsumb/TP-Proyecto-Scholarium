@@ -31,7 +31,7 @@ class SecurityConfig {
                         "/error",
                     ).permitAll()
                     //.requestMatchers(HttpMethod.POST, "/api/portales").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/portales", "/api/portales/{id}").permitAll()
+                    //.requestMatchers(HttpMethod.GET, "/api/portales", "/api/portales/{id}").permitAll()
                     // permisos temporales hasta que tengamos los tokens
                     .anyRequest().authenticated() // El resto requiere auth
             }
