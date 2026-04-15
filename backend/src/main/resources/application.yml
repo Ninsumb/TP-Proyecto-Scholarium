@@ -4,6 +4,7 @@ server:
     whitelabel:
       enabled: false
     include-message: always
+    include-stacktrace: never
 
 spring:
   #   base de datos posta
