@@ -1,31 +1,29 @@
-import { useState } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import Login from './main/Pages/Auth/Login'
+import Register from './main/Pages/Auth/Register'
 import './App.css'
+import { useState } from 'react'
+// Importa los estilos de PrimeReact
+import 'primereact/resources/themes/lara-light-indigo/theme.css'
+import 'primereact/resources/primereact.min.css'
+import 'primeicons/primeicons.css'
+import 'primeflex/primeflex.css'
 
 function App() {
-  const [backendStatus, setBackendStatus] = useState<string>('Verificando...')
-
-  const checkBackendHealth = async () => {
-    try {
-      const response = await fetch('http://localhost:9001/api/health')
-      const data = await response.json()
-      setBackendStatus(data.message || 'Backend UP')
-    } catch (error) {
-      setBackendStatus('Backend no disponible')
-    }
-  }
-
   return (
-    <div className="app">
-      <h1>Scholarium Frontend</h1>
-      <p>Frontend funcionando correctamente</p>
-
-      <div className="backend-check">
-        <button onClick={checkBackendHealth}>
-          Verificar Backend
-        </button>
-        <p>Estado del backend: {backendStatus}</p>
-      </div>
-    </div>
+    <Router>
+      <Routes>
+        {/* Redirige al login */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        
+        {/* autenticación */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        
+        {/* más rutas después */}
+        {/* <Route path="/portales" element={<Portales />} /> */}
+      </Routes>
+    </Router>
   )
 }
 
