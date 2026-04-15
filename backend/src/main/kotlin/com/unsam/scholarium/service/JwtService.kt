@@ -1,5 +1,6 @@
 package com.unsam.scholarium.service
 
+import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
@@ -31,5 +32,22 @@ class JwtService(
             .expiration(expiration)
             .signWith(getSigningKey())
             .compact()
+    }
+
+    private fun extractAllClaims(token:String): Claims {
+        return Jwts.parser()
+            .verifyWith(getSigningKey())
+            .build()
+            .parseSignedClaims(token)
+            .payload
+    }
+
+    fun extractEmail(token:String): String {
+        return extractAllClaims(token).subject
+    }
+
+    fun isTokenValid(token:String): Boolean {
+        val claims = extractAllClaims(token)
+        return claims.expiration.after(Date())
     }
 }

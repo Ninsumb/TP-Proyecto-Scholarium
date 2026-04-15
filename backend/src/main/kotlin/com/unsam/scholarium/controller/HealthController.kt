@@ -15,4 +15,7 @@ class HealthController {
             "message" to "Scholarium Backend está funcionando correctamente!"
         )
     }
+
+    @GetMapping("/test/privado")
+    fun privado(): String = "Todo OK"
 }
