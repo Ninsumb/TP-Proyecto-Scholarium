@@ -32,10 +32,6 @@ class AuthController(
 
     @PostMapping("/login")
     fun login(@RequestBody request: LoginRequest) : LoginResponse {
-        val usuario = authService.login(request)
-        return LoginResponse(
-            email = usuario.email,
-            nombre = usuario.nombre,
-        )
+        return authService.login(request)
     }
 }
