@@ -1,9 +1,11 @@
 package com.unsam.scholarium.controller
 
 import com.unsam.scholarium.dto.PortalResponse
+import com.unsam.scholarium.dto.PortalUserResponse
 import com.unsam.scholarium.mapper.PortalMapper
 import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.service.PortalService
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.CrossOrigin
@@ -24,10 +26,17 @@ class PortalController (
     private val portalService: PortalService
 ) {
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     fun obtenerPortal(@PathVariable id: Long): PortalResponse {
         val portal = portalService.getById(id)
 
         return PortalMapper.toDTO(portal)
+    }
+
+    @GetMapping()
+    fun listarMisPortales(): List<PortalUserResponse> {
+        val emailMock = "test@test.com"
+        return portalService.getPortalesByUser(emailMock)
     }
 
     @PostMapping

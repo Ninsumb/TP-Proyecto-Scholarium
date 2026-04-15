@@ -1,5 +1,6 @@
 package com.unsam.scholarium.service
 
+import com.unsam.scholarium.dto.PortalUserResponse
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.NotAdminException
@@ -24,6 +25,20 @@ class PortalService (
             ?: throw ElementDoesNotExistException("Portal $id no encontrado")
 
         return portal
+    }
+
+    fun getPortalesByUser(email: String): List<PortalUserResponse> {
+        val membresias = membresiaRepository.findAllByUsuarioEmail(email)
+
+        return membresias.map { membresia ->
+            val p = membresia.portal!!
+            PortalUserResponse(
+                id = p.id!!,
+                universidad = p.universidad,
+                carrera = p.carrera,
+                rol = membresia.rol
+            )
+        }
     }
 
     @Transactional(rollbackOn = [Exception::class])
