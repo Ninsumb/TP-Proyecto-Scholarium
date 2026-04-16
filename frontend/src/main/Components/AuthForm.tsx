@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { GraduationCap } from 'lucide-react';
+import { login, register } from '../service/authService';
 
 interface AuthFormProps {
     type: 'login' | 'register';
     title: string;
     submitLabel: string;
-    apiEndpoint: string;
 }
 
-export const AuthForm: React.FC<AuthFormProps> = ({ type, title, submitLabel, apiEndpoint }) => {
+export const AuthForm: React.FC<AuthFormProps> = ({ type, title, submitLabel }) => {
     const [email, setEmail] = useState('');
+    const [nombre, setNombre] = useState('USER') // FALTA EL CAMPO DEL NOMBRE EN EL REGISTRO
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [rememberMe, setRememberMe] = useState(false);
@@ -33,27 +34,20 @@ export const AuthForm: React.FC<AuthFormProps> = ({ type, title, submitLabel, ap
         }
 
         try {
-            const response = await fetch(apiEndpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                localStorage.setItem('token', data.token);
-                
-                // Guardar email si "recordarme" está activado
-                if (rememberMe) {
-                    localStorage.setItem('userEmail', email);
+            if (type === "login"){
+                await login({email,password})
+            
+                if(rememberMe){
+                    localStorage.setItem("userEmail",email)
                 }
-                
-                navigate('/portales');
+
+                navigate("/portales")
             } else {
-                setError(type === 'login' ? "Credenciales incorrectas" : "Error en el registro");
+                await register({nombre,email,password})
+                navigate("/login")
             }
         } catch (err) {
-            setError("Error de conexión con el servidor");
+            setError(type === "login" ? "Credenciales incorrectas" : "Error en el registro");
         }
     };
 

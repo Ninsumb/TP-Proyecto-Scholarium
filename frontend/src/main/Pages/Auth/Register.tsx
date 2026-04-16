@@ -5,7 +5,6 @@ const Register = () => (
         type="register" 
         title="Crear Cuenta" 
         submitLabel="Registrarse" 
-        apiEndpoint="/api/auth/register" 
     />
 );
 
