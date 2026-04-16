@@ -7,6 +7,10 @@ import org.springframework.web.bind.annotation.ResponseStatus
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 class BusinessException(message: String) : RuntimeException(message)
 
+// 401 - Unauthorized
+@ResponseStatus(HttpStatus.UNAUTHORIZED)
+class UnauthorizedException(message: String) : RuntimeException(message)
+
 // 403 - Forbidden
 @ResponseStatus(HttpStatus.FORBIDDEN)
 class NotAdminException(message: String) : RuntimeException(message)

@@ -25,6 +25,12 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+jwt:
+  # En producción este valor debe venir de variables de entorno o un secret manager.
+  secret: "HJklJuxs3IQLiGXX33aJE7CeaZBFylO5BA9bbqyYcwc="
+  expiration-ms: 86400000
+
+
 # Para activar el Trace
 logging:
   level:
