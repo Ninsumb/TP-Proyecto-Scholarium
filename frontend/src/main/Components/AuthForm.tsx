@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
-import { InputText } from 'primereact/inputtext';
-import { Password } from 'primereact/password';
-import { Button } from 'primereact/button';
-import { Message } from 'primereact/message';
 import { useNavigate, Link } from 'react-router-dom';
+import { GraduationCap } from 'lucide-react';
 
 interface AuthFormProps {
     type: 'login' | 'register';
@@ -16,6 +13,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ type, title, submitLabel, ap
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
+    const [rememberMe, setRememberMe] = useState(false);
     const navigate = useNavigate();
 
     const validateEmail = (email: string) => /\S+@\S+\.\S+/.test(email);
@@ -24,7 +22,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ type, title, submitLabel, ap
         e.preventDefault();
         setError(null);
 
-        
+        // Validaciones frontend (lógica de tu compañera)
         if (!validateEmail(email)) {
             setError("Email inválido");
             return;
@@ -43,7 +41,13 @@ export const AuthForm: React.FC<AuthFormProps> = ({ type, title, submitLabel, ap
 
             if (response.ok) {
                 const data = await response.json();
-                localStorage.setItem('token', data.token); 
+                localStorage.setItem('token', data.token);
+                
+                // Guardar email si "recordarme" está activado
+                if (rememberMe) {
+                    localStorage.setItem('userEmail', email);
+                }
+                
                 navigate('/portales');
             } else {
                 setError(type === 'login' ? "Credenciales incorrectas" : "Error en el registro");
@@ -54,46 +58,134 @@ export const AuthForm: React.FC<AuthFormProps> = ({ type, title, submitLabel, ap
     };
 
     return (
-        <div className="flex justify-content-center align-items-center min-h-screen">
-            <div className="card p-4 shadow-2 border-round w-full lg:w-4">
-                <h2 className="text-center">{title}</h2>
-                <form onSubmit={handleSubmit} className="flex flex-column gap-3">
-                    
-                    <div className="flex flex-column gap-2">
-                        <label htmlFor="email">Email</label>
-                        <InputText 
-                            id="email" 
-                            type="email" 
-                            value={email} 
-                            onChange={(e) => setEmail(e.target.value)} 
-                            className={error === "Email inválido" ? 'p-invalid' : ''}
-                        />
+        <div className="min-h-screen bg-background flex items-center justify-center px-4">
+            <div className="w-full max-w-md">
+                {/* Header con logo (diseño Figma) */}
+                <div className="text-center mb-8">
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                        <GraduationCap className="w-12 h-12 text-primary" />
+                        <h1 className="text-3xl font-bold text-foreground">
+                            Portal Universitario
+                        </h1>
                     </div>
+                    <p className="text-muted-foreground">
+                        {type === 'login' 
+                            ? 'Accede a tus carreras y materiales de estudio'
+                            : 'Crea tu cuenta para comenzar'}
+                    </p>
+                </div>
 
-                    <div className="flex flex-column gap-2">
-                        <label htmlFor="password">Password</label>
-                        <Password 
-                            id="password" 
-                            value={password} 
-                            onChange={(e) => setPassword(e.target.value)} 
-                            feedback={type === 'register'} 
-                            toggleMask 
-                            className={error && password === "" ? 'p-invalid' : ''}
-                        />
-                    </div>
+                {/* Card del formulario (diseño Figma) */}
+                <div className="bg-card border border-border rounded-lg p-8 shadow-sm">
+                    <h2 className="text-2xl font-semibold text-foreground mb-6">
+                        {title}
+                    </h2>
 
-                    {error && <Message severity="error" text={error} />}
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Campo Email */}
+                        <div>
+                            <label
+                                htmlFor="email"
+                                className="block text-sm font-medium text-foreground mb-2"
+                            >
+                                {type === 'login' ? 'Correo Electrónico' : 'Email'}
+                            </label>
+                            <input
+                                id="email"
+                                type="email"
+                                required
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className={`w-full px-4 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary ${
+                                    error === "Email inválido" ? 'border-red-500' : 'border-border'
+                                }`}
+                                placeholder={type === 'login' ? 'tu.correo@universidad.edu' : 'email@ejemplo.com'}
+                            />
+                        </div>
 
-                    <Button label={submitLabel} type="submit" className="mt-2" />
+                        {/* Campo Password */}
+                        <div>
+                            <label
+                                htmlFor="password"
+                                className="block text-sm font-medium text-foreground mb-2"
+                            >
+                                Contraseña
+                            </label>
+                            <input
+                                id="password"
+                                type="password"
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className={`w-full px-4 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary ${
+                                    error && password === "" ? 'border-red-500' : 'border-border'
+                                }`}
+                                placeholder="••••••••"
+                            />
+                        </div>
 
-                    <div className="text-center mt-3">
+                        {/* Opciones adicionales (solo para login) */}
+                        {type === 'login' && (
+                            <div className="flex items-center justify-between text-sm">
+                                <label className="flex items-center gap-2 text-muted-foreground cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={rememberMe}
+                                        onChange={(e) => setRememberMe(e.target.checked)}
+                                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                                    />
+                                    Recordarme
+                                </label>
+                                <a
+                                    href="#"
+                                    className="text-primary hover:underline"
+                                >
+                                    ¿Olvidaste tu contraseña?
+                                </a>
+                            </div>
+                        )}
+
+                        {/* Mensaje de error */}
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+                                {error}
+                            </div>
+                        )}
+
+                        {/* Botón Submit */}
+                        <button
+                            type="submit"
+                            className="w-full bg-primary text-primary-foreground py-2 rounded-md hover:opacity-90 transition-opacity font-medium"
+                        >
+                            {submitLabel}
+                        </button>
+                    </form>
+
+                    {/* Footer con link a registro/login */}
+                    <div className="mt-6 text-center text-sm text-muted-foreground">
                         {type === 'login' ? (
-                            <span>¿No tenés cuenta? <Link to="/register">Registrate</Link></span>
+                            <>
+                                ¿No tenés cuenta?{" "}
+                                <Link
+                                    to="/register"
+                                    className="text-primary hover:underline font-medium"
+                                >
+                                    Registrate
+                                </Link>
+                            </>
                         ) : (
-                            <span>¿Ya tenés cuenta? <Link to="/login">Iniciá sesión</Link></span>
+                            <>
+                                ¿Ya tenés cuenta?{" "}
+                                <Link
+                                    to="/login"
+                                    className="text-primary hover:underline font-medium"
+                                >
+                                    Iniciá sesión
+                                </Link>
+                            </>
                         )}
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     );

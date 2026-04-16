@@ -2,25 +2,19 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './main/Pages/Auth/Login'
 import Register from './main/Pages/Auth/Register'
 import './App.css'
-import { useState } from 'react'
-// Importa los estilos de PrimeReact
-import 'primereact/resources/themes/lara-light-indigo/theme.css'
-import 'primereact/resources/primereact.min.css'
-import 'primeicons/primeicons.css'
-import 'primeflex/primeflex.css'
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Redirige al login */}
+        {/* Redirige la raíz al login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
         
-        {/* autenticación */}
+        {/* Rutas de autenticación */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         
-        {/* más rutas después */}
+        {/* Aquí puedes agregar más rutas en el futuro */}
         {/* <Route path="/portales" element={<Portales />} /> */}
       </Routes>
     </Router>
@@ -28,3 +22,8 @@ function App() {
 }
 
 export default App
+
+
+
+
+
