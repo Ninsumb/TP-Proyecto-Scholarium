@@ -1,6 +1,13 @@
 import { PortalCard } from "../../Components/PortalCard"
+import { useOnInit } from "../../hooks/useOnInit"
+import { portalesService } from "../../services/PortalesService"
 
 export const Portales = () => {
+
+    useOnInit(async () => {
+        portalesService.getAll()
+    })
+
     return (
         <div className="portalesView mx-30">
             <h1 className="font-bold">Explorar Portales Universitarios</h1>
