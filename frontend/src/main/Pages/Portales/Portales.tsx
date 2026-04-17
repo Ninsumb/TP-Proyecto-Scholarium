@@ -7,8 +7,8 @@ export const Portales = () => {
             
             <p>Busca y solicita acceso a diferentes portales de carreras</p>
 
-            <p className="flex block">
-                <input className="w-100 border p-1 flex-grow" placeholder="Buscar por nombre o descripcion..."/>
+            <p className="flex">
+                <input className="w-100 border p-1 grow" placeholder="Buscar por nombre o descripcion..."/>
             </p>
 
             <div className="portalesGrid grid grid-cols-3">
