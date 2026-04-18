@@ -5,7 +5,6 @@ const Login = () => (
         type="login" 
         title="Iniciar Sesión" 
         submitLabel="Iniciar sesión" 
-        apiEndpoint="/api/auth/login" 
     />
 );
 
