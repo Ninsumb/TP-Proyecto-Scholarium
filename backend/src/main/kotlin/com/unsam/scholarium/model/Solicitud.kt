@@ -10,8 +10,6 @@ enum class Estado{
     RECHAZADA
 }
 
-
-
 @Entity
 @Table(name = "solicitudes")
 class Solicitud(
@@ -19,16 +17,16 @@ class Solicitud(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    @ManyToOne(fetch = FetchType.LAZY)
     val usuario: Usuario,
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    @ManyToOne(fetch = FetchType.LAZY)
     val portal: Portal,
 
     @Column(nullable = false, length = 255)
     val titulo: String,
 
-    @Enumerated(EnumType.ORDINAL)
+    @Enumerated(EnumType.STRING)
     var estado: Estado,
 
     @Column(columnDefinition = "TEXT")
