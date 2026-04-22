@@ -10,8 +10,6 @@ enum class Estado{
     RECHAZADA
 }
 
-
-
 @Entity
 @Table(name = "solicitudes")
 class Solicitud(
@@ -28,7 +26,7 @@ class Solicitud(
     @Column(nullable = false, length = 255)
     val titulo: String,
 
-    @Enumerated(EnumType.ORDINAL)
+    @Enumerated(EnumType.STRING)
     var estado: Estado,
 
     @Column(columnDefinition = "TEXT")
