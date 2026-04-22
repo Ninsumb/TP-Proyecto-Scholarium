@@ -1,14 +1,20 @@
 package com.unsam.scholarium.service
 
 import com.unsam.scholarium.dto.PortalUserResponse
+import com.unsam.scholarium.dto.SolicitudRequest
+import com.unsam.scholarium.dto.SolicitudResponse
+import com.unsam.scholarium.dto.UsuarioResumenDTO
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.NotAdminException
+import com.unsam.scholarium.model.Estado
 import com.unsam.scholarium.model.Membresia
 import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.model.RolMembresia
+import com.unsam.scholarium.model.Solicitud
 import com.unsam.scholarium.repository.MembresiaRepository
 import com.unsam.scholarium.repository.PortalRepository
+import com.unsam.scholarium.repository.SolicitudRepository
 import com.unsam.scholarium.repository.UsuarioRepository
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
@@ -18,7 +24,8 @@ import kotlin.jvm.optionals.getOrNull
 class PortalService (
     private val portalRepository: PortalRepository,
     private val membresiaRepository: MembresiaRepository,
-    private val usuarioRepository: UsuarioRepository
+    private val usuarioRepository: UsuarioRepository,
+    private val solicitudRepository: SolicitudRepository
 ) {
     fun getById(id: Long): Portal {
         val portal = portalRepository.findById(id).getOrNull()
@@ -41,8 +48,34 @@ class PortalService (
         }
     }
 
+    fun getSolicitudesPendientes(portalId: Long, email: String): List<SolicitudResponse> {
+        portalRepository.findById(portalId).getOrNull()
+            ?: throw ElementDoesNotExistException("Portal $portalId no encontrado")
+
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        val membresia = membresiaRepository.findByUsuarioIdAndPortalId(usuario.id!!, portalId)
+
+        if (membresia.rol != RolMembresia.ADMIN) throw NotAdminException("No sos ADMIN del portal")
+
+        val solicitudes = solicitudRepository.findAllByEstadoAndPortalId(Estado.PENDIENTE, portalId)
+
+        return solicitudes.map { solicitud ->
+            SolicitudResponse(
+                solicitud.id!!,
+                UsuarioResumenDTO(
+                    solicitud.usuario.id!!,
+                    solicitud.usuario.nombre,
+                    solicitud.usuario.email
+                ),
+                solicitud.fechaSolicitud.toString()
+            )
+        }
+    }
+
     @Transactional(rollbackOn = [Exception::class])
-    fun create(portal: Portal, email: String) {
+    fun createPortal(portal: Portal, email: String) {
         portal.validar()
 
         if (portalRepository.existsByUniversidadAndCarrera(portal.universidad, portal.carrera)) {
@@ -61,6 +94,31 @@ class PortalService (
         portal.addMembresia(membresiaAdmin)
 
         portalRepository.save(portal)
+    }
+
+    @Transactional(rollbackOn = [Exception::class])
+    fun createSolicitud(idPortal: Long, email: String, request: SolicitudRequest) {
+        val portal = portalRepository.findById(idPortal).getOrNull()
+            ?: throw ElementDoesNotExistException("Portal no encontrado")
+
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        val esMiembro = membresiaRepository.existsByUsuarioAndPortal(usuario, portal)
+        if (esMiembro) throw BusinessException("Ya sos miembro del portal")
+
+        val tienePendiente = solicitudRepository.existsByUsuarioAndPortalAndEstado(usuario, portal, Estado.PENDIENTE)
+        if (tienePendiente) throw BusinessException("Ya tenés una solicitud pendiente")
+
+        val solicitud = Solicitud(
+            usuario = usuario,
+            portal = portal,
+            titulo = request.titulo,
+            descripcion = request.descripcion,
+            estado = Estado.PENDIENTE
+        )
+
+        solicitudRepository.save(solicitud)
     }
 
     @Transactional(rollbackOn = [Exception::class])

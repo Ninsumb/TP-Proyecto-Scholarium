@@ -1,12 +1,13 @@
 package com.unsam.scholarium.repository
 
 import com.unsam.scholarium.model.Membresia
-import com.unsam.scholarium.model.RolMembresia
+import com.unsam.scholarium.model.Portal
+import com.unsam.scholarium.model.Usuario
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface MembresiaRepository : JpaRepository<Membresia, Long> {
-    fun findByUsuarioIdAndPortalId(usuarioId: Long, portalId: Long): Membresia?
+    fun findByUsuarioIdAndPortalId(usuarioId: Long, portalId: Long): Membresia
     fun findByUsuarioId(usuarioId: Long): List<Membresia>
-    fun existsByUsuarioIdAndPortalIdAndRol(uId: Long, pId: Long, rol: RolMembresia): Boolean
     fun findAllByUsuarioEmail(email: String): List<Membresia>
+    fun existsByUsuarioAndPortal(usuario: Usuario, portal: Portal): Boolean
 }
