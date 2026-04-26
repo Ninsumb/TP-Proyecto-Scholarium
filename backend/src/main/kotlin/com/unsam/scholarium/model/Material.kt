@@ -1,10 +1,11 @@
 package com.unsam.scholarium.model
 
 import jakarta.persistence.*
+import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.UpdateTimestamp
 import java.util.*
 
-
-enum class tipoMaterial {
+enum class TipoMaterial {
     APUNTE,
     PARCIAL,
     FINAL,
@@ -31,18 +32,18 @@ class Material(
     var descripcion: String,
 
     @Enumerated(EnumType.STRING)
-    var tipo: tipoMaterial,
+    var tipo: TipoMaterial,
 
-    @column(nullable = false)
+    @Column(nullable = false)
     var url: String,
 
-    @column(nullable = false)
-    tamanio: Long,
+    @Column(nullable = false)
+    var tamanio: Long,
 
-    @column(nullable = false)
-    tipoArchivo: String,
+    @Column(nullable = false)
+    var tipoArchivo: String,
 
-    @column(nullable = false)
+    @Column(nullable = false)
     var motivoRechazo: String? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -55,11 +56,10 @@ class Material(
 
     @CreationTimestamp
     @Column(nullable = false)
-    createdAt: Date = Date(),
+    var reatedAt: Date = Date(),
 
     @UpdateTimestamp
     val updatedAt: Date? = null,
-
 ) {
 
 }

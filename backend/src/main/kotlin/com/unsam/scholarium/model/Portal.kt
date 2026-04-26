@@ -25,6 +25,12 @@ class Portal(
     @Column(length = 1000)
     var descripcion: String? = null,
 
+    @Column
+    var logoUrl: String? = null,
+
+    @OneToMany(mappedBy = "portal")
+    val carpetas: List<Carpeta> = mutableListOf(),
+
     @OneToMany(
         mappedBy = "portal",
         cascade = [CascadeType.ALL],

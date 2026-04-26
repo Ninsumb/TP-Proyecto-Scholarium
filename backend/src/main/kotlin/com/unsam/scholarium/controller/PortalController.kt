@@ -27,26 +27,33 @@ class PortalController (
     private val portalService: PortalService
 ) {
     @GetMapping("/{id}")
-    fun obtenerPortal(@PathVariable id: Long): PortalResponse {
-        val portal = portalService.getById(id)
+    fun obtenerPortal(
+        @PathVariable id: Long,
+        authentication: Authentication
+    ): PortalResponse {
+        val email = authentication.name
 
-        return PortalMapper.toDTO(portal)
+        val detalleData = portalService.getDetalleById(id, email)
+
+        return PortalMapper.toDetalleDTO(detalleData)
     }
 
     @GetMapping()
-    fun listarMisPortales(): List<PortalUserResponse> {
-        val emailMock = "test@test.com"
-        return portalService.getPortalesByUser(emailMock)
+    fun listarMisPortales(
+        authentication: Authentication
+    ): List<PortalUserResponse> {
+        val email = authentication.name
+        return portalService.getPortalesByUser(email)
     }
 
-    @GetMapping("/{portalId}/solicitudes")
+    @GetMapping("/{id}/solicitudes")
 fun obtenerSolicitudesPendientes(
-        @PathVariable portalId: Long,
+        @PathVariable id: Long,
         authentication: Authentication
     ): List<SolicitudResponse> {
         val email = authentication.name
 
-        return portalService.getSolicitudesPendientes(portalId, email)
+        return portalService.getSolicitudesPendientes(id, email)
     }
 
     @PostMapping

@@ -1,5 +1,6 @@
 package com.unsam.scholarium.service
 
+import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.dto.PortalUserResponse
 import com.unsam.scholarium.dto.SolicitudRequest
 import com.unsam.scholarium.dto.SolicitudResponse
@@ -12,6 +13,8 @@ import com.unsam.scholarium.model.Membresia
 import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.model.Solicitud
+import com.unsam.scholarium.repository.MateriaRepository
+import com.unsam.scholarium.repository.MaterialRepository
 import com.unsam.scholarium.repository.MembresiaRepository
 import com.unsam.scholarium.repository.PortalRepository
 import com.unsam.scholarium.repository.SolicitudRepository
@@ -23,15 +26,29 @@ import kotlin.jvm.optionals.getOrNull
 @Service
 class PortalService (
     private val portalRepository: PortalRepository,
+    private val materiaRepository: MateriaRepository,
+    private val materialRepository: MaterialRepository,
     private val membresiaRepository: MembresiaRepository,
     private val usuarioRepository: UsuarioRepository,
     private val solicitudRepository: SolicitudRepository
 ) {
-    fun getById(id: Long): Portal {
+    fun getDetalleById(id: Long, email: String): Triple<Portal, RolMembresia?, List<Int>> {
         val portal = portalRepository.findById(id).getOrNull()
             ?: throw ElementDoesNotExistException("Portal $id no encontrado")
 
-        return portal
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        val membresia = membresiaRepository
+            .findByUsuarioIdAndPortalId(usuario.id!!, id)
+
+        val stats = listOf(
+            membresiaRepository.countByPortalId(id),
+            materiaRepository.countByPortalId(id),
+            materialRepository.countByPortalId(id)
+        )
+
+        return Triple(portal, membresia?.rol, stats)
     }
 
     fun getPortalesByUser(email: String): List<PortalUserResponse> {
@@ -48,18 +65,19 @@ class PortalService (
         }
     }
 
-    fun getSolicitudesPendientes(portalId: Long, email: String): List<SolicitudResponse> {
-        portalRepository.findById(portalId).getOrNull()
-            ?: throw ElementDoesNotExistException("Portal $portalId no encontrado")
+    fun getSolicitudesPendientes(idPortal: Long, email: String): List<SolicitudResponse> {
+        portalRepository.findById(idPortal).getOrNull()
+            ?: throw ElementDoesNotExistException("Portal $idPortal no encontrado")
 
         val usuario = usuarioRepository.findByEmail(email)
             ?: throw ElementDoesNotExistException("Usuario no encontrado")
 
-        val membresia = membresiaRepository.findByUsuarioIdAndPortalId(usuario.id!!, portalId)
+        val membresia = membresiaRepository.findByUsuarioIdAndPortalId(usuario.id!!, idPortal)
+            ?: throw NotAdminException("No sos miembro del portal")
 
         if (membresia.rol != RolMembresia.ADMIN) throw NotAdminException("No sos ADMIN del portal")
 
-        val solicitudes = solicitudRepository.findAllByEstadoAndPortalId(Estado.PENDIENTE, portalId)
+        val solicitudes = solicitudRepository.findAllByEstadoAndPortalId(Estado.PENDIENTE, idPortal)
 
         return solicitudes.map { solicitud ->
             SolicitudResponse(
@@ -104,7 +122,7 @@ class PortalService (
         val usuario = usuarioRepository.findByEmail(email)
             ?: throw ElementDoesNotExistException("Usuario no encontrado")
 
-        val esMiembro = membresiaRepository.existsByUsuarioAndPortal(usuario, portal)
+        val esMiembro = membresiaRepository.existsByUsuarioIdAndPortalId(usuario.id!!, idPortal)
         if (esMiembro) throw BusinessException("Ya sos miembro del portal")
 
         val tienePendiente = solicitudRepository.existsByUsuarioAndPortalAndEstado(usuario, portal, Estado.PENDIENTE)
