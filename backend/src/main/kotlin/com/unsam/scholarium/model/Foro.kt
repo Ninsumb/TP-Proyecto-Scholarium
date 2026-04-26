@@ -1,13 +1,13 @@
+package com.unsam.scholarium.model
+
 import jakarta.persistence.*
+import org.hibernate.annotations.CreationTimestamp
 import java.util.*
 
-
-Enum class TipoForo {
+enum class TipoForo {
     GENERAL,
     MATERIA
 }
-
-
 
 @Entity
 class Foro(
@@ -17,20 +17,19 @@ class Foro(
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    var tipo: TipoForo
+    var tipo: TipoForo,
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "materia_id", referencedColumnName = "id")
-    var materia: Materia? = null
+    var materia: Materia? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "portal_id", nullable = false)
-    var portal: Portal
+    var portal: Portal,
 
     @CreationTimestamp
     @Column(nullable = false)
-    createdAt: Date = Date(),
-
-) {
+    val createdAt: Date = Date(),
+    ) {
 
 }

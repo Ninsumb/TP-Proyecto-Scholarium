@@ -1,3 +1,5 @@
+package com.unsam.scholarium.model
+
 import jakarta.persistence.*
 import java.util.*
 import org.hibernate.annotations.CreationTimestamp
@@ -12,12 +14,10 @@ class Materia(
     @Column(nullable = false)
     var nombre: String,
 
-   
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "carpeta_id", nullable = false)
     var carpeta: Carpeta,
 
-    
     @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     @JoinColumn(name = "foro_id", referencedColumnName = "id")
     var foro: Foro? = null,
