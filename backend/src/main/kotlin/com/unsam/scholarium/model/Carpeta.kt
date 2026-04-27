@@ -1,5 +1,6 @@
 package com.unsam.scholarium.model
 
+import com.unsam.scholarium.exception.BusinessException
 import jakarta.persistence.*
 import java.util.*
 import org.hibernate.annotations.CreationTimestamp
@@ -30,7 +31,10 @@ class Carpeta(
     val createdAt: Date? = null,
 
     @UpdateTimestamp
-    val updatedAt: Date? = null
+    var updatedAt: Date? = null
 ) {
-
+    fun validacion() {
+        if (nombre.isBlank()) throw BusinessException("El nombre es obligatorio")
+        if (nombre.length > 100) throw BusinessException("El nombre no puede tener más de 100 caracteres")
+    }
 }
