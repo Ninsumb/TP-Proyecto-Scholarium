@@ -33,7 +33,11 @@ class Carpeta(
     @UpdateTimestamp
     var updatedAt: Date? = null
 ) {
-    fun validacion() {
+    init {
+        validar()
+    }
+
+    private fun validar() {
         if (nombre.isBlank()) throw BusinessException("El nombre es obligatorio")
         if (nombre.length > 100) throw BusinessException("El nombre no puede tener más de 100 caracteres")
     }

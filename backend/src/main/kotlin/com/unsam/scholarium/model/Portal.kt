@@ -44,7 +44,11 @@ class Portal(
     @Column(nullable = false)
     val activo: Boolean = true,
 ) {
-    fun validar() {
+    init {
+        validar()
+    }
+
+    private fun validar() {
         if (universidad.isBlank()) throw BusinessException("La universidad es obligatoria")
         if (carrera.isBlank()) throw BusinessException("La carrera es obligatoria")
         if ((descripcion?.length ?: 0) > 1000) throw BusinessException("La descripción no puede tener más de 1000 caracteres")
