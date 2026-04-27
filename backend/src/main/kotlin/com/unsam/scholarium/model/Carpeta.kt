@@ -12,7 +12,7 @@ class Carpeta(
     @GeneratedValue(strategy = GenerationType.UUID)
     val id: UUID? = null,
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false, length = 100)
     var nombre: String,
 
     @ManyToOne(fetch = FetchType.LAZY)
