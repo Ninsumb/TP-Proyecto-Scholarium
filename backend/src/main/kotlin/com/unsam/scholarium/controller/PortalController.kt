@@ -1,5 +1,7 @@
 package com.unsam.scholarium.controller
 
+import com.unsam.scholarium.dto.CarpetaRequest
+import com.unsam.scholarium.dto.CarpetaResponse
 import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.dto.PortalUserResponse
 import com.unsam.scholarium.dto.SolicitudRequest
@@ -79,6 +81,29 @@ fun obtenerSolicitudesPendientes(
         portalService.createSolicitud(id, email, dto)
 
         return ResponseEntity.status(HttpStatus.CREATED).build()
+    }
+
+    @PostMapping("/{id}/carpetas")
+    fun crearCarpeta(
+        @PathVariable id: Long,
+        @RequestBody dto: CarpetaRequest,
+        authentication: Authentication
+    ): ResponseEntity<CarpetaResponse> {
+
+        val email = authentication.name
+
+        val carpeta = portalService.createCarpeta(id, email, dto)
+
+        val response = CarpetaResponse(
+            id = carpeta.id!!,
+            nombre = carpeta.nombre,
+            portalId = carpeta.portal.id!!,
+            carpetaPadreId = carpeta.carpetaPadre?.id,
+            orden = carpeta.orden,
+            createdAt = carpeta.createdAt
+        )
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }
 
     @PatchMapping

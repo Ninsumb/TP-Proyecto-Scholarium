@@ -1,5 +1,6 @@
 package com.unsam.scholarium.model
 
+import com.unsam.scholarium.exception.BusinessException
 import jakarta.persistence.*
 import java.util.*
 import org.hibernate.annotations.CreationTimestamp
@@ -12,7 +13,7 @@ class Carpeta(
     @GeneratedValue(strategy = GenerationType.UUID)
     val id: UUID? = null,
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false, length = 100)
     var nombre: String,
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -30,7 +31,14 @@ class Carpeta(
     val createdAt: Date? = null,
 
     @UpdateTimestamp
-    val updatedAt: Date? = null
+    var updatedAt: Date? = null
 ) {
+    init {
+        validar()
+    }
 
+    private fun validar() {
+        if (nombre.isBlank()) throw BusinessException("El nombre es obligatorio")
+        if (nombre.length > 100) throw BusinessException("El nombre no puede tener más de 100 caracteres")
+    }
 }
