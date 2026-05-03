@@ -2,6 +2,7 @@ package com.unsam.scholarium.controller
 
 import com.unsam.scholarium.dto.CarpetaRequest
 import com.unsam.scholarium.dto.CarpetaResponse
+import com.unsam.scholarium.dto.PortalBusquedaResponse
 import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.dto.PortalUserResponse
 import com.unsam.scholarium.dto.SolicitudRequest
@@ -112,5 +113,16 @@ fun obtenerSolicitudesPendientes(
         @RequestParam adminId: Long
     ) {
         portalService.patch(portal, adminId)
+    }
+
+    @GetMapping("/buscar")
+    fun buscarPortales(
+        @RequestParam(required = false) universidad: String?,
+        @RequestParam(required = false) carrera: String?
+    ): ResponseEntity<List<PortalBusquedaResponse>> {
+
+        return ResponseEntity.ok(
+            portalService.buscarPortales(universidad, carrera)
+        )
     }
 }
