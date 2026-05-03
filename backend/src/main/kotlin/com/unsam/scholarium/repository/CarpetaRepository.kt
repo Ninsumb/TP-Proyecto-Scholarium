@@ -11,4 +11,5 @@ interface CarpetaRepository : JpaRepository<Carpeta, UUID> {
     fun findByCarpetaPadreId(carpetaPadreId: UUID): List<Carpeta>
     fun findByPortalIdAndCarpetaPadreId(portalId: Long, carpetaPadreId: UUID): List<Carpeta>
     fun findByPortalIdAndCarpetaPadreIdIsNull(portalId: Long): List<Carpeta>
+    fun existsByCarpetaPadreId(carpetaPadreId: UUID): Boolean
 }
