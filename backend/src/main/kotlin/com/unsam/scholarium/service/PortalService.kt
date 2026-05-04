@@ -7,6 +7,7 @@ import com.unsam.scholarium.dto.SolicitudResponse
 import com.unsam.scholarium.dto.UsuarioResumenDTO
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
+import com.unsam.scholarium.exception.ItemConflictException
 import com.unsam.scholarium.exception.NotAdminException
 import com.unsam.scholarium.model.Carpeta
 import com.unsam.scholarium.model.Estado
@@ -198,6 +199,10 @@ class PortalService (
 
         val carpeta = carpetaRepository.findById(idCarpeta).getOrNull()
         if (carpeta == null) { throw ElementDoesNotExistException("La carpeta ${idCarpeta} no existe.")}
+
+        //Valida si ya hay otra carpeta con el mismo nombre
+        if (carpetaRepository.findByNombre(nuevoNombre).getOrNull(0) != null)
+            throw ItemConflictException("Ya hay una carpeta con el mismo nombre")
 
         carpeta.nombre = nuevoNombre
 
