@@ -14,6 +14,7 @@ import com.unsam.scholarium.model.Membresia
 import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.model.Solicitud
+import com.unsam.scholarium.model.Usuario
 import com.unsam.scholarium.repository.CarpetaRepository
 import com.unsam.scholarium.repository.MateriaRepository
 import com.unsam.scholarium.repository.MaterialRepository
@@ -25,6 +26,7 @@ import jakarta.transaction.Transactional
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
+import java.util.UUID
 import kotlin.jvm.optionals.getOrNull
 
 @Service
@@ -142,16 +144,26 @@ class PortalService (
         solicitudRepository.save(solicitud)
     }
 
+    fun validarPortal(idPortal: Long): Portal {
+        return portalRepository.findById(idPortal).getOrNull()
+            ?: throw ElementDoesNotExistException("Portal no encontrado")
+    }
+
+    fun validarUsuario(email: String): Usuario {
+        return usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+    }
+
+    fun validarMembresiaUsuario(usuario: Usuario, idPortal: Long, rolMembresia: RolMembresia) {
+        val membresia = membresiaRepository.findByUsuarioIdAndPortalId(usuario.id!!, idPortal)
+        if (membresia?.rol != rolMembresia) throw NotAdminException("Solo los administradores pueden crear carpetas")
+    }
+
     @Transactional(rollbackOn = [Exception::class])
     fun createCarpeta(idPortal: Long, email: String, request: CarpetaRequest): Carpeta {
-        val portal = portalRepository.findById(idPortal).getOrNull()
-            ?: throw ElementDoesNotExistException("Portal no encontrado")
-
-        val usuario = usuarioRepository.findByEmail(email)
-            ?: throw ElementDoesNotExistException("Usuario no encontrado")
-
-        val membresia = membresiaRepository.findByUsuarioIdAndPortalId(usuario.id!!, idPortal)
-        if (membresia?.rol != RolMembresia.ADMIN) throw NotAdminException("Solo los administradores pueden crear carpetas")
+        val portal = validarPortal(idPortal)
+        val usuario = validarUsuario(email)
+        validarMembresiaUsuario(usuario, idPortal, RolMembresia.ADMIN)
 
         val padre = request.carpetaPadreId?.let {
             val carpetaEncontrada = carpetaRepository.findById(it).getOrNull()
@@ -177,6 +189,19 @@ class PortalService (
         )
 
         return carpetaRepository.save(nuevaCarpeta)
+    }
+
+    fun renameCarpeta(idPortal: Long, idCarpeta: UUID, email: String, nuevoNombre: String) {
+        val portal = validarPortal(idPortal)
+        val usuario = validarUsuario(email)
+        validarMembresiaUsuario(usuario, idPortal, RolMembresia.ADMIN)
+
+        val carpeta = carpetaRepository.findById(idCarpeta).getOrNull()
+        if (carpeta == null) { throw ElementDoesNotExistException("La carpeta ${idCarpeta} no existe.")}
+
+        carpeta.nombre = nuevoNombre
+
+        carpetaRepository.save(carpeta)
     }
 
     @Transactional(rollbackOn = [Exception::class])
