@@ -112,7 +112,7 @@ fun obtenerSolicitudesPendientes(
     fun renombrarCarpeta(
         @PathVariable id: java.util.UUID,
         @PathVariable idPortal: Long,
-        @RequestParam nuevoNombre: String,
+        @RequestBody nuevoNombre: String,
         authentication: Authentication
     ): ResponseEntity<String> {
         val email = authentication.name

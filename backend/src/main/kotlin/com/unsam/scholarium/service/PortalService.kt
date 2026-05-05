@@ -197,8 +197,13 @@ class PortalService (
         val usuario = validarUsuario(email)
         validarMembresiaUsuario(usuario, idPortal, RolMembresia.ADMIN)
 
+        //Si nuevoNombre esta vacio, lo saca cagando
+        if (nuevoNombre.isEmpty())
+            throw BusinessException("El nuevo nombre de la carpeta no puede estar vacio")
+
         val carpeta = carpetaRepository.findById(idCarpeta).getOrNull()
-        if (carpeta == null) { throw ElementDoesNotExistException("La carpeta ${idCarpeta} no existe.")}
+        if (carpeta == null)
+            throw ElementDoesNotExistException("La carpeta ${idCarpeta} no existe.")
 
         //Valida si ya hay otra carpeta con el mismo nombre
         if (carpetaRepository.findByNombre(nuevoNombre).getOrNull(0) != null)
