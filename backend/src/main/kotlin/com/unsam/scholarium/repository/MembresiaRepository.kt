@@ -15,5 +15,11 @@ interface MembresiaRepository : JpaRepository<Membresia, Long> {
 
     fun existsByUsuarioIdAndPortalIdAndRol(usuarioId: Long, portalId: Long, rol: RolMembresia): Boolean
 
+    fun existsByUsuarioAndPortalAndRol(
+        usuario: Usuario,
+        portal: Portal,
+        rol: RolMembresia
+    ): Boolean
+
     fun countByPortalId(portalId: Long): Int
 }

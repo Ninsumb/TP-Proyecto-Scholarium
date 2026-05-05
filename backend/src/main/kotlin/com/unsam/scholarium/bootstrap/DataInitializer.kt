@@ -16,6 +16,8 @@ class DataInitializer {
         portalRepo: PortalRepository,
         membresiaRepo: MembresiaRepository,
         solicitudRepo: SolicitudRepository,
+        carpetaRepo: CarpetaRepository,
+        materiaRepo: MateriaRepository,
         passwordEncoder: PasswordEncoder
     ) = CommandLineRunner {
 
@@ -51,11 +53,33 @@ class DataInitializer {
                 )
             )
 
+            val carpeta = carpetaRepo.save(
+                Carpeta(
+                    nombre = "carpeta test",
+                    portal = portal,
+                )
+            )
+
+            val materia = materiaRepo.save(
+                Materia(
+                    nombre = "Mate 1",
+                    carpeta = carpeta,
+                )
+            )
+
             membresiaRepo.save(
                 Membresia(
                     usuario = admin,
                     portal = portal,
                     rol = RolMembresia.ADMIN
+                )
+            )
+
+            membresiaRepo.save(
+                Membresia(
+                    usuario = noAdmin,
+                    portal = portal,
+                    rol = RolMembresia.MIEMBRO
                 )
             )
 
