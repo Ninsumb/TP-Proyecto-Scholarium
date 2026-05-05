@@ -18,6 +18,7 @@ class DataInitializer {
         solicitudRepo: SolicitudRepository,
         carpetaRepo: CarpetaRepository,
         materiaRepo: MateriaRepository,
+        materialRepo: MaterialRepository,
         passwordEncoder: PasswordEncoder
     ) = CommandLineRunner {
 
@@ -64,6 +65,19 @@ class DataInitializer {
                 Materia(
                     nombre = "Mate 1",
                     carpeta = carpeta,
+                )
+            )
+
+            val material = materialRepo.save(
+                Material(
+                    nombre = "Primer parcial 2025",
+                    descripcion = "parcial del primer cuatrimestre de 2025",
+                    tipo = TipoMaterial.PARCIAL,
+                    url = "https://test.com",
+                    tamanio = 8,
+                    tipoArchivo = "pdf",
+                    materia = materia,
+                    usuario = noAdmin,
                 )
             )
 

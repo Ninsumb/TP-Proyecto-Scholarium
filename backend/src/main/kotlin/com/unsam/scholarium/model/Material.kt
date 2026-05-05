@@ -44,6 +44,10 @@ class Material(
     var tipoArchivo: String,
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    var estado: EstadoMaterial = EstadoMaterial.PENDIENTE,
+
+    @Column
     var motivoRechazo: String? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -59,7 +63,7 @@ class Material(
     var reatedAt: Date = Date(),
 
     @UpdateTimestamp
-    val updatedAt: Date? = null,
+    var updatedAt: Date? = null,
 ) {
 
 }
