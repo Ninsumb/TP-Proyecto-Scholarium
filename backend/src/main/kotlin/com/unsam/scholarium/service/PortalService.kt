@@ -201,6 +201,10 @@ class PortalService (
         if (nuevoNombre.isEmpty())
             throw BusinessException("El nuevo nombre de la carpeta no puede estar vacio")
 
+        //Si nuevoNombre es demasiado largo lo saca cagando tambien
+        if (nuevoNombre.length > 100)
+            throw BusinessException("El nuevo nombre no puede pasar de los 100 caracteres")
+
         val carpeta = carpetaRepository.findById(idCarpeta).getOrNull()
         if (carpeta == null)
             throw ElementDoesNotExistException("La carpeta ${idCarpeta} no existe.")
