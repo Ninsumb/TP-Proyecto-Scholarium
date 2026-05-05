@@ -9,6 +9,7 @@ import com.unsam.scholarium.dto.SolicitudResponse
 import com.unsam.scholarium.dto.UsuarioResumenDTO
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
+import com.unsam.scholarium.exception.ItemConflictException
 import com.unsam.scholarium.exception.NotAdminException
 import com.unsam.scholarium.model.Carpeta
 import com.unsam.scholarium.model.Estado
@@ -16,6 +17,7 @@ import com.unsam.scholarium.model.Membresia
 import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.model.Solicitud
+import com.unsam.scholarium.model.Usuario
 import com.unsam.scholarium.repository.CarpetaRepository
 import com.unsam.scholarium.repository.MateriaRepository
 import com.unsam.scholarium.repository.MaterialRepository
@@ -28,6 +30,7 @@ import jakarta.transaction.Transactional
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
+import java.util.UUID
 import kotlin.jvm.optionals.getOrNull
 
 @Service
@@ -145,16 +148,26 @@ class PortalService (
         solicitudRepository.save(solicitud)
     }
 
+    fun validarPortal(idPortal: Long): Portal {
+        return portalRepository.findById(idPortal).getOrNull()
+            ?: throw ElementDoesNotExistException("Portal no encontrado")
+    }
+
+    fun validarUsuario(email: String): Usuario {
+        return usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+    }
+
+    fun validarMembresiaUsuario(usuario: Usuario, idPortal: Long, rolMembresia: RolMembresia) {
+        val membresia = membresiaRepository.findByUsuarioIdAndPortalId(usuario.id!!, idPortal)
+        if (membresia?.rol != rolMembresia) throw NotAdminException("Solo los administradores pueden crear carpetas")
+    }
+
     @Transactional(rollbackOn = [Exception::class])
     fun createCarpeta(idPortal: Long, email: String, request: CarpetaRequest): Carpeta {
-        val portal = portalRepository.findById(idPortal).getOrNull()
-            ?: throw ElementDoesNotExistException("Portal no encontrado")
-
-        val usuario = usuarioRepository.findByEmail(email)
-            ?: throw ElementDoesNotExistException("Usuario no encontrado")
-
-        val membresia = membresiaRepository.findByUsuarioIdAndPortalId(usuario.id!!, idPortal)
-        if (membresia?.rol != RolMembresia.ADMIN) throw NotAdminException("Solo los administradores pueden crear carpetas")
+        val portal = validarPortal(idPortal)
+        val usuario = validarUsuario(email)
+        validarMembresiaUsuario(usuario, idPortal, RolMembresia.ADMIN)
 
         val padre = request.carpetaPadreId?.let {
             val carpetaEncontrada = carpetaRepository.findById(it).getOrNull()
@@ -180,6 +193,32 @@ class PortalService (
         )
 
         return carpetaRepository.save(nuevaCarpeta)
+    }
+
+    fun renameCarpeta(idPortal: Long, idCarpeta: UUID, email: String, nuevoNombre: String) {
+        val portal = validarPortal(idPortal)
+        val usuario = validarUsuario(email)
+        validarMembresiaUsuario(usuario, idPortal, RolMembresia.ADMIN)
+
+        //Si nuevoNombre esta vacio, lo saca cagando
+        if (nuevoNombre.isEmpty())
+            throw BusinessException("El nuevo nombre de la carpeta no puede estar vacio")
+
+        //Si nuevoNombre es demasiado largo lo saca cagando tambien
+        if (nuevoNombre.length > 100)
+            throw BusinessException("El nuevo nombre no puede pasar de los 100 caracteres")
+
+        val carpeta = carpetaRepository.findById(idCarpeta).getOrNull()
+        if (carpeta == null)
+            throw ElementDoesNotExistException("La carpeta ${idCarpeta} no existe.")
+
+        //Valida si ya hay otra carpeta con el mismo nombre
+        if (carpetaRepository.findByNombre(nuevoNombre).getOrNull(0) != null)
+            throw ItemConflictException("Ya hay una carpeta con el mismo nombre")
+
+        carpeta.nombre = nuevoNombre
+
+        carpetaRepository.save(carpeta)
     }
 
     @Transactional(rollbackOn = [Exception::class])
