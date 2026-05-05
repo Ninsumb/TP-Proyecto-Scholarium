@@ -22,4 +22,7 @@ interface MembresiaRepository : JpaRepository<Membresia, Long> {
     ): Boolean
 
     fun countByPortalId(portalId: Long): Int
+
+    fun findByUsuarioOrderByFechaRegistroDesc(usuario: Usuario): List<Membresia>
+    fun countByPortal(portal: Portal): Long
 }
