@@ -1,5 +1,6 @@
 package com.unsam.scholarium.mapper
 
+import com.unsam.scholarium.dto.PortalBusquedaResponse
 import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.model.RolMembresia
@@ -20,6 +21,16 @@ object PortalMapper {
             rol?.name,
             portal.fechaRegistro,
             portal.activo
+        )
+    }
+
+    fun toBusquedaResponse(portal: Portal): PortalBusquedaResponse {
+        return PortalBusquedaResponse(
+            id = portal.id,
+            universidad = portal.universidad,
+            carrera = portal.carrera,
+            descripcion = portal.descripcion,
+            cantidadMiembros = portal.membresias.size
         )
     }
 }
