@@ -41,7 +41,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ type, title, submitLabel }) 
                     localStorage.setItem("userEmail",email)
                 }
 
-                navigate("/portales")
+                navigate("/home")
             } else {
                 await register({nombre,email,password})
                 navigate("/login")

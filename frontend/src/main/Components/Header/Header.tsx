@@ -1,5 +1,5 @@
 import { UniversityIcon } from "lucide-react"
-import { SquareArrowRightExit } from "lucide-react"
+import { SquareArrowRight } from "lucide-react"
 import { UserIcon } from "lucide-react"
 import { PaperclipIcon } from "lucide-react"
 import "./Header.css"
@@ -16,7 +16,7 @@ export const Header = () => {
             <div className="flex items-stretch">
                 <a className="p-2 navButton" onClick={(e) => (navigate("/solicitudes"))}> <PaperclipIcon className="inline"/> Mis Solicitudes</a>
                 <a className="p-2 navButton" onClick={(e) => (navigate("/perfil"))}> <UserIcon className="inline"/> Perfil</a>
-                <a className="p-2 navButton" onClick={(e) => (navigate("/salir"))}> <SquareArrowRightExit className="inline"/> Salir</a>
+                <a className="p-2 navButton" onClick={(e) => (navigate("/salir"))}> <SquareArrowRight className="inline"/> Salir</a>
             </div>
         </nav>
     )

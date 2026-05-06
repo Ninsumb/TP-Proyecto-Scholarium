@@ -9,7 +9,7 @@ import type { MainContextType } from "../types/MainContext";
 //import type { Usuario } from "../../types/Usuario";
 //import { routeConfig } from "../config/routeConfig";
 import { useCallback } from "react";
-import { Header } from "../Components/Header";
+import { Header } from "../Components/Header/Header";
 
 export const LayoutMain = () => {
     const { toast, showToast } = useToast()

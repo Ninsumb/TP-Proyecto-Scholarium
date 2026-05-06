@@ -19,7 +19,7 @@ export const Home = () => {
             <p>Selecciona un portal de carrera para acceder a materiales, foros y recursos academicos</p>
 
             <p>
-                <button className="m-2" onClick={()=>{navigate("/portales")}}><Search className="inline"/> Explorar portales universitarios</button>
+                <button className="m-2" onClick={()=>{}}><Search className="inline"/> Explorar portales universitarios</button>
                 <button className="m-2" onClick={()=>{navigate("/nuevo-portal")}}><UserPlus className="inline"/> Crear nuevo portal</button>
             </p>
             
