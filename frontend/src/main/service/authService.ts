@@ -2,6 +2,9 @@ import { api } from "./api"
 import { saveToken } from "./authStorage"
 
 
+//TODO: VER QUE VAMOS A HACER CON ESTOS ARCHIVOS
+
+
 type LoginRequest = {
     email: string,
     password: string
