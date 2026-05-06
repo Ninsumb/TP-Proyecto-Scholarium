@@ -2,6 +2,7 @@ package com.unsam.scholarium.controller
 
 import com.unsam.scholarium.dto.CarpetaRequest
 import com.unsam.scholarium.dto.CarpetaResponse
+import com.unsam.scholarium.dto.MoverCarpetaBodyRequestDTO
 import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.dto.PortalUserResponse
 import com.unsam.scholarium.dto.SolicitudRequest
@@ -116,10 +117,21 @@ fun obtenerSolicitudesPendientes(
         authentication: Authentication
     ): ResponseEntity<String> {
         val email = authentication.name
-
         portalService.renameCarpeta(idPortal, id, email, nuevoNombre)
 
-        return ResponseEntity.status(HttpStatus.OK).build()
+        return ResponseEntity.status(HttpStatus.OK).body("Carpeta renombrada a ${nuevoNombre}")
+    }
+
+    @PutMapping("/{idPortal}/carpetas/{id}/mover")
+    fun moverCarpeta(
+        @PathVariable id: java.util.UUID,
+        @PathVariable idPortal: Long,
+        @RequestBody moverCarpetaBodyRequestDTO: MoverCarpetaBodyRequestDTO,
+        authentication: Authentication
+    ): ResponseEntity<String> {
+        val email = authentication.name
+        portalService.moverCarpeta(idPortal, id, email, moverCarpetaBodyRequestDTO.carpetaPadre)
+        return ResponseEntity.status(HttpStatus.OK).body("Carpeta movida a ${moverCarpetaBodyRequestDTO.carpetaPadre}")
     }
 
     @PatchMapping
