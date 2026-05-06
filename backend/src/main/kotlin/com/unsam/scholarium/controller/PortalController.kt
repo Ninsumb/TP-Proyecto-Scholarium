@@ -43,6 +43,8 @@ class PortalController (
         return PortalMapper.toDetalleDTO(detalleData)
     }
 
+    //TODO: ¿Esta función y getMisPortales en UsuarioController.kt no son lo mismo?
+
     @GetMapping()
     fun listarMisPortales(
         authentication: Authentication
