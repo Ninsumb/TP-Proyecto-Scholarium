@@ -218,6 +218,39 @@ class PortalService (
         carpetaRepository.save(carpeta)
     }
 
+    fun moverCarpeta(idPortal: Long, idCarpeta: UUID, email: String, parentFolderId: java.util.UUID) {
+        val portal = validarPortal(idPortal)
+        val usuario = validarUsuario(email)
+        validarMembresiaUsuario(usuario, idPortal, RolMembresia.ADMIN)
+
+        val carpeta = carpetaRepository.findById(idCarpeta).getOrNull()
+        if (carpeta == null)
+            throw ElementDoesNotExistException("La carpeta ${idCarpeta} no existe.")
+
+        if (parentFolderId == null) {
+            carpeta.carpetaPadre = null
+            carpetaRepository.save(carpeta)
+        }
+
+        //Bucle que checkea ciclos prohibidos
+        var carpetaParent = carpetaRepository.findById(parentFolderId).get()
+
+        while (true) {
+            //Llego a root? rompe el ciclo
+            if (carpetaParent.carpetaPadre == null)
+                break
+
+            if (carpeta.id == carpetaParent.id)
+                throw BusinessException("La carpeta no puede meterse dentro de la misma")
+
+            carpetaParent = carpetaParent.carpetaPadre!!
+        }
+
+        carpeta.carpetaPadre = carpetaParent
+
+        carpetaRepository.save(carpeta)
+    }
+
     @Transactional(rollbackOn = [Exception::class])
     fun patch(portal: Portal, adminId: Long) {
         portalRepository.save(portal)
