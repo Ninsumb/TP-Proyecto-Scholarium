@@ -2,6 +2,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './main/Pages/Auth/Login'
 import Register from './main/Pages/Auth/Register'
 import './App.css'
+import { Portales } from './main/Pages/Portales/Portales'
+import { Home } from './main/Pages/Home/Portales'
+import { LayoutMain } from './main/Layouts/LayoutMain'
+
 
 function App() {
   return (
@@ -13,9 +17,12 @@ function App() {
         {/* Rutas de autenticación */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        
-        {/* Aquí puedes agregar más rutas en el futuro */}
-        {/* <Route path="/portales" element={<Portales />} /> */}
+
+        <Route element={<LayoutMain/>}>
+          {/* Aquí puedes agregar más rutas en el futuro */}
+          <Route path="/portales" element={<Portales />} /> 
+          <Route path="/home" element={<Home/>} />
+        </Route>
       </Routes>
     </Router>
   )
