@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { GraduationCap } from "lucide-react";
+import { authService } from "../../services/AuthService.tsx";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -8,13 +9,34 @@ export default function Login() {
     email: "",
     password: "",
   });
+  const [error, setError] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulación de login - en producción aquí iría la autenticación real
-    localStorage.setItem("isAuthenticated", "true");
-    localStorage.setItem("userEmail", formData.email);
-    navigate("/portales");
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const response = await authService.login({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      authService.saveSession(response);
+      navigate("/home");
+    } catch (err: any) {
+      // Manejo de errores específicos del backend
+      if (err.response?.status === 401) {
+        setError("Credenciales incorrectas");
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError("Error al iniciar sesión. Intentá de nuevo.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -37,6 +59,12 @@ export default function Login() {
             Iniciar Sesión
           </h2>
 
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label
@@ -58,6 +86,7 @@ export default function Login() {
                 }
                 className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="tu.correo@universidad.edu"
+                disabled={isLoading}
               />
             </div>
 
@@ -81,6 +110,7 @@ export default function Login() {
                 }
                 className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="••••••••"
+                disabled={isLoading}
               />
             </div>
 
@@ -89,6 +119,7 @@ export default function Login() {
                 <input
                   type="checkbox"
                   className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                  disabled={isLoading}
                 />
                 Recordarme
               </label>
@@ -102,9 +133,10 @@ export default function Login() {
 
             <button
               type="submit"
-              className="w-full bg-primary text-primary-foreground py-2 rounded-md hover:opacity-90 transition-opacity font-medium"
+              disabled={isLoading}
+              className="w-full bg-primary text-primary-foreground py-2 rounded-md hover:opacity-90 transition-opacity font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Ingresar
+              {isLoading ? "Ingresando..." : "Ingresar"}
             </button>
           </form>
 
@@ -120,4 +152,5 @@ export default function Login() {
         </div>
       </div>
     </div>
-  );    }
+  );
+}

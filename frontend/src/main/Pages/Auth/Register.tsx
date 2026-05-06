@@ -1,32 +1,62 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { GraduationCap } from "lucide-react";
+import { authService } from "../../services/AuthService";
 
 export default function Register() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     nombre: "",
-    apellido: "",
     email: "",
     password: "",
     confirmPassword: "",
-    universidad: "",
   });
+  const [error, setError] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setError("");
+
     if (formData.password !== formData.confirmPassword) {
-      alert("Las contraseñas no coinciden");
+      setError("Las contraseñas no coinciden");
       return;
     }
 
-    // Simulación de registro - en producción aquí iría la API real
-    localStorage.setItem("isAuthenticated", "true");
-    localStorage.setItem("userEmail", formData.email);
-    localStorage.setItem("userName", `${formData.nombre} ${formData.apellido}`);
-    localStorage.setItem("userUniversity", formData.universidad);
-    navigate("/portales");
+    if (formData.password.length < 6) {
+      setError("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Primero registramos
+      await authService.register({
+        nombre: formData.nombre,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      // Luego hacemos login automático
+      const loginResponse = await authService.login({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      authService.saveSession(loginResponse);
+      navigate("/home");
+    } catch (err: any) {
+      if (err.response?.status === 400) {
+        setError("Este correo ya se encuentra registrado");
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError("Error al crear la cuenta. Intentá de nuevo.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -47,66 +77,31 @@ export default function Register() {
             Registro
           </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="nombre"
-                  className="block text-sm font-medium text-foreground mb-2"
-                >
-                  Nombre
-                </label>
-                <input
-                  id="nombre"
-                  type="text"
-                  required
-                  value={formData.nombre}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nombre: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Juan"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="apellido"
-                  className="block text-sm font-medium text-foreground mb-2"
-                >
-                  Apellido
-                </label>
-                <input
-                  id="apellido"
-                  type="text"
-                  required
-                  value={formData.apellido}
-                  onChange={(e) =>
-                    setFormData({ ...formData, apellido: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Pérez"
-                />
-              </div>
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+              {error}
             </div>
+          )}
 
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label
-                htmlFor="universidad"
+                htmlFor="nombre"
                 className="block text-sm font-medium text-foreground mb-2"
               >
-                Universidad
+                Nombre Completo
               </label>
               <input
-                id="universidad"
+                id="nombre"
                 type="text"
                 required
-                value={formData.universidad}
+                value={formData.nombre}
                 onChange={(e) =>
-                  setFormData({ ...formData, universidad: e.target.value })
+                  setFormData({ ...formData, nombre: e.target.value })
                 }
                 className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Universidad Nacional"
+                placeholder="Juan Pérez"
+                disabled={isLoading}
               />
             </div>
 
@@ -127,6 +122,7 @@ export default function Register() {
                 }
                 className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="tu.correo@universidad.edu"
+                disabled={isLoading}
               />
             </div>
 
@@ -147,6 +143,7 @@ export default function Register() {
                 }
                 className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="••••••••"
+                disabled={isLoading}
               />
             </div>
 
@@ -167,14 +164,16 @@ export default function Register() {
                 }
                 className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="••••••••"
+                disabled={isLoading}
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-primary text-primary-foreground py-2 rounded-md hover:opacity-90 transition-opacity font-medium"
+              disabled={isLoading}
+              className="w-full bg-primary text-primary-foreground py-2 rounded-md hover:opacity-90 transition-opacity font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Crear Cuenta
+              {isLoading ? "Creando cuenta..." : "Crear Cuenta"}
             </button>
           </form>
 
