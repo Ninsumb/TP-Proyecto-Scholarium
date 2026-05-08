@@ -75,6 +75,7 @@ fun obtenerSolicitudesPendientes(
         return ResponseEntity.status(HttpStatus.CREATED).build()
     }
 
+    //TODO: 1) ¿Por qué se llama "placeholder"? 2) ¿Dónde deberían ir las request de Solicitud?
     @PostMapping("/{id}/solicitudes")
     fun placeholder(
         @PathVariable id: Long,
