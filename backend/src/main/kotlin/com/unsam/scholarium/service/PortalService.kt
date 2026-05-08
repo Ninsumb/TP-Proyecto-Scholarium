@@ -1,6 +1,8 @@
 package com.unsam.scholarium.service
 
 import com.unsam.scholarium.dto.CarpetaRequest
+import com.unsam.scholarium.dto.PortalBusquedaResponse
+import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.dto.PortalUserResponse
 import com.unsam.scholarium.dto.SolicitudRequest
 import com.unsam.scholarium.dto.SolicitudResponse
@@ -23,6 +25,7 @@ import com.unsam.scholarium.repository.MembresiaRepository
 import com.unsam.scholarium.repository.PortalRepository
 import com.unsam.scholarium.repository.SolicitudRepository
 import com.unsam.scholarium.repository.UsuarioRepository
+import com.unsam.scholarium.mapper.PortalMapper
 import jakarta.transaction.Transactional
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -257,5 +260,17 @@ class PortalService (
     @Transactional(rollbackOn = [Exception::class])
     fun patch(portal: Portal, adminId: Long) {
         portalRepository.save(portal)
+    }
+
+    fun buscarPortales(universidad: String?, carrera: String?): List<PortalBusquedaResponse> {
+
+        val resultados = portalRepository.buscarPortales(
+            universidad?.takeIf { it.isNotBlank() },
+            carrera?.takeIf { it.isNotBlank() }
+        )
+
+        return resultados.map { portal ->
+            PortalMapper.toBusquedaResponse(portal)
+        }
     }
 }
