@@ -3,6 +3,7 @@ package com.unsam.scholarium.controller
 import com.unsam.scholarium.dto.CarpetaRequest
 import com.unsam.scholarium.dto.CarpetaResponse
 import com.unsam.scholarium.dto.MoverCarpetaBodyRequestDTO
+import com.unsam.scholarium.dto.PortalBusquedaResponse
 import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.dto.PortalUserResponse
 import com.unsam.scholarium.dto.SolicitudRequest
@@ -43,6 +44,8 @@ class PortalController (
         return PortalMapper.toDetalleDTO(detalleData)
     }
 
+    //TODO: ¿Esta función y getMisPortales en UsuarioController.kt no son lo mismo?
+
     @GetMapping()
     fun listarMisPortales(
         authentication: Authentication
@@ -73,6 +76,7 @@ fun obtenerSolicitudesPendientes(
         return ResponseEntity.status(HttpStatus.CREATED).build()
     }
 
+    //TODO: 1) ¿Por qué se llama "placeholder"? 2) ¿Dónde deberían ir las request de Solicitud?
     @PostMapping("/{id}/solicitudes")
     fun placeholder(
         @PathVariable id: Long,
@@ -142,5 +146,16 @@ fun obtenerSolicitudesPendientes(
         @RequestParam adminId: Long
     ) {
         portalService.patch(portal, adminId)
+    }
+
+    @GetMapping("/buscar")
+    fun buscarPortales(
+        @RequestParam(required = false) universidad: String?,
+        @RequestParam(required = false) carrera: String?
+    ): ResponseEntity<List<PortalBusquedaResponse>> {
+
+        return ResponseEntity.ok(
+            portalService.buscarPortales(universidad, carrera)
+        )
     }
 }

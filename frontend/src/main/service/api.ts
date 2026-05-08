@@ -1,6 +1,8 @@
 import axios from "axios";
 import { getToken, removeToken } from "./authStorage";
 
+//TODO: VER QUE VAMOS A HACER CON ESTOS ARCHIVOS
+
 export const api = axios.create({
     baseURL: "http://localhost:9001",
 });
