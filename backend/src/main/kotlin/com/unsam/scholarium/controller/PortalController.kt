@@ -134,6 +134,8 @@ fun obtenerSolicitudesPendientes(
         return ResponseEntity.status(HttpStatus.OK).body("Carpeta movida a ${moverCarpetaBodyRequestDTO.carpetaPadre}")
     }
 
+    @PutMapping("/{idPortal}/materias/{id}/mover")
+
     @PatchMapping
     fun patchPortal(
         @RequestBody portal: Portal,
