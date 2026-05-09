@@ -11,7 +11,7 @@ class Materia(
     @GeneratedValue(strategy = GenerationType.UUID)
     val id: UUID? = null,
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 150)
     var nombre: String,
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -31,4 +31,13 @@ class Materia(
 
     @UpdateTimestamp
     val updatedAt: Date? = null
-)
+) {
+    init {
+        validar()
+    }
+
+    private fun validar() {
+        if (nombre.isBlank()) throw BusinessException("El nombre de la materia es obligatorio")
+        if (nombre.length > 150) throw BusinessException("El nombre no puede tener más de 150 caracteres")
+    }
+}
