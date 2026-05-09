@@ -7,7 +7,6 @@ data class MateriaResponse(
     val id: UUID,
     val nombre: String,
     val carpetaId: UUID,
-    val foroId: UUID?,
     val orden: Int,
     val createdAt: Instant
 )

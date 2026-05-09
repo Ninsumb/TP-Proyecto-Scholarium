@@ -37,9 +37,8 @@ class MateriaController(
             id = materiaActualizada.id!!,
             nombre = materiaActualizada.nombre,
             carpetaId = materiaActualizada.carpeta.id!!,
-            foroId = materiaActualizada.foro?.id,
             orden = materiaActualizada.orden,
-            createdAt = materiaActualizada.createdAt!!.toInstant(),
+            createdAt = materiaActualizada.createdAt!!.toInstant()
         )
 
         return ResponseEntity.ok(response)
