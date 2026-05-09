@@ -16,7 +16,7 @@ class Foro(
     @Column(nullable = false, length = 150)
     var nombre: String,
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "etiqueta_id", nullable = false)
     var etiqueta: Etiqueta,  
 
