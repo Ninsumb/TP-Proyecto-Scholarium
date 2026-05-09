@@ -14,6 +14,8 @@ class Materia(
     @Column(nullable = false, length = 150)
     var nombre: String,
 
+    //TODO: Pensar que la Materia también poseería una descripción, posiblemente laaaarga y que en el front se formatearía a MD (dando la posiblidad de personalización con links, imagenes, etc).
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "carpeta_id", nullable = false)
     var carpeta: Carpeta,
