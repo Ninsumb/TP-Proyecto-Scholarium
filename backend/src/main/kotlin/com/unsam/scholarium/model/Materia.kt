@@ -21,9 +21,7 @@ class Materia(
     @JoinColumn(name = "carpeta_id", nullable = false)
     var carpeta: Carpeta,
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
-    @JoinColumn(name = "foro_id", referencedColumnName = "id")
-    var foro: Foro? = null,
+    // ELIMINADO: var foro: Foro? = null
 
     @Column(nullable = false)
     var orden: Int = 0,

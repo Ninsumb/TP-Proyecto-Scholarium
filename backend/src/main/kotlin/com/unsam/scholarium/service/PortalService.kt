@@ -26,6 +26,8 @@ import com.unsam.scholarium.repository.PortalRepository
 import com.unsam.scholarium.repository.SolicitudRepository
 import com.unsam.scholarium.repository.UsuarioRepository
 import com.unsam.scholarium.mapper.PortalMapper
+import com.unsam.scholarium.model.Etiqueta
+import com.unsam.scholarium.repository.EtiquetaRepository
 import jakarta.transaction.Transactional
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -41,7 +43,8 @@ class PortalService (
     private val carpetaRepository: CarpetaRepository,
     private val membresiaRepository: MembresiaRepository,
     private val usuarioRepository: UsuarioRepository,
-    private val solicitudRepository: SolicitudRepository
+    private val solicitudRepository: SolicitudRepository,
+    private val etiquetaRepository: EtiquetaRepository
 ) {
     fun getDetalleById(id: Long, email: String): Triple<Portal, RolMembresia?, List<Int>> {
         val portal = portalRepository.findById(id).getOrNull()
@@ -121,6 +124,13 @@ class PortalService (
         portal.addMembresia(membresiaAdmin)
 
         portalRepository.save(portal)
+
+        etiquetaRepository.save(
+            Etiqueta(
+                nombre = "GENERAL",
+                portal = portal
+            )
+        )
     }
 
     @Transactional(rollbackOn = [Exception::class])
