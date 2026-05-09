@@ -1,7 +1,12 @@
 package com.unsam.scholarium.controller
 
+import com.unsam.scholarium.dto.CrearMateriaRequest
+import com.unsam.scholarium.dto.MateriaResponse
 import com.unsam.scholarium.service.CarpetaService
+import com.unsam.scholarium.service.MateriaService
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 import java.util.UUID
@@ -9,13 +14,39 @@ import java.util.UUID
 @RestController
 @RequestMapping("/api/carpetas")
 class CarpetaController(
-    private val carpetaService: CarpetaService
+    private val carpetaService: CarpetaService,
+    private val materiaService: MateriaService
 ) {
+
+    //TODO: Notar las diferentes implementaciones: SecurityContexy vs authentication. ¿Cuales son las diferencias? ¿Nos sirve para PHM también xD?
 
     @DeleteMapping("/{carpetaId}")
     fun eliminarCarpeta(@PathVariable carpetaId: UUID): ResponseEntity<Void> {
         val email = SecurityContextHolder.getContext().authentication.name
         carpetaService.eliminarCarpeta(carpetaId, email)
         return ResponseEntity.noContent().build()
+    }
+
+    @PostMapping("/{carpetaId}/materias")
+    fun crearMateria(
+        @PathVariable carpetaId: UUID,
+        @RequestBody request: CrearMateriaRequest,
+        authentication: Authentication
+    ): ResponseEntity<MateriaResponse> {
+
+        val email = authentication.name
+
+        val materiaCreada = materiaService.crearMateria(carpetaId, email, request)
+
+        val response = MateriaResponse(
+            id = materiaCreada.id!!,
+            nombre = materiaCreada.nombre!!,
+            carpetaId = materiaCreada.carpeta!!.id!!,
+            foroId = materiaCreada.foro?.id,
+            orden = materiaCreada.orden,
+            createdAt = materiaCreada.createdAt!!.toInstant()
+        )
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }
 }
