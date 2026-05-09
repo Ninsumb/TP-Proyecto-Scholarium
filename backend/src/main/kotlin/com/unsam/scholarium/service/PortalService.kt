@@ -112,13 +112,6 @@ class PortalService (
             throw BusinessException("Ya existe un portal para esa universidad y carrera")
         }
 
-        etiquetaRepository.save(
-            Etiqueta(
-                nombre = "GENERAL",
-                portal = portal
-            )
-        )
-
         val usuario = usuarioRepository.findByEmail(email)
             ?: throw ElementDoesNotExistException("Usuario no encontrado")
 
@@ -131,6 +124,13 @@ class PortalService (
         portal.addMembresia(membresiaAdmin)
 
         portalRepository.save(portal)
+
+        etiquetaRepository.save(
+            Etiqueta(
+                nombre = "GENERAL",
+                portal = portal
+            )
+        )
     }
 
     @Transactional(rollbackOn = [Exception::class])
