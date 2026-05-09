@@ -3,6 +3,7 @@ package com.unsam.scholarium.service
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.NotAdminException
+import com.unsam.scholarium.model.Carpeta
 import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.repository.CarpetaRepository
 import com.unsam.scholarium.repository.MateriaRepository
@@ -49,7 +50,6 @@ class CarpetaService(
 
         carpetaRepository.delete(carpeta)
     }
-/*
     @Transactional
     fun moverCarpeta(carpetaId: UUID, nuevoPadreId: UUID?, emailAdmin: String) {
         val carpeta = carpetaRepository.findById(carpetaId)
@@ -74,12 +74,10 @@ class CarpetaService(
             val nuevoPadre = carpetaRepository.findById(nuevoPadreId)
                 .orElseThrow { ElementDoesNotExistException("La carpeta padre no existe") }
 
-            // Validar que ambas carpetas pertenezcan al mismo portal
             if (carpeta.portal.id != nuevoPadre.portal.id) {
                 throw BusinessException("No se puede mover una carpeta entre portales diferentes")
             }
 
-            // VALIDACIÓN DE CICLO - LA CLAVE
             if (creariaciclo(carpeta, nuevoPadre)) {
                 throw BusinessException(
                     "No se puede mover la carpeta: se crearía un ciclo en la jerarquía. " +
@@ -104,11 +102,11 @@ class CarpetaService(
 
         while (ancestroActual != null) {
             if (ancestroActual.id == carpeta.id) {
-                return true  // ¡Ciclo detectado!
+                return true
             }
             ancestroActual = ancestroActual.carpetaPadre
         }
 
-        return false  // No hay ciclo
-    }*/
+        return false
+    }
 }
