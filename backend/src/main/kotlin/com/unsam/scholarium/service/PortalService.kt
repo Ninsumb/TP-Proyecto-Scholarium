@@ -231,7 +231,7 @@ class PortalService (
         carpetaRepository.save(carpeta)
     }
 
-    fun moverCarpeta(idPortal: Long, idCarpeta: UUID, email: String, parentFolderId: java.util.UUID) {
+   /* fun moverCarpeta(idPortal: Long, idCarpeta: UUID, email: String, parentFolderId: java.util.UUID) {
         val portal = validarPortal(idPortal)
         val usuario = validarUsuario(email)
         validarMembresiaUsuario(usuario, idPortal, RolMembresia.ADMIN)
@@ -266,7 +266,7 @@ class PortalService (
 
         carpetaRepository.save(carpeta)
     }
-
+*/
     @Transactional(rollbackOn = [Exception::class])
     fun patch(portal: Portal, adminId: Long) {
         portalRepository.save(portal)
