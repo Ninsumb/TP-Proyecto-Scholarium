@@ -1,5 +1,6 @@
 package com.unsam.scholarium.model
 
+import com.unsam.scholarium.exception.BusinessException
 import jakarta.persistence.*
 import java.util.*
 import org.hibernate.annotations.CreationTimestamp
