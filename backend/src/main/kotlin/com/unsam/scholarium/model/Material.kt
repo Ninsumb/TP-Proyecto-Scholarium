@@ -1,16 +1,15 @@
 package com.unsam.scholarium.model
 
 import jakarta.persistence.*
+import java.time.LocalDateTime
 import java.util.*
+import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.UpdateTimestamp
+import com.unsam.scholarium.model.Materia
+import com.unsam.scholarium.dto.TipoMaterial
 
 
-enum class tipoMaterial {
-    APUNTE,
-    PARCIAL,
-    FINAL,
-    GUIA_EJERCICIOS,
-    OTRO,
-}
+
 
 enum class EstadoMaterial {
     PENDIENTE,
@@ -25,40 +24,44 @@ class Material(
     val id: UUID? = null,
 
     @Column(nullable = false)
-    var nombre: String,
+    var nombre: String = "",
 
     @Column(nullable = false, length = 255)
-    var descripcion: String,
+    var descripcion: String = "",
 
     @Enumerated(EnumType.STRING)
-    var tipo: tipoMaterial,
+    @Column(nullable = false)
+    var tipo: TipoMaterial,
 
-    @column(nullable = false)
-    var url: String,
+    @Enumerated(EnumType.STRING)
+    var estado: EstadoMaterial = EstadoMaterial.PENDIENTE,
 
-    @column(nullable = false)
-    tamanio: Long,
+    @Column(nullable = false)
+    var url: String = "",
 
-    @column(nullable = false)
-    tipoArchivo: String,
+    @Column(nullable = false)
+    var tamanio: Long = 0,
 
-    @column(nullable = false)
+    @Column(nullable = false)
+    var tipoArchivo: String = "",
+
+    @Column(nullable = false)
     var motivoRechazo: String? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "materia_id", nullable = false)
-    var materia: Materia,
+    var materia: Materia? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uploadedById", nullable = false)
-    var usuario: Usuario,
+    var usuario: Usuario? = null,
 
     @CreationTimestamp
     @Column(nullable = false)
-    createdAt: Date = Date(),
+    val createdAt: LocalDateTime? = null,
 
     @UpdateTimestamp
-    val updatedAt: Date? = null,
+    val updatedAt: LocalDateTime? = null,
 
 ) {
 

@@ -2,6 +2,7 @@ package com.unsam.scholarium.repository
 
 import com.unsam.scholarium.model.Membresia
 import com.unsam.scholarium.model.Portal
+import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.model.Usuario
 import org.springframework.data.jpa.repository.JpaRepository
 
@@ -11,5 +12,7 @@ interface MembresiaRepository : JpaRepository<Membresia, Long> {
     fun findAllByUsuarioEmail(email: String): List<Membresia>
 
     fun existsByUsuarioIdAndPortalId(usuarioId: Long, portalId: Long): Boolean
+    fun existsByUsuarioAndPortal(usuario: Usuario, portal: Portal): Boolean
+    fun existsByUsuarioIdAndPortalIdAndRol(usuarioId: Long, portalId: Long, rol: RolMembresia): Boolean
 
 }

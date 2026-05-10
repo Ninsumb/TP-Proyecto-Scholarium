@@ -16,24 +16,24 @@ class Carpeta(
     val id: UUID? = null,
 
     @Column(nullable = false, length = 255)
-    nombre: String,
+    var nombre: String = "",
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "portal_id")
-    var portal: Portal,
+    var portal: Portal? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "carpeta_padre_id")
     var carpetaPadre: Carpeta? = null,
 
-    var orden: Int = 0
+    var orden: Int = 0,
 
     @CreationTimestamp
     @Column(updatable = false)
-    val createdAt: Date? = null,
+    val createdAt: LocalDateTime? = null,
 
     @UpdateTimestamp
-    val updatedAt: Date? = null
+    val updatedAt: LocalDateTime? = null
 
 ) {
 

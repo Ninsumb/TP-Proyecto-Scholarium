@@ -1,7 +1,11 @@
+package com.unsam.scholarium.model
+
 import jakarta.persistence.*
 import java.util.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
+import com.unsam.scholarium.model.Carpeta
+import com.unsam.scholarium.model.Foro
 
 @Entity
 class Materia(
@@ -10,12 +14,12 @@ class Materia(
     val id: UUID? = null,
 
     @Column(nullable = false)
-    var nombre: String,
+    var nombre: String = "",
 
    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "carpeta_id", nullable = false)
-    var carpeta: Carpeta,
+    var carpeta: Carpeta? = null,
 
     
     @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
