@@ -1,8 +1,6 @@
 package com.unsam.scholarium.service
- 
-import com.unsam.scholarium.dto.MaterialResponse
+
 import com.unsam.scholarium.dto.SubirMaterialRequest
-import com.unsam.scholarium.dto.MultipartFile
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.UnauthorizedException
 import com.unsam.scholarium.model.EstadoMaterial
@@ -25,13 +23,13 @@ class MaterialService(
     private val materiaRepository: MateriaRepository,
     private val membresiaRepository: MembresiaRepository,
     private val usuarioRepository: UsuarioRepository,
-    
+    private val storageService: StorageService
 ) {
  
     @Transactional(rollbackOn = [Exception::class])
     fun subirMaterial(
         materiaId: Long,
-        request: MultipartFile,
+        request: SubirMaterialRequest,
         email: String,
     ) {
  
