@@ -1,3 +1,6 @@
+
+//TODO: VER QUE VAMOS A HACER CON ESTOS ARCHIVOS
+
 const TOKEN_KEY = "token"
 
 export const saveToken =(token: string) : void  => localStorage.setItem(TOKEN_KEY,token)

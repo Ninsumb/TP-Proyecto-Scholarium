@@ -18,3 +18,7 @@ class NotAdminException(message: String) : RuntimeException(message)
 // 404 - Not Found
 @ResponseStatus(HttpStatus.NOT_FOUND)
 class ElementDoesNotExistException(message: String) : RuntimeException(message)
+
+// 409 - Conflict
+@ResponseStatus(HttpStatus.CONFLICT)
+class ItemConflictException(message: String) : RuntimeException(message)
