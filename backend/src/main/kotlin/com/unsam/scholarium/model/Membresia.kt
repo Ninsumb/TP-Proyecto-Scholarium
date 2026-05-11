@@ -22,7 +22,7 @@ class Membresia(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
-    val usuario: Usuario? = null,
+    val usuario: Usuario,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "portal_id", nullable = false)

@@ -17,10 +17,10 @@ class Portal(
     val id: Long? = null,
 
     @Column(nullable = false)
-    var universidad: String = "",
+    var universidad: String,
 
     @Column(nullable = false)
-    var carrera: String = "",
+    var carrera: String,
 
     @Column(length = 1000)
     var descripcion: String? = null,

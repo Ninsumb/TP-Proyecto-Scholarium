@@ -13,12 +13,12 @@ class Carpeta(
     @GeneratedValue(strategy = GenerationType.UUID)
     val id: UUID? = null,
 
-    @Column(nullable = false, length = 255)
-    var nombre: String = "",
+    @Column(nullable = false, length = 150)
+    var nombre: String,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "portal_id")
-    var portal: Portal? = null,
+    var portal: Portal,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "carpeta_padre_id")
@@ -28,11 +28,10 @@ class Carpeta(
 
     @CreationTimestamp
     @Column(updatable = false)
-    val createdAt: LocalDateTime? = null,
+    val createdAt: Date? = null,
 
     @UpdateTimestamp
-    val updatedAt: LocalDateTime? = null
-
+    var updatedAt: Date? = null
 ) {
     init {
         validar()
