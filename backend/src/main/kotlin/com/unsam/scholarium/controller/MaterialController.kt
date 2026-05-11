@@ -1,36 +1,41 @@
 package com.unsam.scholarium.controller
 
-import com.unsam.scholarium.dto.MaterialResponse
-import com.unsam.scholarium.service.MaterialService
-import org.springframework.http.ResponseEntity
-import org.springframework.security.core.Authentication
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.http.ResponseEntity
+import org.springframework.http.HttpStatus
+import org.springframework.security.core.Authentication
 import java.util.UUID
+import com.unsam.scholarium.service.MaterialService
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.ui.Model
+import org.springframework.web.bind.annotation.ModelAttribute
+import com.unsam.scholarium.dto.SubirMaterialRequest
+
+
 
 @RestController
-@RequestMapping("/api/material")
-class MaterialController(private val materialService: MaterialService) {
+@RequestMapping("/api")
+class MaterialController(
+    private val materialService: MaterialService
+) {
 
-    @PutMapping("/{materialId}/aprobar")
-    fun aprobarMaterial(
-        @PathVariable materialId: UUID,
+    @PostMapping("/materias/{materiaId}/material", consumes = ["multipart/form-data"])
+    fun subirMaterial(
+        @PathVariable materiaId: Long,
+        @ModelAttribute request: SubirMaterialRequest,
         authentication: Authentication
-    ): ResponseEntity<MaterialResponse> {
+        ): ResponseEntity<Void> {
 
-        val email = authentication.name
+      val email = authentication.name      
+       
+       materialService.subirMaterial(materiaId, request, email)
+       
+       return ResponseEntity.status(HttpStatus.CREATED).build()
 
-        val material = materialService.aprobarMaterial(materialId, email)
-
-        val response = MaterialResponse(
-            id = material.id!!,
-            nombre = material.nombre,
-            estado = material.estado,
-            updatedAt = material.updatedAt
-        )
-
-        return ResponseEntity.ok(response)
     }
 }

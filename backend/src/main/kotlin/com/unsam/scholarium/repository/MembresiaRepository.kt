@@ -12,6 +12,8 @@ interface MembresiaRepository : JpaRepository<Membresia, Long> {
     fun findAllByUsuarioEmail(email: String): List<Membresia>
 
     fun existsByUsuarioIdAndPortalId(usuarioId: Long, portalId: Long): Boolean
+    fun existsByUsuarioAndPortal(usuario: Usuario, portal: Portal): Boolean
+    fun existsByUsuarioIdAndPortalIdAndRol(usuarioId: Long, portalId: Long, rol: RolMembresia): Boolean
 
     fun existsByUsuarioIdAndPortalIdAndRol(usuarioId: Long, portalId: Long, rol: RolMembresia): Boolean
 

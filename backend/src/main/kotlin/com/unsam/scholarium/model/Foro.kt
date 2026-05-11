@@ -1,10 +1,21 @@
 package com.unsam.scholarium.model
 
-import com.unsam.scholarium.exception.BusinessException
+
 import jakarta.persistence.*
+import java.time.LocalDateTime
+import java.util.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
-import java.util.*
+import com.unsam.scholarium.model.Materia
+import com.unsam.scholarium.model.Portal
+
+
+enum class TipoForo {
+    GENERAL,
+    MATERIA
+}
+
+
 
 @Entity
 @Table(name = "foros")
@@ -13,20 +24,21 @@ class Foro(
     @GeneratedValue(strategy = GenerationType.UUID)
     val id: UUID? = null,
 
-    @Column(nullable = false, length = 150)
-    var nombre: String,
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    var tipo: TipoForo = TipoForo.GENERAL,
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "etiqueta_id", nullable = false)
-    var etiqueta: Etiqueta,  
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "materia_id", referencedColumnName = "id")
+    var materia: Materia? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "portal_id", nullable = false)
-    var portal: Portal,
+    var portal: Portal? = null,
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    val createdAt: Date? = null,
+    @Column(nullable = false)
+    val createdAt: LocalDateTime? = null
 
     @UpdateTimestamp
     val updatedAt: Date? = null

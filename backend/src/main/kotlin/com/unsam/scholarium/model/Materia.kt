@@ -1,10 +1,11 @@
 package com.unsam.scholarium.model
 
-import com.unsam.scholarium.exception.BusinessException
 import jakarta.persistence.*
 import java.util.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
+import com.unsam.scholarium.model.Carpeta
+import com.unsam.scholarium.model.Foro
 
 @Entity
 class Materia(
@@ -12,14 +13,14 @@ class Materia(
     @GeneratedValue(strategy = GenerationType.UUID)
     val id: UUID? = null,
 
-    @Column(nullable = false, length = 150)
-    var nombre: String,
+    @Column(nullable = false)
+    var nombre: String = "",
 
     //TODO: Pensar que la Materia también poseería una descripción, posiblemente laaaarga y que en el front se formatearía a MD (dando la posiblidad de personalización con links, imagenes, etc).
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "carpeta_id", nullable = false)
-    var carpeta: Carpeta,
+    var carpeta: Carpeta? = null,
 
     // ELIMINADO: var foro: Foro? = null
 

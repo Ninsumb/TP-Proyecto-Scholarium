@@ -11,13 +11,13 @@ class Usuario(
     val id: Long? = null,
 
     @Column(nullable = false, length = 100)
-    val nombre: String,
+    val nombre: String = "",
 
     @Column(unique = true, nullable = false, length = 255)
-    val email: String,
+    val email: String = "",
 
     @Column(nullable = false)
-    var password: String, // Debe estar hasheada (BCrypt) dsp
+    var password: String = "", // Debe estar hasheada (BCrypt) dsp
 
     @OneToMany(mappedBy = "usuario", cascade = [CascadeType.ALL], orphanRemoval = true)
     val membresias: MutableList<Membresia> = mutableListOf(),
