@@ -110,7 +110,7 @@ export function Home() {
         </Link>
         
         <Link
-          to="/nuevo-portal"
+          to="/crear-portal"
           className="inline-flex items-center gap-2 px-6 py-3 rounded-sm bg-surface-container-high text-foreground hover:bg-surface-container transition-all"
         >
           <UserPlus className="w-5 h-5" />

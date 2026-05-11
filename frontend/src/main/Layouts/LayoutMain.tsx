@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { useMemo } from "react";
-import { useToast } from "../hooks/useToast";
+import { useToast } from "../Hooks/useToast";
 import { Toast } from "../Components/common/Toast";
 import { MainContext } from "../types/MainContext";
 import type { MainContextType } from "../types/MainContext";

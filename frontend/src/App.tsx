@@ -4,6 +4,9 @@ import Register from './main/Pages/Auth/Register'
 import './App.css'
 import { Home } from './main/Pages/Home/Portales'
 import { LayoutMain } from './main/Layouts/LayoutMain'
+import { Profile } from './main/Pages/Perfil/Perfil'
+import { ExplorePortals } from './main/Pages/ExplorarPortales'
+import { CreatePortal } from './main/Pages/Auth/CrearPortal'
 
 
 function App() {
@@ -20,6 +23,9 @@ function App() {
         <Route element={<LayoutMain/>}>
           {/* Aquí puedes agregar más rutas en el futuro */}
           <Route path="/home" element={<Home />} /> 
+          <Route path="/perfil" element={<Profile />} /> 
+          <Route path="/explorar-portales" element={<ExplorePortals />} /> 
+          <Route path="/crear-portal" element={<CreatePortal />} /> 
         </Route>
       </Routes>
     </Router>

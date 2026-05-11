@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { GraduationCap } from "lucide-react";
-import { authService } from "../../services/AuthService";
+import { authService } from "../../Services/AuthService";
 
 export default function Register() {
   const navigate = useNavigate();
