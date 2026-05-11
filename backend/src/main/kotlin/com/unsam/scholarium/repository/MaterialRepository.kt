@@ -1,6 +1,7 @@
 package com.unsam.scholarium.repository
 
 import com.unsam.scholarium.model.Material
+import com.unsam.scholarium.model.TipoMaterial
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository

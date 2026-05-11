@@ -1,11 +1,12 @@
 package com.unsam.scholarium.repository
 
 import com.unsam.scholarium.model.Materia
+import com.unsam.scholarium.model.Portal
+import java.util.UUID
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
-import java.util.*
 
 @Repository
 interface MateriaRepository : JpaRepository<Materia, UUID> {
