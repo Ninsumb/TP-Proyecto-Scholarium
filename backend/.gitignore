@@ -15,7 +15,7 @@ out/
 # Application properties con credenciales reales
 application-local.properties
 application-prod.properties
-.env
+../.env
 
 # Docker
 docker-compose.override.yml
