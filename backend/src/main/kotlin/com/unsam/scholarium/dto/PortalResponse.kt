@@ -11,7 +11,7 @@ data class PortalResponse(
     var cantidadMiembros: Int = 0,
     var cantidadMaterias: Int = 0,
     var cantidadMaterialPublicado: Int = 0,
-    val rolUsuarioAutenticado: String?,
+    val rolUsuarioAutenticado: String?,  // Será "ADMIN", "MEMBER" o null
     var fechaRegistro: LocalDateTime,
     var activo: Boolean
 )
