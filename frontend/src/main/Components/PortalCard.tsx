@@ -1,12 +1,9 @@
 import { Code } from "lucide-react"
+import type { PortalCardProps } from "../types/Portal"
 
-interface PortalCardProps{
-    nombre: string,
-    descripcion: string,
-    numeroEstudiantes: number
-}
 
-export const PortalCard = (props: PortalCardProps) => {
+
+export const PortalCard = ({portal}: PortalCardProps) => {
     return (
         <div className="portalCard border m-1 p-2 flex flex-col">
             <div className="flex grow">
@@ -16,10 +13,10 @@ export const PortalCard = (props: PortalCardProps) => {
                     </div>
                 </div>
                 <div className="flex flex-col justify-between">
-                    <h2 className="font-semibold grow">{props.nombre}</h2>
+                    <h2 className="font-semibold grow">{portal.nombre}</h2>
                     <div className="">
-                        <p>{props.descripcion}</p>
-                        <p>{props.numeroEstudiantes} estudiantes</p>
+                        <p>{portal.descripcion}</p>
+                        <p>{portal.numeroEstudiantes} estudiantes</p>
                     </div>
                 </div>
             </div>
