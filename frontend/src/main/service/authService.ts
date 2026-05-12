@@ -1,5 +1,8 @@
-import { api } from "./api"
+/* import { api } from "./api"
 import { saveToken } from "./authStorage"
+
+
+//TODO: VER QUE VAMOS A HACER CON ESTOS ARCHIVOS
 
 
 type LoginRequest = {
@@ -36,4 +39,4 @@ export const login = async (payload:LoginRequest):Promise<LoginResponse> =>{
 export const register = async (payload:RegisterRequest):Promise<RegisterResponse>=>{
     const response = await api.post<RegisterResponse>("/api/auth/register",payload)
     return response.data
-}
+} */

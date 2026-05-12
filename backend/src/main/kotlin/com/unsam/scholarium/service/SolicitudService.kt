@@ -5,6 +5,7 @@ import com.unsam.scholarium.exception.NotAdminException
 import com.unsam.scholarium.model.Estado
 import com.unsam.scholarium.model.Membresia
 import com.unsam.scholarium.model.RolMembresia
+import com.unsam.scholarium.model.Solicitud
 import com.unsam.scholarium.repository.MembresiaRepository
 import com.unsam.scholarium.repository.SolicitudRepository
 import com.unsam.scholarium.repository.UsuarioRepository
@@ -17,11 +18,12 @@ class SolicitudService(
     val membresiaRepository: MembresiaRepository,
     val usuarioRepository: UsuarioRepository
 ) {
-    @Transactional
-    fun aprobarSolicitud(solicitudId: Long, emailAdmin: String){
-        val solicitud = solicitudRepository.findById(solicitudId)
+    fun validarSolicitud(solicitudId: Long): Solicitud {
+        return solicitudRepository.findById(solicitudId)
             .orElseThrow{ ElementDoesNotExistException("La solicitud no existe") }
+    }
 
+    fun validarAdmin(solicitud: Solicitud, emailAdmin: String) {
         val admin = usuarioRepository.findByEmail(emailAdmin)
             ?: throw ElementDoesNotExistException("El usuario no existe")
 
@@ -34,12 +36,19 @@ class SolicitudService(
         if(!esAdmin){
             throw NotAdminException("No tenes permisos para aprobar esta solicitud")
         }
+    }
+
+    @Transactional
+    fun aprobarSolicitud(solicitudId: Long, emailAdmin: String){
+        val solicitud = validarSolicitud(solicitudId)
+
+        validarAdmin(solicitud, emailAdmin)
 
         solicitud.estado = Estado.ACEPTADA
 
         val yaEsMiembro = membresiaRepository.existsByUsuarioIdAndPortalId(
             solicitud.usuario.id!!,
-            solicitud.portal.id
+            solicitud.portal.id!!
         )
 
         if(!yaEsMiembro){
@@ -50,6 +59,17 @@ class SolicitudService(
             )
             membresiaRepository.save(nuevaMembresia)
         }
+
+        solicitudRepository.save(solicitud)
+    }
+
+    @Transactional
+    fun rechazarSolicitud(solicitudId: Long, emailAdmin: String){
+        val solicitud = validarSolicitud(solicitudId)
+
+        validarAdmin(solicitud, emailAdmin)
+
+        solicitud.estado = Estado.RECHAZADA
 
         solicitudRepository.save(solicitud)
     }

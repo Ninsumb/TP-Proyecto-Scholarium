@@ -1,6 +1,7 @@
 package com.unsam.scholarium.model
 
 
+import com.unsam.scholarium.exception.BusinessException
 import jakarta.persistence.*
 import java.time.LocalDateTime
 
@@ -29,11 +30,18 @@ class Solicitud(
     @Enumerated(EnumType.STRING)
     var estado: Estado,
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", length = 1000)
     val descripcion: String,
 
     @Column(nullable = false)
     val fechaSolicitud: LocalDateTime = LocalDateTime.now()
 ){
+    init {
+        validar()
+    }
 
+    private fun validar() {
+        if (titulo.isBlank()) throw BusinessException("El título es obligatorio")
+        if (descripcion.length > 1000) throw BusinessException("La descripción no puede tener más de 1000 caracteres")
+    }
 }

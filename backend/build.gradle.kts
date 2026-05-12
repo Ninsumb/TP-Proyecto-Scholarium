@@ -36,6 +36,8 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
+    implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.7.3")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     testImplementation("io.mockk:mockk:1.14.9")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")

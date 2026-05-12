@@ -1,0 +1,119 @@
+package com.unsam.scholarium.service
+
+import com.unsam.scholarium.dto.CrearMateriaRequest
+import com.unsam.scholarium.exception.BusinessException
+import com.unsam.scholarium.exception.ElementDoesNotExistException
+import com.unsam.scholarium.exception.NotAdminException
+import com.unsam.scholarium.model.Etiqueta
+import com.unsam.scholarium.model.Foro
+import com.unsam.scholarium.model.Materia
+import com.unsam.scholarium.model.RolMembresia
+import com.unsam.scholarium.repository.*
+import jakarta.transaction.Transactional
+import org.springframework.stereotype.Service
+import java.util.UUID
+
+@Service
+class MateriaService(
+    private val materiaRepository: MateriaRepository,
+    private val usuarioRepository: UsuarioRepository,
+    private val membresiaRepository: MembresiaRepository,
+    private val carpetaRepository: CarpetaRepository,
+    private val etiquetaRepository: EtiquetaRepository,
+    private val foroRepository: ForoRepository
+) {
+
+    @Transactional(rollbackOn = [Exception::class])
+    fun crearMateria(carpetaId: UUID, email: String, request: CrearMateriaRequest): Materia {
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        val carpeta = carpetaRepository.findById(carpetaId)
+            .orElseThrow { ElementDoesNotExistException("La carpeta no existe") }
+
+        val portal = carpeta.portal
+
+        val esAdmin = membresiaRepository
+            .existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+        if (!esAdmin) {
+            throw NotAdminException("No tenés permisos para crear materias en este portal")
+        }
+
+        validarEtiqueta(request.etiqueta)
+
+        val materiasEnCarpeta = materiaRepository.findByCarpetaId(carpetaId)
+        val nuevoOrden = (materiasEnCarpeta.maxOfOrNull { it.orden } ?: -1) + 1
+
+        val nuevaMateria = Materia(
+            nombre = request.nombre,
+            carpeta = carpeta,
+            orden = nuevoOrden
+        )
+
+        val materiaSaved = materiaRepository.save(nuevaMateria)
+
+        val etiqueta = etiquetaRepository.findByNombreAndPortal(request.etiqueta.uppercase(), portal)
+            ?: etiquetaRepository.save(
+                Etiqueta(
+                    nombre = request.etiqueta.uppercase(),
+                    portal = portal
+                )
+            )
+
+        val nuevoForo = Foro(
+            nombre = request.nombre,
+            etiqueta = etiqueta,
+            portal = portal
+        )
+
+        foroRepository.save(nuevoForo)
+
+        return materiaSaved
+    }
+
+    private fun validarEtiqueta(etiqueta: String) {
+        if (etiqueta.isBlank()) {
+            throw BusinessException("La etiqueta es obligatoria")
+        }
+        if (etiqueta.length > 30) {
+            throw BusinessException("La etiqueta no puede tener más de 30 caracteres")
+        }
+
+        if (!etiqueta.matches(Regex("^[A-Za-z0-9\\-]+$"))) {
+            throw BusinessException("La etiqueta solo puede contener letras, números y guiones")
+        }
+    }
+
+    fun actualizarNombreMateria(
+        materiaId: UUID,
+        nuevoNombre: String,
+        email: String
+    ): Materia {
+
+        val materia = materiaRepository.findById(materiaId)
+            .orElseThrow { ElementDoesNotExistException("Materia no encontrada") }
+
+        if (nuevoNombre.isBlank()) {
+            throw BusinessException("El nombre no puede estar vacío")
+        }
+
+        if (nuevoNombre.length > 150) {
+            throw BusinessException("El nombre no puede superar los 150 caracteres")
+        }
+
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        val portal = materia.carpeta.portal
+
+        val esAdmin = membresiaRepository
+            .existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+        if (!esAdmin) {
+            throw NotAdminException("No tenés permisos para editar esta materia")
+        }
+
+        materia.nombre = nuevoNombre
+
+        return materiaRepository.save(materia)
+    }
+}
