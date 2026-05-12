@@ -13,6 +13,7 @@ enum class TipoMaterial {
     OTRO,
 }
 
+
 enum class EstadoMaterial {
     PENDIENTE,
     PUBLICADO,
@@ -32,6 +33,7 @@ class Material(
     var descripcion: String,
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     var tipo: TipoMaterial,
 
     @Column(nullable = false)
@@ -47,7 +49,7 @@ class Material(
     @Enumerated(EnumType.STRING)
     var estado: EstadoMaterial = EstadoMaterial.PENDIENTE,
 
-    @Column
+    @Column(nullable = true)
     var motivoRechazo: String? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -59,10 +61,11 @@ class Material(
     var usuario: Usuario,
 
     @CreationTimestamp
-    @Column(nullable = false)
-    var reatedAt: Date = Date(),
+    @Column(name = "created_at", nullable = false)
+    var createdAt: Date = Date(),
 
     @UpdateTimestamp
+    @Column(name = "updated_at")
     var updatedAt: Date? = null,
 ) {
 
