@@ -1,87 +1,34 @@
-import { Link, useNavigate } from "react-router-dom";
-import { Code, Briefcase, FlaskConical, Calculator, Languages, GraduationCap, BookOpen, Search, UserPlus } from "lucide-react";
-
-const portales = [
-  {
-    id: "ingenieria-informatica",
-    nombre: "Ingeniería Informática",
-    descripcion: "Sistemas, programación y desarrollo de software",
-    icon: Code,
-    color: "bg-blue-500",
-    estudiantes: 1250,
-  },
-  {
-    id: "administracion",
-    nombre: "Administración de Empresas",
-    descripcion: "Gestión, finanzas y desarrollo organizacional",
-    icon: Briefcase,
-    color: "bg-green-500",
-    estudiantes: 980,
-  },
-  {
-    id: "ingenieria-quimica",
-    nombre: "Ingeniería Química",
-    descripcion: "Procesos químicos y desarrollo industrial",
-    icon: FlaskConical,
-    color: "bg-purple-500",
-    estudiantes: 650,
-  },
-  {
-    id: "matematicas",
-    nombre: "Matemáticas",
-    descripcion: "Análisis matemático y aplicaciones",
-    icon: Calculator,
-    color: "bg-orange-500",
-    estudiantes: 420,
-  },
-  {
-    id: "letras",
-    nombre: "Letras",
-    descripcion: "Literatura, lingüística y análisis textual",
-    icon: Languages,
-    color: "bg-pink-500",
-    estudiantes: 530,
-  },
-  {
-    id: "medicina",
-    nombre: "Medicina",
-    descripcion: "Ciencias de la salud y práctica médica",
-    icon: GraduationCap,
-    color: "bg-red-500",
-    estudiantes: 1450,
-  },
-];
-
-//OJO QUE TODA ESTA LÓGICA ESTÁ SACADA DE FIGMA Y ESTA RE MAL 
+// src/pages/Home.tsx
+import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Code, Search, UserPlus, BookOpen } from "lucide-react";
+import { usuarioService } from "../../Services/UsuarioService";
+import type { UsuarioPortalResponse } from "../../types/DashboardPortals/UsuarioPortalResponse";
 
 export function Home() {
-  const navigate = useNavigate();
+  const [portales, setPortales] = useState<UsuarioPortalResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const userName = localStorage.getItem("userName") || "Usuario";
 
-  // Obtener datos de membresía
-  const getUserPortals = () => {
-    const stored = localStorage.getItem("userPortals");
-    return stored ? JSON.parse(stored) : ["ingenieria-informatica"];
-  };
+  useEffect(() => {
+    const fetchPortales = async () => {
+      try {
+        setLoading(true);
+        const data = await usuarioService.getMisPortales();
+        setPortales(data);
+      } catch (err) {
+        console.error("Error al cargar portales:", err);
+        setError("No se pudieron cargar los portales");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const getAdminPortals = () => {
-    const stored = localStorage.getItem("adminPortals");
-    return stored ? JSON.parse(stored) : ["ingenieria-informatica"];
-  };
+    fetchPortales();
+  }, []);
 
-  const userPortals = getUserPortals();
-  const adminPortals = getAdminPortals();
-
-  // Filtrar solo los portales de los que soy miembro
-  const myPortals = portales.filter(portal => 
-    userPortals.includes(portal.id) || adminPortals.includes(portal.id)
-  );
-
-  const getPortalStatus = (portalId: string) => {
-    if (adminPortals.includes(portalId)) return "admin";
-    if (userPortals.includes(portalId)) return "miembro";
-    return null;
-  };
+  const totalMiembros = portales.reduce((sum, p) => sum + p.cantidadMiembros, 0);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -120,8 +67,29 @@ export function Home() {
 
       {/* Portals Grid */}
       <div>
-        <h2 className="text-2xl font-semibold text-foreground mb-6" style={{ fontFamily: 'Work Sans, sans-serif' }}>Mis Portales</h2>
-        {myPortals.length === 0 ? (
+        <h2 className="text-2xl font-semibold text-foreground mb-6" style={{ fontFamily: 'Work Sans, sans-serif' }}>
+          Mis Portales
+        </h2>
+
+        {loading ? (
+          <div className="bg-surface-container-lowest p-12 text-center rounded-sm">
+            <p className="text-muted-foreground">Cargando portales...</p>
+          </div>
+        ) : error ? (
+          <div className="bg-surface-container-lowest p-12 text-center rounded-sm">
+            <p className="text-destructive mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-sm transition-all"
+              style={{ 
+                background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)',
+                color: 'var(--primary-foreground)'
+              }}
+            >
+              Reintentar
+            </button>
+          </div>
+        ) : portales.length === 0 ? (
           <div className="bg-surface-container-lowest p-12 text-center rounded-sm">
             <p className="text-muted-foreground mb-4">
               Aún no eres miembro de ningún portal universitario
@@ -140,50 +108,45 @@ export function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {myPortals.map((portal) => {
-              const Icon = portal.icon;
-              const status = getPortalStatus(portal.id);
-              return (
-                <Link
-                  key={portal.id}
-                  to={`/portal/${portal.id}`}
-                  className="bg-surface-container-lowest p-6 hover:shadow-lg transition-all group relative rounded-sm"
-                  style={{ boxShadow: '0 1px 3px rgba(58, 95, 148, 0.06)' }}
-                >
-                  {/* Badge de estado en la esquina */}
-                  {status && (
-                    <div className="absolute top-4 right-4">
-                      {status === "admin" ? (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-sm text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20">
-                          Administrador
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-sm text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-                          Miembro
-                        </span>
-                      )}
-                    </div>
+            {portales.map((portal) => (
+              <Link
+                key={portal.id}
+                to={`/portal/${portal.id}`}
+                className="bg-surface-container-lowest p-6 hover:shadow-lg transition-all group relative rounded-sm"
+                style={{ boxShadow: '0 1px 3px rgba(58, 95, 148, 0.06)' }}
+              >
+                <div className="absolute top-4 right-4">
+                  {portal.rol === "ADMIN" ? (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-sm text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20">
+                      Administrador
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-sm text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                      Miembro
+                    </span>
                   )}
-                  <div className="flex items-start gap-4">
-                    <div className={`${portal.color} p-3 rounded-sm group-hover:scale-105 transition-transform`}>
-                      <Icon className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1 pr-20">
-                      <h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
-                        {portal.nombre}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {portal.descripcion}
-                      </p>
-                      <div className="flex items-center gap-2 text-xs text-on-surface-variant uppercase tracking-wide">
-                        <BookOpen className="w-3 h-3" />
-                        <span>{portal.estudiantes} estudiantes</span>
-                      </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="bg-blue-500 p-3 rounded-sm group-hover:scale-105 transition-transform">
+                    <Code className="w-6 h-6 text-white" />
+                  </div>
+
+                  <div className="flex-1 pr-20">
+                    <h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
+                      {portal.carrera}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {portal.universidad}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-on-surface-variant uppercase tracking-wide">
+                      <BookOpen className="w-3 h-3" />
+                      <span>{portal.cantidadMiembros} miembros</span>
                     </div>
                   </div>
-                </Link>
-              );
-            })}
+                </div>
+              </Link>
+            ))}
           </div>
         )}
       </div>
@@ -191,14 +154,14 @@ export function Home() {
       {/* Stats Section */}
       <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-surface-container-lowest p-6 text-center rounded-sm">
-          <div className="text-3xl font-bold text-primary mb-2">{myPortals.length}</div>
+          <div className="text-3xl font-bold text-primary mb-2">{portales.length}</div>
           <div className="text-sm text-on-surface-variant uppercase tracking-wide">Mis Portales</div>
         </div>
         <div className="bg-surface-container-lowest p-6 text-center rounded-sm">
           <div className="text-3xl font-bold text-primary mb-2">
-            {portales.reduce((sum, p) => sum + p.estudiantes, 0).toLocaleString()}
+            {totalMiembros.toLocaleString()}
           </div>
-          <div className="text-sm text-on-surface-variant uppercase tracking-wide">Estudiantes Activos</div>
+          <div className="text-sm text-on-surface-variant uppercase tracking-wide">Miembros Totales</div>
         </div>
         <div className="bg-surface-container-lowest p-6 text-center rounded-sm">
           <div className="text-3xl font-bold text-primary mb-2">24/7</div>
