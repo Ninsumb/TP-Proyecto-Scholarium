@@ -11,7 +11,7 @@ interface AuthFormProps {
 
 export const AuthForm: React.FC<AuthFormProps> = ({ type, title, submitLabel }) => {
     const [email, setEmail] = useState('');
-    const [nombre, setNombre] = useState('USER') // FALTA EL CAMPO DEL NOMBRE EN EL REGISTRO
+    const [nombre, setNombre] = useState('') 
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [rememberMe, setRememberMe] = useState(false);
@@ -30,6 +30,11 @@ export const AuthForm: React.FC<AuthFormProps> = ({ type, title, submitLabel }) 
         }
         if (password.trim() === "") {
             setError("La contraseña no puede estar vacía");
+            return;
+        }
+
+        if (type === "register" && nombre.trim() === "") {
+            setError("El nombre no puede estar vacío");
             return;
         }
 
@@ -96,6 +101,29 @@ export const AuthForm: React.FC<AuthFormProps> = ({ type, title, submitLabel }) 
                                 placeholder={type === 'login' ? 'tu.correo@universidad.edu' : 'email@ejemplo.com'}
                             />
                         </div>
+
+                        {/* Campo Nombre (solo para registro) */}
+                        {type === 'register' && (
+                            <div>
+                                <label
+                                    htmlFor="nombre"
+                                    className="block text-sm font-medium text-foreground mb-2"
+                                >
+                                    Nombre Completo
+                                </label>
+                                <input
+                                    id="nombre"
+                                    type="text"
+                                    required
+                                    value={nombre}
+                                    onChange={(e) => setNombre(e.target.value)}
+                                    className={`w-full px-4 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary ${
+                                        error === "El nombre no puede estar vacío" ? 'border-red-500' : 'border-border'
+                                    }`}
+                                    placeholder="Tu nombre completo"
+                                />
+                            </div>
+                        )}
 
                         {/* Campo Password */}
                         <div>
