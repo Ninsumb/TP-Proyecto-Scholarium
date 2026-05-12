@@ -14,7 +14,7 @@ import java.time.LocalDateTime
 class Portal(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
+    val id: Long? = null, //TODO: ¿No estaría mejor que fuese un UUID en lugar de un ID?
 
     @Column(nullable = false)
     var universidad: String,
