@@ -4,6 +4,7 @@ import Register from './main/Pages/Auth/Register'
 import './App.css'
 import { Home } from './main/Pages/Home/Portales'
 import { LayoutMain } from './main/Layouts/LayoutMain'
+import BuscarPortales from './main/Pages/BuscarPortales/BuscarPortales'
 
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route element={<LayoutMain/>}>
           {/* Aquí puedes agregar más rutas en el futuro */}
           <Route path="/home" element={<Home />} /> 
+          <Route path="/portales/buscar" element={<BuscarPortales />} />
         </Route>
       </Routes>
     </Router>

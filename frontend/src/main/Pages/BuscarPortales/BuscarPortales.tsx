@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { Portal } from "../types/Portal";
-import { PortalCard } from "./PortalCard";
+import type { Portal } from "../../types/Portal";
+import { PortalCard } from "../../Components/PortalCard";
+import "./BuscarPortales.css";  
 
  
 interface SearchFilters {
@@ -135,9 +136,8 @@ const EmptyState = ({ hasFilters }: { hasFilters: boolean }) => (
   </div>
 );
  
-
  
-export default function BuscarPortalesPage() {
+export default function BuscarPortales() {
   const [query, setQuery] = useState("");
   const [universidadFilter, setUniversidadFilter] = useState("");
   const [carreraFilter, setCarreraFilter] = useState("");
