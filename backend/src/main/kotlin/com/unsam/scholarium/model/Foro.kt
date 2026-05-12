@@ -16,6 +16,7 @@ class Foro(
     @Column(nullable = false, length = 150)
     var nombre: String,
 
+    //todo: considerar el EAGER
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "etiqueta_id", nullable = false)
     var etiqueta: Etiqueta,  
