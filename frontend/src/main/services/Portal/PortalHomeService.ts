@@ -1,4 +1,3 @@
-// src/services/portalHomePage.service.ts
 import axios from 'axios';
 import type { AxiosInstance } from 'axios';
 import type { BlocksResponse, UpdateBlocksRequest } from '../../types/Portal/PortalHomeBlocksTypes';
@@ -14,7 +13,7 @@ class PortalHomePageService {
       headers: { 'Content-Type': 'application/json' },
     });
 
-    // Interceptor para agregar el token
+    
     this.api.interceptors.request.use(
       (config) => {
         const token = localStorage.getItem('token');
@@ -26,7 +25,7 @@ class PortalHomePageService {
       (error) => Promise.reject(error)
     );
 
-    // Interceptor para manejar errores de autenticación
+    
     this.api.interceptors.response.use(
       (response) => response,
       (error) => {
