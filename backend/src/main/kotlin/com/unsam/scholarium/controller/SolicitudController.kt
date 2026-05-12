@@ -25,6 +25,14 @@ class SolicitudController(
         return ResponseEntity.ok().build()
     }
 
+    @PutMapping("/{solicitudId}/rechazar")
+    fun rechazarSolicitud(@PathVariable solicitudId: Long) : ResponseEntity<Void>{
+        val email = SecurityContextHolder
+            .getContext()
+            .authentication
+            .name
 
-
+        solicitudService.rechazarSolicitud(solicitudId, email)
+        return ResponseEntity.ok().build()
+    }
 }

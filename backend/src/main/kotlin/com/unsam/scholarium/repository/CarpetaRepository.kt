@@ -7,7 +7,12 @@ import java.util.*
 
 @Repository
 interface CarpetaRepository : JpaRepository<Carpeta, UUID> {
-    fun findByPortalId(portalId: UUID): List<Carpeta>
+    fun findByNombre(nombre: String): List<Carpeta>
+    fun findByPortalId(portalId: Long): List<Carpeta>
     fun findByCarpetaPadreId(carpetaPadreId: UUID): List<Carpeta>
-    fun findByPortalIdAndCarpetaPadreId(portalId: UUID, carpetaPadreId: UUID): List<Carpeta>
+    fun findByPortalIdAndCarpetaPadreId(portalId: Long, carpetaPadreId: UUID): List<Carpeta>
+    fun findByPortalIdAndCarpetaPadreIdIsNull(portalId: Long): List<Carpeta>
+
+    fun existsByCarpetaPadreId(carpetaPadreId: UUID): Boolean
+
 }

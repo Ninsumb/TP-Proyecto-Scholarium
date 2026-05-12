@@ -18,6 +18,7 @@ enum class TipoForo {
 
 
 @Entity
+@Table(name = "foros")
 class Foro(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -39,6 +40,15 @@ class Foro(
     @Column(nullable = false)
     val createdAt: LocalDateTime? = null
 
+    @UpdateTimestamp
+    val updatedAt: Date? = null
 ) {
+    init {
+        validar()
+    }
 
+    private fun validar() {
+        if (nombre.isBlank()) throw BusinessException("El nombre del foro es obligatorio")
+        if (nombre.length > 150) throw BusinessException("El nombre no puede tener más de 150 caracteres")
+    }
 }

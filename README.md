@@ -96,3 +96,107 @@ npm install
 ```
 
 3. Configurar variables de entorno (crear archivo `.env`):
+
+---
+
+```mermaid
+erDiagram
+    USUARIO ||--o{ MEMBRESIA : tiene
+    USUARIO ||--o{ SOLICITUD : crea
+    USUARIO ||--o{ MATERIAL : sube
+    
+    PORTAL ||--o{ MEMBRESIA : tiene
+    PORTAL ||--o{ SOLICITUD : recibe
+    PORTAL ||--o{ CARPETA : contiene
+    PORTAL ||--|| FORO : tiene_foro_general
+    
+    CARPETA ||--o{ CARPETA : subcarpetas
+    CARPETA ||--o{ MATERIA : contiene
+    
+    MATERIA ||--|| FORO : tiene_foro
+    MATERIA ||--o{ MATERIAL : tiene
+    
+    USUARIO {
+        BIGINT id PK
+        VARCHAR nombre
+        VARCHAR email "unique"
+        VARCHAR password
+        TIMESTAMP fecha_registro
+        BOOLEAN activo
+    }
+    
+    PORTAL {
+        BIGINT id PK
+        VARCHAR universidad
+        VARCHAR carrera
+        VARCHAR descripcion
+        TIMESTAMP fecha_registro
+        BOOLEAN activo
+        VARCHAR nota "universidad + carrera unique"
+    }
+    
+    MEMBRESIA {
+        BIGINT id PK
+        BIGINT usuario_id FK
+        BIGINT portal_id FK
+        VARCHAR rol "MIEMBRO|ADMIN"
+        TIMESTAMP fecha_registro
+        BOOLEAN activo
+        VARCHAR nota "usuario + portal unique"
+    }
+    
+    SOLICITUD {
+        BIGINT id PK
+        BIGINT usuario_id FK
+        BIGINT portal_id FK
+        VARCHAR titulo
+        VARCHAR estado "PENDIENTE|ACEPTADA|RECHAZADA"
+        TEXT descripcion
+        TIMESTAMP fecha_solicitud
+    }
+    
+    CARPETA {
+        STRING id PK
+        VARCHAR nombre
+        BIGINT portal_id FK
+        STRING carpeta_padre_id FK "nullable"
+        INT orden
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        VARCHAR regla "no autoreferencia"
+    }
+    
+    MATERIA {
+        STRING id PK
+        VARCHAR nombre
+        STRING carpeta_id FK
+        INT orden
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+    
+    FORO {
+        STRING id PK
+        VARCHAR tipo "GENERAL|MATERIA"
+        STRING materia_id FK "nullable"
+        BIGINT portal_id FK
+        TIMESTAMP created_at
+        VARCHAR regla "general sin materia / materia con materia_id"
+    }
+    
+    MATERIAL {
+        STRING id PK
+        VARCHAR nombre
+        TEXT descripcion
+        STRING materia_id FK
+        BIGINT subido_por_id FK
+        VARCHAR estado "PENDIENTE|PUBLICADO|RECHAZADO"
+        VARCHAR tipo "APUNTE|PARCIAL|FINAL|PRACTICA|OTRO"
+        VARCHAR archivo_url
+        VARCHAR archivo_nombre
+        BIGINT archivo_tamano
+        VARCHAR archivo_mime_type
+        TEXT motivo_rechazo "nullable"
+        TIMESTAMP fecha_subida
+        TIMESTAMP fecha_moderacion "nullable"
+    }

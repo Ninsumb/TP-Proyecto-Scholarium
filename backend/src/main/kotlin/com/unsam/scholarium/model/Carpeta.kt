@@ -1,12 +1,10 @@
 package com.unsam.scholarium.model
 
-
+import com.unsam.scholarium.exception.BusinessException
 import jakarta.persistence.*
-import java.time.LocalDateTime
 import java.util.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
-
 
 @Entity
 @Table(name = "carpetas")
@@ -36,5 +34,12 @@ class Carpeta(
     val updatedAt: LocalDateTime? = null
 
 ) {
+    init {
+        validar()
+    }
 
+    private fun validar() {
+        if (nombre.isBlank()) throw BusinessException("El nombre es obligatorio")
+        if (nombre.length > 100) throw BusinessException("El nombre no puede tener más de 100 caracteres")
+    }
 }
