@@ -59,7 +59,10 @@ class MateriaController(
 
         val response = MateriaResponse(
             id = materiaActualizada.id!!,
-            nombre = materiaActualizada.nombre
+            nombre = materiaActualizada.nombre,
+            carpetaId = materiaActualizada.carpeta.id!!,
+            orden = materiaActualizada.orden,
+            createdAt = materiaActualizada.createdAt!!.toInstant()
         )
 
         return ResponseEntity.ok(response)

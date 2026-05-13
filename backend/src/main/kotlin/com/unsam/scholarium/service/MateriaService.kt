@@ -7,11 +7,14 @@ import com.unsam.scholarium.exception.NotAdminException
 import com.unsam.scholarium.model.Etiqueta
 import com.unsam.scholarium.model.Foro
 import com.unsam.scholarium.model.Materia
+import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.model.RolMembresia
+import com.unsam.scholarium.model.Usuario
 import com.unsam.scholarium.repository.*
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import java.util.UUID
+import kotlin.jvm.optionals.getOrNull
 
 @Service
 class MateriaService(
@@ -22,6 +25,14 @@ class MateriaService(
     private val etiquetaRepository: EtiquetaRepository,
     private val foroRepository: ForoRepository
 ) {
+
+    fun validarAdmin(usuario: Usuario, portal: Portal){
+        val esAdmin = membresiaRepository
+            .existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+        if (!esAdmin) {
+            throw NotAdminException("No tenés permisos para editar esta materia")
+        }
+    }
 
     @Transactional(rollbackOn = [Exception::class])
     fun crearMateria(carpetaId: UUID, email: String, request: CrearMateriaRequest): Materia {
@@ -106,28 +117,42 @@ class MateriaService(
 
         val portal = materia.carpeta.portal
 
-        val esAdmin = membresiaRepository
-            .existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
-        if (!esAdmin) {
-            throw NotAdminException("No tenés permisos para editar esta materia")
-        }
+        validarAdmin(usuario, portal)
 
         materia.nombre = nuevoNombre
 
         return materiaRepository.save(materia)
     }
 
+    //Mueve la materia a una carpeta
     fun moverMateria(
         materiaId: UUID,
-        nuevaMateriaId: UUID,
+        nuevaCarpetaId: UUID,
         email: String
-    ) {
+    ): Materia {
         val materia = materiaRepository.findById(materiaId)
             .orElseThrow { ElementDoesNotExistException("Materia no encontrada") }
 
         val usuario = usuarioRepository.findByEmail(email)
             ?: throw ElementDoesNotExistException("Usuario no encontrado")
 
-        
+        val carpeta = carpetaRepository.findById(nuevaCarpetaId).getOrNull()
+            ?: throw ElementDoesNotExistException("Carpeta no encontrada")
+
+        val portal = materia.carpeta.portal
+
+        validarAdmin(usuario, portal)
+
+        materia.carpeta = carpeta
+
+        //nuevo orden
+        val materiasEnCarpeta = materiaRepository.findByCarpetaId(nuevaCarpetaId)
+        val nuevoOrden = (materiasEnCarpeta.maxOfOrNull { it.orden } ?: -1) + 1
+
+        materia.orden = nuevoOrden
+
+        materiaRepository.save(materia)
+
+        return materia
     }
 }
