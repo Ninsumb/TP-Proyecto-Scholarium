@@ -126,18 +126,6 @@ fun obtenerSolicitudesPendientes(
         return ResponseEntity.status(HttpStatus.OK).body("Carpeta renombrada a ${nuevoNombre}")
     }
 
-    @PutMapping("/{idPortal}/carpetas/{id}/mover")
-    fun moverCarpeta(
-        @PathVariable id: java.util.UUID,
-        @PathVariable idPortal: Long,
-        @RequestBody moverCarpetaBodyRequestDTO: MoverCarpetaBodyRequestDTO,
-        authentication: Authentication
-    ): ResponseEntity<String> {
-        val email = authentication.name
-        portalService.moverCarpeta(idPortal, id, email, moverCarpetaBodyRequestDTO.carpetaPadre)
-        return ResponseEntity.status(HttpStatus.OK).body("Carpeta movida a ${moverCarpetaBodyRequestDTO.carpetaPadre}")
-    }
-
     @PutMapping("/{idPortal}/materias/{id}/mover")
 
     @PatchMapping

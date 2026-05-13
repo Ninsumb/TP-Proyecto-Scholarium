@@ -41,7 +41,7 @@ class AuthService {
     return response.data;
   }
 
-  // Métodos para manejar el token y la sesión
+  
   saveSession(loginResponse: LoginResponse): void {
     localStorage.setItem('token', loginResponse.token);
     localStorage.setItem('userEmail', loginResponse.email);

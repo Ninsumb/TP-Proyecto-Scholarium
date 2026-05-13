@@ -32,7 +32,7 @@ Thumbs.db
 
 # ===== Other =====
 *.log
-.env.local
+.env
 
 # Ignorar todas las carpetas node_modules del proyecto
 **/node_modules/
@@ -44,8 +44,3 @@ node_modules/
 build/
 bin/
 out/
-
-# Archivos de configuración de IDE
-.idea/
-*.iml
-.vscode/
