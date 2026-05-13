@@ -2,6 +2,7 @@ package com.unsam.scholarium.controller
 
 import com.unsam.scholarium.dto.ActualizarMateriaRequest
 import com.unsam.scholarium.dto.MateriaResponse
+import com.unsam.scholarium.dto.MoverMateriaRequest
 import com.unsam.scholarium.service.MateriaService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
@@ -24,12 +25,32 @@ class MateriaController(
         @RequestBody request: ActualizarMateriaRequest,
         authentication: Authentication
     ): ResponseEntity<MateriaResponse> {
-
         val email = authentication.name
 
         val materiaActualizada = materiaService.actualizarNombreMateria(
             materiaId,
             request.nombre,
+            email
+        )
+
+        val response = MateriaResponse(
+            id = materiaActualizada.id!!,
+            nombre = materiaActualizada.nombre
+        )
+
+        return ResponseEntity.ok(response)
+    }
+    @PutMapping("/{materiaId}/mover")
+    fun moverMateria(
+        @PathVariable materiaId: UUID,
+        @RequestBody request: MoverMateriaRequest,
+        authentication: Authentication
+    ): ResponseEntity<MateriaResponse> {
+        val email = authentication.name
+
+        val materiaActualizada = materiaService.moverMateria(
+            materiaId,
+            request.nuevaCarpetaId,
             email
         )
 

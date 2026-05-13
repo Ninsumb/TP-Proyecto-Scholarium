@@ -50,4 +50,18 @@ class MateriaService(
 
         return materiaRepository.save(materia)
     }
+
+    fun moverMateria(
+        materiaId: UUID,
+        nuevaMateriaId: UUID,
+        email: String
+    ) {
+        val materia = materiaRepository.findById(materiaId)
+            .orElseThrow { ElementDoesNotExistException("Materia no encontrada") }
+
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        
+    }
 }
