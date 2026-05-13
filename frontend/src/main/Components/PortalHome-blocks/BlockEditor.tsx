@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Plus, Trash2, Eye, Save, ChevronUp, ChevronDown, Heading, BarChart3, FileText, List, FileCode, ImageIcon, Megaphone } from "lucide-react";
+import { X, Plus, Trash2, Eye, Save, ChevronUp, ChevronDown, Heading, BarChart3, FileText, List, FileCode, ImageIcon, Megaphone, Loader2 } from "lucide-react";
 import type {
   Block,
   HeaderBlock,
@@ -365,14 +365,17 @@ interface BlockEditorProps {
   blocks: Block[];
   onSave: (blocks: Block[]) => void;
   onCancel: () => void;
+  isSaving?: boolean;
 }
 
-export function BlockEditor({ blocks: initialBlocks, onSave, onCancel }: BlockEditorProps) {
+export function BlockEditor({ blocks: initialBlocks, onSave, onCancel, isSaving = false }: BlockEditorProps) {
   const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [isPreview, setIsPreview] = useState(false);
 
   const selectedBlock = blocks.find(b => b.id === selectedBlockId);
+
+  // ... (mantené todas las funciones addBlock, removeBlock, updateBlock, moveBlock exactamente como están)
 
   const addBlock = (type: string) => {
     const id = `block-${Date.now()}`;
@@ -465,6 +468,7 @@ export function BlockEditor({ blocks: initialBlocks, onSave, onCancel }: BlockEd
             onClick={() => setIsPreview(!isPreview)}
             className="flex items-center gap-2 px-4 py-2 border border-border hover:bg-accent transition-colors"
             style={{ borderRadius: 'var(--radius)' }}
+            disabled={isSaving}
           >
             <Eye className="w-4 h-4" />
             {isPreview ? 'Editar' : 'Preview'}
@@ -473,22 +477,33 @@ export function BlockEditor({ blocks: initialBlocks, onSave, onCancel }: BlockEd
             onClick={onCancel}
             className="flex items-center gap-2 px-4 py-2 border border-border hover:bg-accent transition-colors"
             style={{ borderRadius: 'var(--radius)' }}
+            disabled={isSaving}
           >
             <X className="w-4 h-4" />
             Cancelar
           </button>
           <button
             onClick={() => onSave(blocks)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ borderRadius: 'var(--radius)' }}
+            disabled={isSaving}
           >
-            <Save className="w-4 h-4" />
-            Guardar
+            {isSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Guardando...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                Guardar
+              </>
+            )}
           </button>
         </div>
       </div>
 
-      {/* Layout del Editor */}
+      {/* Layout del Editor - mantené el resto del código exactamente igual */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar Izquierdo - Bloques Disponibles */}
         {!isPreview && (
