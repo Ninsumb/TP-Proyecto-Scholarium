@@ -95,7 +95,9 @@ export function HeaderBlockComponent({ data }: { data: HeaderBlock['data'] }) {
   return (
     <div className="mb-8">
       <h1 className="mb-3 text-foreground">{data.title}</h1>
-      <p className="text-lg text-on-surface-variant leading-relaxed max-w-4xl">{data.description}</p>
+      <p className="text-lg text-on-surface-variant leading-relaxed max-w-4xl whitespace-pre-line">
+        {data.description}
+      </p>
     </div>
   );
 }
@@ -133,7 +135,7 @@ export function TextSectionBlockComponent({ data }: { data: TextSectionBlock['da
   return (
     <div className="mb-8">
       <h2 className="mb-4 text-foreground">{data.title}</h2>
-      <p className="text-on-surface-variant leading-relaxed">{data.content}</p>
+      <p className="text-on-surface-variant leading-relaxed whitespace-pre-line">{data.content}</p>
     </div>
   );
 }
@@ -173,8 +175,7 @@ export function RichTextBlockComponent({ data }: { data: RichTextBlock['data'] }
     >
       <h3 className="mb-4 text-foreground">{data.title}</h3>
       <div className="prose prose-sm max-w-none text-on-surface-variant">
-        {/* Aquí se renderizaría el Markdown - por ahora mostramos el contenido raw */}
-        <p className="whitespace-pre-wrap">{data.markdown}</p>
+        <p className="whitespace-pre-line">{data.markdown}</p>
       </div>
     </div>
   );

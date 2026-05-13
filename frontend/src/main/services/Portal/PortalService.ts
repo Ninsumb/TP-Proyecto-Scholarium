@@ -1,14 +1,19 @@
 import axios from 'axios';
 import type { AxiosInstance } from 'axios';
 import type { PortalDetailResponse } from '../../types/Portal/Portal';
+import type { Block } from '../../Components/PortalHome-blocks/BlockComponents';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:9001/api';
 
 
-export interface Block {
-  id: string;
-  type: string;
-  data: any;
+
+export interface BlocksResponse {
+  blocks: Block[];
+  error?: string;
+}
+
+export interface UpdateBlocksRequest {
+  blocks: Block[];
 }
 
 export interface BloqueBackendResponse {
@@ -27,7 +32,6 @@ class PortalService {
       headers: { 'Content-Type': 'application/json' },
     });
 
-   
     this.api.interceptors.request.use(
       (config) => {
         const token = localStorage.getItem('token');
@@ -39,7 +43,6 @@ class PortalService {
       (error) => Promise.reject(error)
     );
 
-   
     this.api.interceptors.response.use(
       (response) => response,
       (error) => {
@@ -54,9 +57,21 @@ class PortalService {
     );
   }
 
-
   async getPortalDetail(portalId: number): Promise<PortalDetailResponse> {
     const response = await this.api.get<PortalDetailResponse>(`/${portalId}`);
+    return response.data;
+  }
+
+  // Nuevo: Obtener bloques de la home page
+  async getHomeBlocks(portalId: number): Promise<BlocksResponse> {
+    const response = await this.api.get<BlocksResponse>(`/${portalId}/home`);
+    return response.data;
+  }
+
+  // Nuevo: Actualizar bloques de la home page
+  async updateHomeBlocks(portalId: number, blocks: Block[]): Promise<BlocksResponse> {
+    const request: UpdateBlocksRequest = { blocks };
+    const response = await this.api.put<BlocksResponse>(`/${portalId}/home`, request);
     return response.data;
   }
 }
