@@ -97,7 +97,17 @@ npm install
 
 3. Configurar variables de entorno (crear archivo `.env`):
 
----
+Para que el proyecto funcione correctamente, se debe crear un archivo llamado .env en la raíz del proyecto (donde se encuentra este archivo README).
+
+# --- Seguridad (JWT) ---
+# Reemplaza con una clave secreta aleatoria
+JWT_SECRET=tu_clave_secreta_super_segura_de_256_bits
+
+# --- Cloudinary Storage ---
+# Obtén estos valores desde tu consola en cloudinary.com
+CLOUDINARY_CLOUD_NAME=tu_cloud_name
+CLOUDINARY_API_KEY=tu_api_key
+CLOUDINARY_API_SECRET=tu_api_secret
 
 ```mermaid
 erDiagram
