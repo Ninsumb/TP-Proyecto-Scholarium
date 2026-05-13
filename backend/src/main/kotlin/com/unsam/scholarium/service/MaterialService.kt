@@ -7,7 +7,6 @@ import com.unsam.scholarium.exception.NotAdminException
 import com.unsam.scholarium.exception.UnauthorizedException
 import com.unsam.scholarium.model.EstadoMaterial
 import com.unsam.scholarium.model.Material
-import com.unsam.scholarium.model.Materia
 import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.model.TipoMaterial
 import com.unsam.scholarium.repository.MateriaRepository
@@ -23,13 +22,12 @@ import kotlin.jvm.optionals.getOrNull
 
 @Service
 class MaterialService(
-    private val storageService: StorageService,
+    private val storageService: CloudinaryFileStorageService,
     private val materiaRepository: MateriaRepository,
     private val materialRepository: MaterialRepository,
     private val usuarioRepository: UsuarioRepository,
     private val membresiaRepository: MembresiaRepository,
 ) {
-
     fun aprobarMaterial(materialId: UUID, email: String): Material {
 
         val material = materialRepository.findById(materialId)
@@ -64,10 +62,14 @@ class MaterialService(
         archivo: MultipartFile,
         nombre: String,
         descripcion: String?,
-        tipo: TipoMaterial,
+        tipo: String,
         email: String,
     ): MaterialResponse {
-
+        val tipo = try {
+            TipoMaterial.valueOf(tipo)
+        } catch (e: IllegalArgumentException) {
+            throw BusinessException("El tipo de material no está permitido")
+        }
 
         val usuario = usuarioRepository.findByEmail(email)
             ?: throw EntityNotFoundException("Usuario no encontrado")
@@ -84,9 +86,7 @@ class MaterialService(
             throw UnauthorizedException("No tenés permisos para subir material en este portal")
         }
 
-
-        val archivoSubido = storageService.subirArchivo(archivo)
-
+        val archivoSubido = storageService.upload(archivo)
 
         val material = Material(
             nombre = nombre,
@@ -94,6 +94,7 @@ class MaterialService(
             tipo = tipo,
             estado = EstadoMaterial.PENDIENTE,
             url = archivoSubido.url,
+            publicId = archivoSubido.publicId,
             tamanio = archivoSubido.tamanio,
             tipoArchivo = archivoSubido.tipoArchivo,
             materia = materia,
