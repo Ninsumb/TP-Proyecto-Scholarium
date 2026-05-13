@@ -137,19 +137,21 @@ class MateriaService(
             ?: throw ElementDoesNotExistException("Usuario no encontrado")
 
         val carpeta = carpetaRepository.findById(nuevaCarpetaId).getOrNull()
-            ?: throw ElementDoesNotExistException("Carpeta no encontrada")
+            ?: throw BusinessException("Carpeta no encontrada")
 
         val portal = materia.carpeta.portal
+        if (materia.carpeta.portal != carpeta.portal)
+            throw BusinessException("La materia y la nueva carpeta no pertenecen al mismo portal")
 
         validarAdmin(usuario, portal)
-
-        materia.carpeta = carpeta
 
         //nuevo orden
         val materiasEnCarpeta = materiaRepository.findByCarpetaId(nuevaCarpetaId)
         val nuevoOrden = (materiasEnCarpeta.maxOfOrNull { it.orden } ?: -1) + 1
-
         materia.orden = nuevoOrden
+
+        //Ahora si mete la carpeta
+        materia.carpeta = carpeta
 
         materiaRepository.save(materia)
 
