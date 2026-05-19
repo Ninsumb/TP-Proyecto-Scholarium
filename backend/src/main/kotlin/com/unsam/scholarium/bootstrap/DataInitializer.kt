@@ -74,6 +74,7 @@ class DataInitializer {
                     descripcion = "parcial del primer cuatrimestre de 2025",
                     tipo = TipoMaterial.PARCIAL,
                     url = "https://test.com",
+                    publicId = "test/test.pdf",
                     tamanio = 8,
                     tipoArchivo = "pdf",
                     materia = materia,

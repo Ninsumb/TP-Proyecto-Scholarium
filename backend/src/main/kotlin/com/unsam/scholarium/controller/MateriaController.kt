@@ -3,9 +3,12 @@ package com.unsam.scholarium.controller
 import com.unsam.scholarium.dto.ActualizarMateriaRequest
 import com.unsam.scholarium.dto.MateriaResponse
 import com.unsam.scholarium.dto.MoverMateriaRequest
+import com.unsam.scholarium.dto.MaterialPublicadoResponse
 import com.unsam.scholarium.service.MateriaService
+import com.unsam.scholarium.service.MaterialService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -16,7 +19,8 @@ import java.util.UUID
 @RestController
 @RequestMapping("/api/materias")
 class MateriaController(
-    private val materiaService: MateriaService
+    private val materiaService: MateriaService,
+    private val materialService: MaterialService
 ) {
 
     @PutMapping("/{materiaId}")
@@ -66,5 +70,14 @@ class MateriaController(
         )
 
         return ResponseEntity.ok(response)
+
+    @GetMapping("/{materiaId}/material")
+    fun listarMaterialPublicado(
+        @PathVariable materiaId: UUID,
+        authentication: Authentication
+    ): ResponseEntity<List<MaterialPublicadoResponse>> {
+        val email = authentication.name
+        val materiales = materialService.listarMaterialPublicado(materiaId, email)
+        return ResponseEntity.ok(materiales)
     }
 }

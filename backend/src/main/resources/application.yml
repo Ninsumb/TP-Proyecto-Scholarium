@@ -14,11 +14,6 @@ spring:
     password: postgres
     driver-class-name: org.postgresql.Driver
 
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
-
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false

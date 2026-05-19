@@ -13,7 +13,6 @@ enum class TipoMaterial {
     OTRO,
 }
 
-
 enum class EstadoMaterial {
     PENDIENTE,
     PUBLICADO,
@@ -67,6 +66,7 @@ class Material(
     @UpdateTimestamp
     @Column(name = "updated_at")
     var updatedAt: Date? = null,
-) {
 
-}
+    @Column(nullable = false)
+    var publicId: String?
+)
