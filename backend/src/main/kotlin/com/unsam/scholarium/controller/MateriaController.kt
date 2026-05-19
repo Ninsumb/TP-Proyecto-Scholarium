@@ -47,6 +47,7 @@ class MateriaController(
 
         return ResponseEntity.ok(response)
     }
+
     @PutMapping("/{materiaId}/mover")
     fun moverMateria(
         @PathVariable materiaId: UUID,
@@ -71,6 +72,9 @@ class MateriaController(
 
         return ResponseEntity.ok(response)
 
+
+    }
+
     @GetMapping("/{materiaId}/material")
     fun listarMaterialPublicado(
         @PathVariable materiaId: UUID,
@@ -80,4 +84,5 @@ class MateriaController(
         val materiales = materialService.listarMaterialPublicado(materiaId, email)
         return ResponseEntity.ok(materiales)
     }
+
 }
