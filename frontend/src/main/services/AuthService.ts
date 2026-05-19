@@ -1,6 +1,14 @@
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:9001/api';
+
+interface JwtPayload {
+  sub: string       
+  userId: number
+  nombre: string
+  exp: number
+}
 
 export interface RegisterRequest {
   nombre: string;
@@ -21,8 +29,6 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
-  nombre: string;
-  email: string;
 }
 
 class AuthService {
@@ -44,14 +50,10 @@ class AuthService {
   
   saveSession(loginResponse: LoginResponse): void {
     localStorage.setItem('token', loginResponse.token);
-    localStorage.setItem('userEmail', loginResponse.email);
-    localStorage.setItem('userName', loginResponse.nombre);
   }
 
   clearSession(): void {
     localStorage.removeItem('token');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('userName');
   }
 
   getToken(): string | null {
@@ -60,15 +62,36 @@ class AuthService {
 
   isAuthenticated(): boolean {
     const token = this.getToken();
-    return token !== null;
+    if(!token) return false;
+    try{
+      const {exp} = jwtDecode<JwtPayload>(token)
+      if (!exp) return true
+      return Date.now() < exp * 1000
+    } catch {
+      return false
+    }
+  }
+
+  private getPayload(): JwtPayload | null{
+    const token = this.getToken()
+    if(!token) return null
+    try{
+      return jwtDecode<JwtPayload>(token)
+    }catch{
+      return null
+    }
   }
 
   getUserEmail(): string | null {
-    return localStorage.getItem('userEmail');
+    return this.getPayload()?.sub ?? null;
   }
 
   getUserName(): string | null {
-    return localStorage.getItem('userName');
+    return this.getPayload()?.nombre ?? null;
+  }
+
+  getUserId(): number | null {
+    return this.getPayload()?.userId ?? null;
   }
 }
 

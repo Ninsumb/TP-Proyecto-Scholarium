@@ -30,7 +30,7 @@ class AuthService(
         return usuarioRepository.save(usuario)
     }
 
-    fun login(request: LoginRequest): LoginResponse {
+    fun     login(request: LoginRequest): LoginResponse {
         val usuario = usuarioRepository.findByEmail(request.email)
             ?: throw UnauthorizedException("Credenciales incorrectas")
 
@@ -46,10 +46,6 @@ class AuthService(
             nombre = usuario.nombre,
         )
 
-        return LoginResponse(
-            token = token,
-            email = usuario.email,
-            nombre = usuario.nombre,
-        )
+        return LoginResponse(token = token)
     }
 }

@@ -104,4 +104,32 @@ class MaterialService(
         val guardado = materialRepository.save(material)
         return MaterialResponse.fromEntity(guardado)
     }
+
+    fun rechazarMaterial(materialId: UUID, email: String, motivo: String): Material {
+
+        val material = materialRepository.findById(materialId)
+            .orElseThrow { ElementDoesNotExistException("Material no encontrado") }
+
+        if(material.estado == EstadoMaterial.PUBLICADO ||
+            material.estado == EstadoMaterial.RECHAZADO) {
+            throw BusinessException("El material ya fue procesado")
+        }
+
+        val usuario = usuarioRepository.findByEmail(email)
+        ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        val portal = material.materia.carpeta.portal
+
+        val esAdmin = membresiaRepository
+            .existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+
+        if (!esAdmin) {
+            throw NotAdminException("No tenés permisos para rechazar material")
+        }
+
+        material.estado = EstadoMaterial.RECHAZADO
+        material.motivoRechazo = motivo
+
+        return materialRepository.save(material)
+    }
 }
