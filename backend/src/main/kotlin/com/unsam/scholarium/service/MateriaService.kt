@@ -140,7 +140,7 @@ class MateriaService(
             ?: throw BusinessException("Carpeta no encontrada")
 
         val portal = materia.carpeta.portal
-        if (materia.carpeta.portal != carpeta.portal)
+        if (materia.carpeta.portal.id != carpeta.portal.id)
             throw BusinessException("La materia y la nueva carpeta no pertenecen al mismo portal")
 
         validarAdmin(usuario, portal)
