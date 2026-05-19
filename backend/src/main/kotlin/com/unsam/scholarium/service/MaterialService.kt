@@ -1,5 +1,6 @@
 package com.unsam.scholarium.service
 
+import com.unsam.scholarium.dto.MaterialPublicadoResponse
 import com.unsam.scholarium.dto.MaterialResponse
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
@@ -131,5 +132,30 @@ class MaterialService(
         material.motivoRechazo = motivo
 
         return materialRepository.save(material)
+    }
+
+    fun listarMaterialPublicado(materiaId: UUID, email: String): List<MaterialPublicadoResponse> {
+
+        val materia = materiaRepository.findById(materiaId).getOrNull()
+            ?: throw ElementDoesNotExistException("Materia no encontrada")
+
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        val portal = materia.carpeta.portal
+
+        val esMiembro = membresiaRepository
+            .existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.MIEMBRO)
+
+        val esAdmin = membresiaRepository
+            .existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+
+        if (!esMiembro && !esAdmin) {
+            throw UnauthorizedException("No sos miembro de este portal")
+        }
+
+        return materialRepository
+            .findByMateriaIdAndEstadoOrderByCreatedAtDesc(materiaId, EstadoMaterial.PUBLICADO)
+            .map { MaterialPublicadoResponse.fromEntity(it) }
     }
 }

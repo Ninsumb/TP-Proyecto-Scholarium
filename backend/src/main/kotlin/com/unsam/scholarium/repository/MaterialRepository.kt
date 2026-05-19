@@ -1,5 +1,6 @@
 package com.unsam.scholarium.repository
 
+import com.unsam.scholarium.model.EstadoMaterial
 import com.unsam.scholarium.model.Material
 import com.unsam.scholarium.model.TipoMaterial
 import org.springframework.data.jpa.repository.JpaRepository
@@ -14,4 +15,9 @@ interface MaterialRepository : JpaRepository<Material, UUID> {
     @Query("SELECT COUNT(m) FROM Material m WHERE m.materia.carpeta.portal.id = :portalId")
     fun countByPortalId(portalId: Long): Int
     fun tipo(tipo: TipoMaterial): MutableList<Material>
+
+    fun findByMateriaIdAndEstadoOrderByCreatedAtDesc(
+        materiaId: UUID,
+        estado: EstadoMaterial
+    ): List<Material>
 }
