@@ -46,12 +46,15 @@ class MaterialController(private val materialService: MaterialService) {
         @RequestParam("tipo") tipo: String,
         authentication: Authentication
     ): ResponseEntity<MaterialResponse> {
-
-        val tipoMaterial = TipoMaterial.valueOf(tipo)
         val email = authentication.name
 
         val material = materialService.subirMaterial(
-            materiaId, archivo, nombre, descripcion, tipoMaterial, email
+            materiaId,
+            archivo,
+            nombre,
+            descripcion,
+            tipo,
+            email
         )
 
         return ResponseEntity.status(HttpStatus.CREATED).body(material)
