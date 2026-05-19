@@ -10,7 +10,7 @@ import java.util.*
 @Table(
     name = "posts",
     indexes = [
-        Index(name = "idx_posts_foro_id", columnList = "foro_id"),
+        Index(name = "idx_posts_tablero_id", columnList = "tablero_id"),
         Index(name = "idx_posts_post_padre_id", columnList = "post_padre_id")
     ]
 )
@@ -26,8 +26,8 @@ class Post(
     var contenido: String,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "foro_id", nullable = false)
-    var foro: Foro,
+    @JoinColumn(name = "tablero_id", nullable = false)
+    var tablero: Tablero,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "autor_id", nullable = false)

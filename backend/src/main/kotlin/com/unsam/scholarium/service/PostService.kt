@@ -31,9 +31,9 @@ class PostService(
         usuarioRepository.findByEmail(email)
             ?: throw ElementDoesNotExistException("El usuario autenticado no existe")
 
-    private fun resolverForo(foroId: UUID) =
-        foroRepository.findById(foroId)
-            .orElseThrow { ElementDoesNotExistException("El foro no existe") }
+    private fun resolverTablero(tableroId: UUID) =
+        foroRepository.findById(tableroId)
+            .orElseThrow { ElementDoesNotExistException("El tablero no existe") }
 
     private fun validarMembresía(usuarioId: Long, portalId: Long) {
         val esMiembro = membresiaRepository.existsByUsuarioIdAndPortalIdAndRol(
@@ -51,7 +51,7 @@ class PostService(
             id = post.id,
             titulo = post.titulo,
             contenido = post.contenido,
-            foroId = post.foro.id!!,
+            tableroId = post.tablero.id!!,
             autor = AutorDTO(id = post.autor.id!!, nombre = post.autor.nombre),
             postPadreId = post.postPadre?.id,
             cantidadRespuestas = cantidadRespuestas,
@@ -63,16 +63,16 @@ class PostService(
     // ── casos de uso ──────────────────────────────────────────────────────────
 
     @Transactional
-    fun crearPost(foroId: UUID, email: String, request: CrearPostRequest): PostResponse {
+    fun crearPost(tableroId: UUID, email: String, request: CrearPostRequest): PostResponse {
         val usuario = resolverUsuario(email)
-        val foro = resolverForo(foroId)
+        val tablero = resolverTablero(tableroId)
 
-        validarMembresía(usuario.id!!, foro.portal.id!!)
+        validarMembresía(usuario.id!!, tablero.portal.id!!)
 
         val post = Post(
             titulo = request.titulo,
             contenido = request.contenido,
-            foro = foro,
+            tablero = tablero,
             autor = usuario
         )
 
@@ -81,14 +81,14 @@ class PostService(
     }
 
     @Transactional(readOnly = true)
-    fun listarPostsDeForo(foroId: UUID, email: String): List<PostResponse> {
+    fun listarPostsDeTablero(tableroId: UUID, email: String): List<PostResponse> {
         val usuario = resolverUsuario(email)
-        val foro = resolverForo(foroId)
+        val tablero = resolverTablero(tableroId)
 
-        validarMembresía(usuario.id!!, foro.portal.id!!)
+        validarMembresía(usuario.id!!, tablero.portal.id!!)
 
         return postRepository
-            .findByForoIdAndPostPadreIsNullAndEliminadoFalseOrderByCreatedAtDesc(foroId)
+            .findByTableroIdAndPostPadreIsNullAndEliminadoFalseOrderByCreatedAtDesc(tableroId)
             .map { toResponse(it) }
     }
 
@@ -108,12 +108,12 @@ class PostService(
             throw BusinessException("No se puede responder a una respuesta. Solo se permite un nivel de threading.")
         }
 
-        validarMembresía(usuario.id!!, postPadre.foro.portal.id!!)
+        validarMembresía(usuario.id!!, postPadre.tablero.portal.id!!)
 
         val respuesta = Post(
             titulo = null,
             contenido = request.contenido,
-            foro = postPadre.foro,
+            tablero = postPadre.tablero,
             autor = usuario,
             postPadre = postPadre
         )

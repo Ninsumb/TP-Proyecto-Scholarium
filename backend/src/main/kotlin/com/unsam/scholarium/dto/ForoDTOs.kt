@@ -3,7 +3,7 @@ package com.unsam.scholarium.dto
 import java.time.Instant
 import java.util.UUID
 
-data class ForoResponse(
+data class TableroResponse(
     val id: UUID,
     val nombre: String,
     val etiqueta: EtiquetaSimpleResponse,
@@ -17,7 +17,7 @@ data class EtiquetaSimpleResponse(
 )
 
 
-data class ObtenerForosRequest(
+data class ObtenerTablerosRequest(
     val portalId: Long,
     val etiquetaNombre: String? = null
 )

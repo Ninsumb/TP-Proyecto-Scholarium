@@ -21,8 +21,6 @@ class Materia(
     @JoinColumn(name = "carpeta_id", nullable = false)
     var carpeta: Carpeta,
 
-    // ELIMINADO: var foro: Foro? = null
-
     @Column(nullable = false)
     var orden: Int = 0,
 

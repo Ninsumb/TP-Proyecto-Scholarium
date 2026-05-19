@@ -5,7 +5,7 @@ import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.NotAdminException
 import com.unsam.scholarium.model.Etiqueta
-import com.unsam.scholarium.model.Foro
+import com.unsam.scholarium.model.Tablero
 import com.unsam.scholarium.model.Materia
 import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.model.RolMembresia
@@ -71,13 +71,13 @@ class MateriaService(
                 )
             )
 
-        val nuevoForo = Foro(
+        val nuevoTablero = Tablero(
             nombre = request.nombre,
             etiqueta = etiqueta,
             portal = portal
         )
 
-        foroRepository.save(nuevoForo)
+        foroRepository.save(nuevoTablero)
 
         return materiaSaved
     }

@@ -15,24 +15,24 @@ import java.util.UUID
 @RequestMapping("/api")
 class PostController(private val postService: PostService) {
 
-    @PostMapping("/foros/{foroId}/posts")
+    @PostMapping("/foros/{tableroId}/posts")
     fun crearPost(
-        @PathVariable foroId: UUID,
+        @PathVariable tableroId: UUID,
         @Valid @RequestBody request: CrearPostRequest,
         authentication: Authentication
     ): ResponseEntity<PostResponse> {
         val email = authentication.name
-        val post = postService.crearPost(foroId, email, request)
+        val post = postService.crearPost(tableroId, email, request)
         return ResponseEntity.status(HttpStatus.CREATED).body(post)
     }
 
-    @GetMapping("/foros/{foroId}/posts")
+    @GetMapping("/foros/{tableroId}/posts")
     fun listarPosts(
-        @PathVariable foroId: UUID,
+        @PathVariable tableroId: UUID,
         authentication: Authentication
     ): ResponseEntity<List<PostResponse>> {
         val email = authentication.name
-        val posts = postService.listarPostsDeForo(foroId, email)
+        val posts = postService.listarPostsDeTablero(tableroId, email)
         return ResponseEntity.ok(posts)
     }
 

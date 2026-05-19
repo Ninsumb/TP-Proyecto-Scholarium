@@ -1,6 +1,6 @@
 package com.unsam.scholarium.controller
 
-import com.unsam.scholarium.dto.ForoResponse
+import com.unsam.scholarium.dto.TableroResponse
 import com.unsam.scholarium.service.ForoService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
@@ -14,20 +14,20 @@ class ForoController(
 
 
     @GetMapping
-    fun obtenerForos(
+    fun obtenerTableros(
         @PathVariable portalId: Long,
         @RequestParam(required = false) etiqueta: String?,
         authentication: Authentication
-    ): ResponseEntity<List<ForoResponse>> {
+    ): ResponseEntity<List<TableroResponse>> {
 
         val email = authentication.name
 
-        val foros = foroService.obtenerForosDePortal(
+        val tableros = foroService.obtenerTablerosDePortal(
             portalId = portalId,
             emailUsuario = email,
             etiquetaNombre = etiqueta
         )
 
-        return ResponseEntity.ok(foros)
+        return ResponseEntity.ok(tableros)
     }
 }
