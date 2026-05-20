@@ -1,6 +1,6 @@
 package com.unsam.scholarium.service
 
-import com.unsam.scholarium.dto.ForoResponse
+import com.unsam.scholarium.dto.TableroResponse
 import com.unsam.scholarium.dto.EtiquetaSimpleResponse
 import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.NotAdminException
@@ -22,11 +22,11 @@ class ForoService(
 ) {
 
     @Transactional(readOnly = true)
-    fun obtenerForosDePortal(
+    fun obtenerTablerosDePortal(
         portalId: Long,
         emailUsuario: String,
         etiquetaNombre: String? = null
-    ): List<ForoResponse> {
+    ): List<TableroResponse> {
 
         
         val portal = portalRepository.findById(portalId)
@@ -44,19 +44,19 @@ class ForoService(
         }
 
 
-        val foros = foroRepository.findByPortalIdWithEtiqueta(portalId, etiquetaNombre)
+        val tableros = foroRepository.findByPortalIdWithEtiqueta(portalId, etiquetaNombre)
 
 
-        return foros.map { foro ->
-            ForoResponse(
-                id = foro.id!!,
-                nombre = foro.nombre,
+        return tableros.map { tablero ->
+            TableroResponse(
+                id = tablero.id!!,
+                nombre = tablero.nombre,
                 etiqueta = EtiquetaSimpleResponse(
-                    id = foro.etiqueta.id!!,
-                    nombre = foro.etiqueta.nombre
+                    id = tablero.etiqueta.id!!,
+                    nombre = tablero.etiqueta.nombre
                 ),
-                createdAt = foro.createdAt!!.toInstant(),
-                updatedAt = foro.updatedAt?.toInstant()
+                createdAt = tablero.createdAt!!.toInstant(),
+                updatedAt = tablero.updatedAt?.toInstant()
             )
         }
     }

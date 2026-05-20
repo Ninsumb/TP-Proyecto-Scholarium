@@ -2,6 +2,7 @@ package com.unsam.scholarium.controller
 
 import com.unsam.scholarium.dto.ActualizarMateriaRequest
 import com.unsam.scholarium.dto.MateriaResponse
+import com.unsam.scholarium.dto.MoverMateriaRequest
 import com.unsam.scholarium.dto.MaterialPublicadoResponse
 import com.unsam.scholarium.service.MateriaService
 import com.unsam.scholarium.service.MaterialService
@@ -28,7 +29,6 @@ class MateriaController(
         @RequestBody request: ActualizarMateriaRequest,
         authentication: Authentication
     ): ResponseEntity<MateriaResponse> {
-
         val email = authentication.name
 
         val materiaActualizada = materiaService.actualizarNombreMateria(
@@ -48,6 +48,33 @@ class MateriaController(
         return ResponseEntity.ok(response)
     }
 
+    @PutMapping("/{materiaId}/mover")
+    fun moverMateria(
+        @PathVariable materiaId: UUID,
+        @RequestBody request: MoverMateriaRequest,
+        authentication: Authentication
+    ): ResponseEntity<MateriaResponse> {
+        val email = authentication.name
+
+        val materiaActualizada = materiaService.moverMateria(
+            materiaId,
+            request.nuevaCarpetaId,
+            email
+        )
+
+        val response = MateriaResponse(
+            id = materiaActualizada.id!!,
+            nombre = materiaActualizada.nombre,
+            carpetaId = materiaActualizada.carpeta.id!!,
+            orden = materiaActualizada.orden,
+            createdAt = materiaActualizada.createdAt!!.toInstant()
+        )
+
+        return ResponseEntity.ok(response)
+
+
+    }
+
     @GetMapping("/{materiaId}/material")
     fun listarMaterialPublicado(
         @PathVariable materiaId: UUID,
@@ -57,4 +84,5 @@ class MateriaController(
         val materiales = materialService.listarMaterialPublicado(materiaId, email)
         return ResponseEntity.ok(materiales)
     }
+
 }

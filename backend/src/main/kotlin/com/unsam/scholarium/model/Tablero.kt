@@ -7,8 +7,8 @@ import org.hibernate.annotations.UpdateTimestamp
 import java.util.*
 
 @Entity
-@Table(name = "foros")
-class Foro(
+@Table(name = "tableros")
+class Tablero(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     val id: UUID? = null,
@@ -37,7 +37,7 @@ class Foro(
     }
 
     private fun validar() {
-        if (nombre.isBlank()) throw BusinessException("El nombre del foro es obligatorio")
+        if (nombre.isBlank()) throw BusinessException("El nombre del tablero es obligatorio")
         if (nombre.length > 150) throw BusinessException("El nombre no puede tener más de 150 caracteres")
     }
 }
