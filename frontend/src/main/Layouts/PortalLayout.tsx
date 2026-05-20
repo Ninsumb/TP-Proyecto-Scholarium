@@ -62,7 +62,7 @@ export function PortalLayout() {
       <div className="flex">
         {/* Sidebar Lateral */}
         <aside
-          className={`bg-surface-container-high h-screen sticky top-0 overflow-y-auto transition-all duration-300 ${
+          className={`bg-sidebar-border h-screen sticky top-0 overflow-y-auto transition-all duration-300 ${
             isSidebarCollapsed ? 'w-16' : 'w-64'
           }`}
         >

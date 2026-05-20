@@ -527,7 +527,7 @@ export function BlockEditor({ blocks: initialBlocks, onSave, onCancel, isSaving 
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-foreground text-sm">{block.label}</div>
-                      <div className="text-xs text-on-surface-variant mt-0.5 line-clamp-2">{block.description}</div>
+                      <div className="text-xs text-foreground mt-0.5 line-clamp-2">{block.description}</div>
                     </div>
                   </button>
                 );

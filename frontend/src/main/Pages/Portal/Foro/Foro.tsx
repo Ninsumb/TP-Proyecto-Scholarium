@@ -188,10 +188,10 @@ export function ForumBoardsList() {
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                  className={`w-full text-left px-3 py-2 text-sm text-foreground transition-colors ${
                     selectedCategory === category
                       ? "bg-primary text-primary-foreground shadow-sm"
-                      : "hover:bg-surface-container text-on-surface-variant"
+                      : "hover:bg-surface-container text-foreground"
                   }`}
                   style={{ borderRadius: 'var(--radius)' }}
                 >
@@ -206,15 +206,15 @@ export function ForumBoardsList() {
             <h3 className="mb-4 text-foreground">Estadísticas</h3>
             <div className="space-y-3.5">
               <div className="flex items-center justify-between">
-                <span className="text-on-surface-variant text-sm">Tableros</span>
+                <span className="text-foreground text-sm">Tableros</span>
                 <span className="text-foreground font-medium">{totalBoards}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-on-surface-variant text-sm">Publicaciones</span>
+                <span className="text-foreground text-sm">Publicaciones</span>
                 <span className="text-foreground font-medium">{totalPosts}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-on-surface-variant text-sm">Miembros</span>
+                <span className="text-foreground text-sm">Miembros</span>
                 <span className="text-foreground font-medium">{totalMembers.toLocaleString()}</span>
               </div>
             </div>
@@ -232,7 +232,7 @@ export function ForumBoardsList() {
                 placeholder="Buscar tableros..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                className="w-full pl-12 pr-4 py-3 border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                 style={{ borderRadius: 'var(--radius)' }}
               />
             </div>
@@ -272,10 +272,10 @@ export function ForumBoardsList() {
                         {board.category}
                       </span>
                     </div>
-                    <p className="text-sm text-on-surface-variant mb-3 line-clamp-2">
+                    <p className="text-sm text-foreground mb-3 line-clamp-2">
                       {board.description}
                     </p>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-on-surface-variant">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-foreground">
                       <span className="flex items-center gap-1.5">
                         <span className="hidden sm:inline">{board.author}</span>
                       </span>

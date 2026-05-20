@@ -281,13 +281,13 @@ function PostItem({ post, isLast }: PostItemProps) {
 
             {/* Botones de interacción */}
             <div className="flex items-center gap-4">
-              <button className="flex items-center gap-2 text-sm text-on-surface-variant hover:text-destructive transition-colors">
+              <button className="flex items-center gap-2 text-sm text-foreground hover:text-destructive transition-colors">
                 <Heart className="w-4 h-4" />
                 <span>{post.likes}</span>
               </button>
               <button
                 onClick={() => setShowReplyForm(!showReplyForm)}
-                className="flex items-center gap-2 text-sm text-on-surface-variant hover:text-primary transition-colors"
+                className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
               >
                 <MessageCircle className="w-4 h-4" />
                 <span>{allRepliesFlat.length} {allRepliesFlat.length === 1 ? 'respuesta' : 'respuestas'}</span>
@@ -439,7 +439,7 @@ export function ForumBoardView() {
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
             <h1 className="mb-2 text-foreground">{boardData.title}</h1>
-            <p className="text-on-surface-variant max-w-3xl">{boardData.description}</p>
+            <p className="text-foreground max-w-3xl">{boardData.description}</p>
           </div>
           <button
             onClick={() => setShowNewPostModal(true)}
