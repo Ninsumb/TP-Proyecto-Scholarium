@@ -341,6 +341,8 @@ export function SubjectDetail() {
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         subjectName={subject.name}
+        materiaId={id ?? ""}
+        onUploaded={()=> {setIsUploadModalOpen(false)}}
       />
     </>
   );
