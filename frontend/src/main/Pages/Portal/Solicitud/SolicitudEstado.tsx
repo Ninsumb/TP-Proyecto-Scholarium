@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router";
 import { Clock, X, CheckCircle, Mail, AlertTriangle } from "lucide-react";
-import { useToast } from "../../../Hooks/useToast";
+import { useToast } from "../../..//hooks/useToast";
 
 type RequestStatus = 'pending' | 'rejected' | 'approved';
 
