@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { GraduationCap, AlertCircle } from "lucide-react";
-import { useToast } from "../../../Hooks/useToast";
+import { useToast } from "../../../hooks/useToast";
 
 export function JoinPortal() {
   const { portalId } = useParams();

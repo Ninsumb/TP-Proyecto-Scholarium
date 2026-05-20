@@ -2,7 +2,7 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Code, Search, UserPlus, BookOpen } from "lucide-react";
-import { usuarioService } from "../../Services/UsuarioService";
+import { usuarioService } from "../../services/UsuarioService";
 import type { UsuarioPortalResponse } from "../../types/DashboardPortals/UsuarioPortalResponse";
 
 export function Home() {

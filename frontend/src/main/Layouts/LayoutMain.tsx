@@ -1,10 +1,11 @@
 import { Outlet } from "react-router-dom";
 import { useMemo } from "react";
-import { useToast } from "../Hooks/useToast";
+import { useToast } from "../hooks/useToast";
 import { Toast } from "../Components/common/Toast";
 import { MainContext } from "../types/MainContext";
 import type { MainContextType } from "../types/MainContext";
 import { Header } from "../Components/Header/Header";
+import { Footer } from "../Components/Footer/Footer";
 
 export const LayoutMain = () => {
     const { toast, showToast } = useToast();
@@ -22,6 +23,8 @@ export const LayoutMain = () => {
                 <div id="toast-container">
                     <Toast toast={toast} />
                 </div>
+                
+                <Footer />
             </div>
         </MainContext.Provider>
     );

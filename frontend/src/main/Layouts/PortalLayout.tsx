@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { BookOpen, MessageSquare, UserPlus, Shield, Home, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { usePortalContext } from "../Hooks/usePortalContext";
+import { usePortalContext } from "../hooks/usePortalContext";
 
 export function PortalLayout() {
   const location = useLocation();
