@@ -171,13 +171,13 @@ function ReplyItem({ reply, postId, allRepliesFlat }: ReplyItemProps) {
           <span className="font-medium text-foreground text-sm">{reply.author}</span>
           {!isReplyingToPost && parentReply && (
             <>
-              <CornerDownRight className="w-3 h-3 text-on-surface-variant" />
-              <span className="text-xs text-on-surface-variant">
+              <CornerDownRight className="w-3 h-3 text-foreground" />
+              <span className="text-xs text-foreground">
                 respondiendo a <span className="text-primary">{parentReply.author}</span>
               </span>
             </>
           )}
-          <span className="text-xs text-on-surface-variant">
+          <span className="text-xs text-foreground">
             {new Date(reply.date).toLocaleDateString("es-ES", {
               day: 'numeric',
               month: 'short',
@@ -190,13 +190,13 @@ function ReplyItem({ reply, postId, allRepliesFlat }: ReplyItemProps) {
 
         {/* Botones de interacción */}
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-destructive transition-colors">
+          <button className="flex items-center gap-1.5 text-xs text-foreground hover:text-destructive transition-colors">
             <Heart className="w-3.5 h-3.5" />
             <span>{reply.likes}</span>
           </button>
           <button
             onClick={() => setShowReplyForm(!showReplyForm)}
-            className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-primary transition-colors"
+            className="flex items-center gap-1.5 text-xs text-foreground hover:text-primary transition-colors"
           >
             <MessageCircle className="w-3.5 h-3.5" />
             <span>Responder</span>
@@ -263,7 +263,7 @@ function PostItem({ post, isLast }: PostItemProps) {
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-2 mb-2">
               <span className="font-medium text-foreground">{post.author}</span>
-              <span className="text-sm text-on-surface-variant">
+              <span className="text-sm text-foreground">
                 {new Date(post.date).toLocaleDateString("es-ES", {
                   day: 'numeric',
                   month: 'short',
@@ -424,7 +424,7 @@ export function ForumBoardView() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Breadcrumb */}
-      <nav className="mb-6 flex items-center gap-2 text-sm text-on-surface-variant">
+      <nav className="mb-6 flex items-center gap-2 text-sm text-foreground">
         <Link to={`/portal/${portalId}/foro`} className="hover:text-primary transition-colors">
           Foro
         </Link>

@@ -95,7 +95,7 @@ export function HeaderBlockComponent({ data }: { data: HeaderBlock['data'] }) {
   return (
     <div className="mb-8">
       <h1 className="mb-3 text-foreground">{data.title}</h1>
-      <p className="text-lg text-on-surface-variant leading-relaxed max-w-4xl whitespace-pre-line">
+      <p className="text-lg text-foreground leading-relaxed max-w-4xl whitespace-pre-line">
         {data.description}
       </p>
     </div>
@@ -122,7 +122,7 @@ export function StatsBlockComponent({ data }: { data: StatsBlock['data'] }) {
               <Icon className="w-6 h-6 text-primary" />
             </div>
             <div className="text-2xl font-semibold text-foreground mb-1">{stat.value}</div>
-            <div className="text-sm text-on-surface-variant">{stat.label}</div>
+            <div className="text-sm text-foreground">{stat.label}</div>
           </div>
         );
       })}
@@ -135,7 +135,7 @@ export function TextSectionBlockComponent({ data }: { data: TextSectionBlock['da
   return (
     <div className="mb-8">
       <h2 className="mb-4 text-foreground">{data.title}</h2>
-      <p className="text-on-surface-variant leading-relaxed whitespace-pre-line">{data.content}</p>
+      <p className="text-foreground leading-relaxed whitespace-pre-line">{data.content}</p>
     </div>
   );
 }
@@ -156,7 +156,7 @@ export function InfoListBlockComponent({ data }: { data: InfoListBlock['data'] }
               <Icon className="w-5 h-5 text-primary mt-0.5" />
               <div className="flex-1">
                 <div className="text-sm font-medium text-foreground">{item.label}</div>
-                <div className="text-sm text-on-surface-variant">{item.value}</div>
+                <div className="text-sm text-foreground">{item.value}</div>
               </div>
             </div>
           );
@@ -174,7 +174,7 @@ export function RichTextBlockComponent({ data }: { data: RichTextBlock['data'] }
       style={{ borderRadius: 'var(--radius)' }}
     >
       <h3 className="mb-4 text-foreground">{data.title}</h3>
-      <div className="prose prose-sm max-w-none text-on-surface-variant">
+      <div className="prose prose-sm max-w-none text-foreground">
         <p className="whitespace-pre-line">{data.markdown}</p>
       </div>
     </div>
@@ -187,7 +187,7 @@ export function ImageTextBlockComponent({ data }: { data: ImageTextBlock['data']
     <div className={`flex ${data.imagePosition === 'right' ? 'flex-row-reverse' : 'flex-row'} gap-8 items-center mb-8`}>
       <div className="flex-1">
         <div
-          className="w-full aspect-video bg-surface-container-low flex items-center justify-center text-on-surface-variant"
+          className="w-full aspect-video bg-surface-container-low flex items-center justify-center text-foreground"
           style={{ borderRadius: 'var(--radius)' }}
         >
           {data.imageUrl ? (
@@ -199,7 +199,7 @@ export function ImageTextBlockComponent({ data }: { data: ImageTextBlock['data']
       </div>
       <div className="flex-1">
         <h2 className="mb-3 text-foreground">{data.title}</h2>
-        <p className="text-on-surface-variant leading-relaxed">{data.content}</p>
+        <p className="text-foreground leading-relaxed">{data.content}</p>
       </div>
     </div>
   );

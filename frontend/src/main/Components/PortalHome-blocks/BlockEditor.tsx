@@ -540,7 +540,7 @@ export function BlockEditor({ blocks: initialBlocks, onSave, onCancel, isSaving 
         <main className="flex-1 overflow-y-auto p-8 bg-background">
           <div className="max-w-4xl mx-auto">
             {blocks.length === 0 && (
-              <div className="text-center py-16 text-on-surface-variant">
+              <div className="text-center py-16 text-foreground">
                 <p className="mb-2">No hay bloques aún</p>
                 <p className="text-sm">Selecciona un bloque de la izquierda para comenzar</p>
               </div>

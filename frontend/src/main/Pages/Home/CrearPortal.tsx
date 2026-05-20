@@ -232,7 +232,7 @@ export function CreatePortal() {
                       {formData.descripcion || "Descripción de la carrera"}
                     </p>
                     {formData.universidad && (
-                      <p className="text-xs text-on-surface-variant">
+                      <p className="text-xs text-foreground">
                         {formData.universidad}
                       </p>
                     )}

@@ -164,7 +164,7 @@ export function ForumBoardsList() {
       <div className="flex items-start justify-between mb-10">
         <div>
           <h1 className="mb-2 text-foreground">Foro de Discusión</h1>
-          <p className="text-on-surface-variant">Comparte dudas, recursos y experiencias con la comunidad</p>
+          <p className="text-foreground">Comparte dudas, recursos y experiencias con la comunidad</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
@@ -226,7 +226,7 @@ export function ForumBoardsList() {
           {/* Barra de búsqueda */}
           <div className="mb-6">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground" />
               <input
                 type="text"
                 placeholder="Buscar tableros..."
@@ -306,7 +306,7 @@ export function ForumBoardsList() {
           {filteredBoards.length === 0 && (
             <div className="text-center py-16">
               <MessageSquare className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-30" />
-              <p className="text-on-surface-variant">No se encontraron tableros</p>
+              <p className="text-foreground">No se encontraron tableros</p>
             </div>
           )}
         </main>
