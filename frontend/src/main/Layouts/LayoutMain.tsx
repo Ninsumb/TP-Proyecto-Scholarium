@@ -6,16 +6,18 @@ import { MainContext } from "../types/MainContext";
 import type { MainContextType } from "../types/MainContext";
 import { Header } from "../Components/Header/Header";
 import { Footer } from "../Components/Footer/Footer";
+import { useSwitchTheme } from "../hooks/useSwitchTheme";
 
 export const LayoutMain = () => {
     const { toast, showToast } = useToast();
+    const { darkTheme, switchTheme} = useSwitchTheme();
     
-    const contextValue: MainContextType = useMemo(() => ({showToast}), [showToast]);
+    const contextValue: MainContextType = useMemo(() => ({showToast, switchTheme}), [showToast, switchTheme]);
 
     return (
         <MainContext.Provider value={contextValue}>
-            <div className="min-h-screen bg-background">
-                <Header />
+            <div className={`min-h-screen bg-background ${darkTheme ? 'dark' : ''}`}>
+                <Header darkTheme={darkTheme} switchTheme={switchTheme}/>
                 
                 {/* Contenido de las páginas */}
                 <Outlet context={{}} />
