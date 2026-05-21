@@ -121,4 +121,22 @@ class PostService(
         val guardada = postRepository.save(respuesta)
         return toResponse(guardada)
     }
+
+    @Transactional(readOnly = true)
+    fun listarRespuestasDePost(postId: UUID, email: String): List<PostResponse> {
+        val usuario = resolverUsuario(email)
+
+        val post = postRepository.findById(postId)
+            .orElseThrow { ElementDoesNotExistException("El post no existe") }
+
+        if (post.eliminado) {
+            throw BusinessException("El post fue eliminado")
+        }
+
+        validarMembresía(usuario.id!!, post.tablero.portal.id!!)
+
+        return postRepository
+            .findByPostPadreId(postId)
+            .map { toResponse(it) }
+    }
 }

@@ -46,4 +46,14 @@ class PostController(private val postService: PostService) {
         val respuesta = postService.responderPost(postId, email, request)
         return ResponseEntity.status(HttpStatus.CREATED).body(respuesta)
     }
+
+    @GetMapping("/posts/{postId}/respuestas")
+    fun listarRespuestas(
+        @PathVariable postId: UUID,
+        authentication: Authentication
+    ): ResponseEntity<List<PostResponse>> {
+        val email = authentication.name
+        val respuestas = postService.listarRespuestasDePost(postId, email)
+        return ResponseEntity.ok(respuestas)
+    }
 }
