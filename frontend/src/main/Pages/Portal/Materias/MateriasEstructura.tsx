@@ -30,10 +30,10 @@ const initialFolderStructure: FolderItem[] = [
         type: "folder",
         children: [
           {
-            id: "mat1",
+            id: "d0120437-915a-49e8-99b7-8968ca7fe539",
             name: "Matemática I",
             type: "subject",
-            subject: { id: "mat1", name: "Matemática I", code: "MAT101", materials: 24 },
+            subject: { id: "d0120437-915a-49e8-99b7-8968ca7fe539", name: "Matemática I", code: "MAT101", materials: 24 },
           },
           {
             id: "fis1",
