@@ -2,6 +2,7 @@ package com.unsam.scholarium.controller
 
 import com.unsam.scholarium.dto.CrearPostRequest
 import com.unsam.scholarium.dto.CrearRespuestaRequest
+import com.unsam.scholarium.dto.EditarPostRequest
 import com.unsam.scholarium.dto.PostResponse
 import com.unsam.scholarium.service.PostService
 import jakarta.validation.Valid
@@ -55,5 +56,26 @@ class PostController(private val postService: PostService) {
         val email = authentication.name
         val respuestas = postService.listarRespuestasDePost(postId, email)
         return ResponseEntity.ok(respuestas)
+    }
+
+    @PutMapping("/posts/{postId}")
+    fun editarPost(
+        @PathVariable postId: UUID,
+        @Valid @RequestBody request: EditarPostRequest,
+        authentication: Authentication
+    ): ResponseEntity<PostResponse> {
+        val email = authentication.name
+        val post = postService.editarPost(postId, email, request)
+        return ResponseEntity.ok(post)
+    }
+
+    @DeleteMapping("/posts/{postId}")
+    fun eliminarPost(
+        @PathVariable postId: UUID,
+        authentication: Authentication
+    ): ResponseEntity<Void> {
+        val email = authentication.name
+        postService.eliminarPost(postId, email)
+        return ResponseEntity.noContent().build()
     }
 }
