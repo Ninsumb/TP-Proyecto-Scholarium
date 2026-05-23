@@ -14,6 +14,7 @@ import {
   ShieldAlert,
   X,
   Check,
+  CornerDownRight,
 } from "lucide-react";
 import { foroService } from "../../../services/Portal/ForoService";
 import { usuarioService } from "../../../services/UsuarioService";
@@ -21,7 +22,6 @@ import { authService } from "../../../services/AuthService";
 import type {
   PostResponse,
   CrearPostRequest,
-  CrearRespuestaRequest,
   TableroResponse,
 } from "../../../types/Portal/Foro";
 
@@ -169,23 +169,51 @@ function ConfirmDeleteModal({ isOpen, esRespuesta, onConfirmar, onCancelar }: Co
 
 interface ReplyItemProps {
   reply: PostResponse;
+  postRaizId: string;
+  autorPadreNombre: string | null;
   usuarioActualId: number | null;
   rolUsuario: "ADMIN" | "MIEMBRO" | null;
   onEliminada: (id: string) => void;
   onEditada: (updated: PostResponse) => void;
+  onNuevaRespuesta: (nueva: PostResponse) => void;
 }
 
-function ReplyItem({ reply, usuarioActualId, rolUsuario, onEliminada, onEditada }: ReplyItemProps) {
+function ReplyItem({
+  reply,
+  postRaizId,
+  autorPadreNombre,
+  usuarioActualId,
+  rolUsuario,
+  onEliminada,
+  onEditada,
+  onNuevaRespuesta,
+}: ReplyItemProps) {
   const [editando, setEditando] = useState(false);
   const [contenidoEdit, setContenidoEdit] = useState(reply.contenido ?? "");
   const [guardando, setGuardando] = useState(false);
   const [errorEdit, setErrorEdit] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  const [showReplyForm, setShowReplyForm] = useState(false);
+  const [contenidoRespuesta, setContenidoRespuesta] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [errorRespuesta, setErrorRespuesta] = useState<string | null>(null);
+
   const esPropio = reply.autor !== null && reply.autor.id === usuarioActualId;
   const fuiEditado =
     !reply.eliminado &&
     new Date(reply.updatedAt).getTime() - new Date(reply.createdAt).getTime() > 1000;
+
+  // Es respuesta de respuesta si su padre no es el post raíz
+  const esRespuestaDeRespuesta = reply.postPadreId !== postRaizId;
+
+  const handleScrollAlPadre = () => {
+    const el = document.getElementById(`reply-${reply.postPadreId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("ring-2", "ring-primary/30");
+    setTimeout(() => el.classList.remove("ring-2", "ring-primary/30"), 1200);
+  };
 
   const handleGuardar = async () => {
     if (!contenidoEdit.trim()) return;
@@ -212,9 +240,29 @@ function ReplyItem({ reply, usuarioActualId, rolUsuario, onEliminada, onEditada 
     }
   };
 
+  const handleResponder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!contenidoRespuesta.trim()) return;
+    try {
+      setEnviando(true);
+      setErrorRespuesta(null);
+      // Apuntamos al ID de esta respuesta directamente — el back ya soporta profundidad libre
+      const nueva = await foroService.responderPost(reply.id, {
+        contenido: contenidoRespuesta.trim(),
+      });
+      onNuevaRespuesta(nueva);
+      setContenidoRespuesta("");
+      setShowReplyForm(false);
+    } catch (err: any) {
+      setErrorRespuesta(err?.response?.data?.message || "No se pudo enviar la respuesta.");
+    } finally {
+      setEnviando(false);
+    }
+  };
+
   if (reply.eliminado) {
     return (
-      <div className="flex gap-3 py-3 pl-4 relative">
+      <div id={`reply-${reply.id}`} className="flex gap-3 py-3 pl-4 relative transition-all">
         <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border" />
         <p className="text-sm text-on-surface-variant italic">Respuesta eliminada por el usuario.</p>
       </div>
@@ -230,7 +278,7 @@ function ReplyItem({ reply, usuarioActualId, rolUsuario, onEliminada, onEditada 
         onCancelar={() => setConfirmDelete(false)}
       />
 
-      <div className="flex gap-3 py-3 pl-4 relative">
+      <div id={`reply-${reply.id}`} className="flex gap-3 py-3 pl-4 relative transition-all rounded-sm">
         <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border" />
 
         <div className="flex-shrink-0">
@@ -248,6 +296,21 @@ function ReplyItem({ reply, usuarioActualId, rolUsuario, onEliminada, onEditada 
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-medium text-foreground text-sm">{reply.autor!.nombre}</span>
+
+              {/* "Respondiendo a" — solo aparece si es respuesta de respuesta */}
+              {esRespuestaDeRespuesta && autorPadreNombre && (
+                <button
+                  onClick={handleScrollAlPadre}
+                  className="flex items-center gap-1 text-xs text-on-surface-variant hover:text-primary transition-colors group"
+                >
+                  <CornerDownRight className="w-3 h-3 flex-shrink-0" />
+                  <span>respondiendo a </span>
+                  <span className="text-primary/70 group-hover:text-primary transition-colors font-medium underline underline-offset-2 decoration-primary/40">
+                    {autorPadreNombre}
+                  </span>
+                </button>
+              )}
+
               <span className="text-xs text-on-surface-variant">
                 {new Date(reply.createdAt).toLocaleDateString("es-ES", {
                   day: "numeric",
@@ -302,7 +365,61 @@ function ReplyItem({ reply, usuarioActualId, rolUsuario, onEliminada, onEditada 
               </div>
             </div>
           ) : (
-            <p className="text-sm text-foreground leading-relaxed">{reply.contenido}</p>
+            <>
+              <p className="text-sm text-foreground leading-relaxed">{reply.contenido}</p>
+
+              {/* Botón Responder */}
+              {!editando && (
+                <button
+                  onClick={() => setShowReplyForm((v) => !v)}
+                  className="mt-1.5 text-xs text-on-surface-variant hover:text-primary transition-colors"
+                >
+                  Responder
+                </button>
+              )}
+
+              {/* Formulario de respuesta a esta respuesta */}
+              {showReplyForm && (
+                <form onSubmit={handleResponder} className="mt-3">
+                  {errorRespuesta && (
+                    <p className="text-xs text-destructive mb-2">{errorRespuesta}</p>
+                  )}
+                  <textarea
+                    rows={2}
+                    value={contenidoRespuesta}
+                    onChange={(e) => setContenidoRespuesta(e.target.value)}
+                    placeholder={`Respondiendo a ${reply.autor!.nombre}...`}
+                    className="w-full px-3 py-2 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none text-sm"
+                    style={{ borderRadius: "var(--radius)" }}
+                    autoFocus
+                  />
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowReplyForm(false);
+                        setErrorRespuesta(null);
+                        setContenidoRespuesta("");
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 border border-border hover:bg-accent transition-colors text-xs"
+                      style={{ borderRadius: "var(--radius)" }}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={enviando || !contenidoRespuesta.trim()}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors text-xs disabled:opacity-60"
+                      style={{ borderRadius: "var(--radius)" }}
+                    >
+                      {enviando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                      Responder
+                    </button>
+                  </div>
+                </form>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -410,8 +527,6 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, onEliminado, onEd
 
   const cantidadMostrada = respuestas.length > 0 ? respuestas.length : post.cantidadRespuestas;
 
-  // Post eliminado: no se renderiza en el listado principal (el back no lo devuelve)
-  // pero por si acaso llega uno con eliminado=true, lo ignoramos silenciosamente
   if (post.eliminado) return null;
 
   return (
@@ -437,7 +552,6 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, onEliminado, onEd
           </div>
 
           <div className="flex-1 min-w-0">
-            {/* Header del post */}
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="flex items-baseline gap-2 flex-wrap">
                 <span className="font-medium text-foreground">{post.autor!.nombre}</span>
@@ -465,7 +579,6 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, onEliminado, onEd
               />
             </div>
 
-            {/* Contenido: modo edición o modo lectura */}
             {editando ? (
               <div className="mt-1">
                 {errorEdit && (
@@ -521,7 +634,6 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, onEliminado, onEd
               </>
             )}
 
-            {/* Acciones */}
             {!editando && (
               <div className="flex items-center gap-4">
                 <button
@@ -543,7 +655,6 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, onEliminado, onEd
               </div>
             )}
 
-            {/* Formulario de respuesta */}
             {showReplyForm && !editando && (
               <form onSubmit={handleResponder} className="mt-4 pt-4 border-t border-border">
                 {errorRespuesta && (
@@ -600,22 +711,38 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, onEliminado, onEd
               </div>
             )}
             {!cargandoRespuestas &&
-              respuestas.map((r) => (
-                <ReplyItem
-                  key={r.id}
-                  reply={r}
-                  usuarioActualId={usuarioActualId}
-                  rolUsuario={rolUsuario}
-                  onEliminada={(id) =>
-                    setRespuestas((prev) =>
-                      prev.map((x) => x.id === id ? { ...x, eliminado: true, contenido: null, autor: null } : x)
-                    )
-                  }
-                  onEditada={(updated) =>
-                    setRespuestas((prev) => prev.map((x) => (x.id === updated.id ? updated : x)))
-                  }
-                />
-              ))}
+              respuestas.map((r) => {
+                // Nombre del autor padre: solo relevante si es respuesta de respuesta
+                const autorPadreNombre =
+                  r.postPadreId !== post.id
+                    ? (respuestas.find((x) => x.id === r.postPadreId)?.autor?.nombre ?? null)
+                    : null;
+
+                return (
+                  <ReplyItem
+                    key={r.id}
+                    reply={r}
+                    postRaizId={post.id}
+                    autorPadreNombre={autorPadreNombre}
+                    usuarioActualId={usuarioActualId}
+                    rolUsuario={rolUsuario}
+                    onEliminada={(id) =>
+                      setRespuestas((prev) =>
+                        prev.map((x) =>
+                          x.id === id ? { ...x, eliminado: true, contenido: null, autor: null } : x
+                        )
+                      )
+                    }
+                    onEditada={(updated) =>
+                      setRespuestas((prev) => prev.map((x) => (x.id === updated.id ? updated : x)))
+                    }
+                    onNuevaRespuesta={(nueva) => {
+                      setRespuestas((prev) => [...prev, nueva]);
+                      setExpandido(true);
+                    }}
+                  />
+                );
+              })}
             {!cargandoRespuestas && respuestas.length === 0 && post.cantidadRespuestas === 0 && (
               <p className="text-sm text-on-surface-variant py-3">
                 Todavía no hay respuestas. ¡Sé el primero!
@@ -748,7 +875,6 @@ export function ForumBoardView() {
       try {
         setCargando(true);
         setError(null);
-        // Cargamos tableros del portal para obtener nombre y descripción del actual
         const [tableros, postsData] = await Promise.all([
           foroService.listarTableros(portalIdNum),
           foroService.listarPosts(tableroId),
@@ -788,7 +914,7 @@ export function ForumBoardView() {
         <span className="text-foreground">{tablero?.nombre ?? "Tablero"}</span>
       </nav>
 
-      {/* Header con título y descripción del tablero */}
+      {/* Header */}
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
           {tablero ? (
