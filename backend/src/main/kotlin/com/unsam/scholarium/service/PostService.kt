@@ -125,11 +125,6 @@ class PostService(
             throw BusinessException("No se puede responder a un post eliminado")
         }
 
-        // Solo 1 nivel de threading
-        if (postPadre.postPadre != null) {
-            throw BusinessException("No se puede responder a una respuesta. Solo se permite un nivel de threading.")
-        }
-
         validarMembresía(usuario.id!!, postPadre.tablero.portal.id!!)
 
         val respuesta = Post(
@@ -159,7 +154,7 @@ class PostService(
         validarMembresía(usuario.id!!, post.tablero.portal.id!!)
 
         return postRepository
-            .findByPostPadreId(postId)
+            .findAllRespuestasRecursivas(postId)
             .map { toResponse(it) }
     }
 
