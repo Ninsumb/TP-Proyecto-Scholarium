@@ -1,9 +1,6 @@
-export interface AutorDTO {
-  id: number;
-  nombre: string;
-}
+// src/types/Portal/Foro.ts
 
-export interface EtiquetaSimpleResponse {
+export interface EtiquetaResponse {
   id: string;
   nombre: string;
 }
@@ -12,19 +9,25 @@ export interface TableroResponse {
   id: string;
   nombre: string;
   descripcion: string | null;
-  etiqueta: EtiquetaSimpleResponse;
+  etiqueta: EtiquetaResponse;
   createdAt: string;
-  updatedAt: string | null;
+  updatedAt: string;
+}
+
+export interface AutorDTO {
+  id: number;
+  nombre: string;
 }
 
 export interface PostResponse {
   id: string;
   titulo: string | null;
-  contenido: string;
+  contenido: string | null;   // null cuando el post está eliminado
   tableroId: string;
-  autor: AutorDTO;
+  autor: AutorDTO | null;     // null cuando el post está eliminado
   postPadreId: string | null;
   cantidadRespuestas: number;
+  eliminado: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -37,6 +40,11 @@ export interface CrearTableroRequest {
 
 export interface CrearPostRequest {
   titulo: string | null;
+  contenido: string;
+}
+
+export interface EditarPostRequest {
+  titulo?: string;
   contenido: string;
 }
 

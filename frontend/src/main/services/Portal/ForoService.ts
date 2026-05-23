@@ -8,6 +8,7 @@ import type {
   CrearTableroRequest,
   CrearPostRequest,
   CrearRespuestaRequest,
+  EditarPostRequest,
 } from '../../types/Portal/Foro';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:9001/api';
@@ -69,6 +70,24 @@ class ForoService {
       { headers: this.authHeaders() }
     );
     return response.data;
+  }
+
+  async editarPost(
+    postId: string,
+    request: EditarPostRequest
+  ): Promise<PostResponse> {
+    const response = await this.api.put<PostResponse>(
+      `/posts/${postId}`,
+      request,
+      { headers: this.authHeaders() }
+    );
+    return response.data;
+  }
+
+  async eliminarPost(postId: string): Promise<void> {
+    await this.api.delete(`/posts/${postId}`, {
+      headers: this.authHeaders(),
+    });
   }
 
   // ── Respuestas ────────────────────────────────────────────────────────────
