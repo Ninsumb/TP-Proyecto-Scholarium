@@ -30,15 +30,12 @@ class AuthService(
         return usuarioRepository.save(usuario)
     }
 
-    fun     login(request: LoginRequest): LoginResponse {
+    fun login(request: LoginRequest): LoginResponse {
         val usuario = usuarioRepository.findByEmail(request.email)
             ?: throw UnauthorizedException("Credenciales incorrectas")
 
         val passwordCorrecta = passwordEncoder.matches(request.password, usuario.password)
-
-        if(!passwordCorrecta){
-            throw UnauthorizedException("Credenciales incorrectas")
-        }
+        if (!passwordCorrecta) throw UnauthorizedException("Credenciales incorrectas")
 
         val token = jwtService.generateToken(
             userId = usuario.id!!,
@@ -46,6 +43,27 @@ class AuthService(
             nombre = usuario.nombre,
         )
 
-        return LoginResponse(token = token)
+        val refreshToken = jwtService.generateRefreshToken(email = usuario.email)
+
+        return LoginResponse(token = token, refreshToken = refreshToken)
+    }
+
+    fun refresh(refreshToken: String): LoginResponse {
+        if (!jwtService.isRefreshTokenValid(refreshToken)) {
+            throw UnauthorizedException("Refresh token inválido o expirado")
+        }
+
+        val email = jwtService.extractEmail(refreshToken)
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw UnauthorizedException("Usuario no encontrado")
+
+        val newToken = jwtService.generateToken(
+            userId = usuario.id!!,
+            email = usuario.email,
+            nombre = usuario.nombre,
+        )
+        val newRefreshToken = jwtService.generateRefreshToken(email = usuario.email)
+
+        return LoginResponse(token = newToken, refreshToken = newRefreshToken)
     }
 }

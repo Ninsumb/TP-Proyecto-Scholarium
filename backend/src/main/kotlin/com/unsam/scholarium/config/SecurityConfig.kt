@@ -29,6 +29,7 @@ class SecurityConfig {
                         "/api/health",
                         "/api/auth/login",
                         "/api/auth/register",
+                        "/api/auth/refresh",
                         "/error",
                     ).permitAll()
                     //.requestMatchers(HttpMethod.POST, "/api/portales").permitAll()

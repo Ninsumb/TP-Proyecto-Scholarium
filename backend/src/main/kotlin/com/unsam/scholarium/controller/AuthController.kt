@@ -34,4 +34,11 @@ class AuthController(
     fun login(@RequestBody request: LoginRequest) : LoginResponse {
         return authService.login(request)
     }
+
+    data class RefreshRequest(val refreshToken: String)
+
+    @PostMapping("/refresh")
+    fun refresh(@RequestBody request: RefreshRequest): LoginResponse {
+        return authService.refresh(request.refreshToken)
+    }
 }
