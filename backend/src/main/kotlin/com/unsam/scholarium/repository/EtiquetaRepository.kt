@@ -9,5 +9,6 @@ import java.util.UUID
 @Repository
 interface EtiquetaRepository : JpaRepository<Etiqueta, UUID> {
     fun findByNombreAndPortal(nombre: String, portal: Portal): Etiqueta?
+    fun findByNombreAndPortalId(nombre: String, portalId: Long): Etiqueta?
     fun findByPortalId(portalId: Long): List<Etiqueta>
 }

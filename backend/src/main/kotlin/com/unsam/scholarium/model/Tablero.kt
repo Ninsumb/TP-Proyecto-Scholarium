@@ -16,10 +16,12 @@ class Tablero(
     @Column(nullable = false, length = 150)
     var nombre: String,
 
-    //todo: considerar el EAGER
+    @Column(length = 500)
+    var descripcion: String? = null,
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "etiqueta_id", nullable = false)
-    var etiqueta: Etiqueta,  
+    var etiqueta: Etiqueta,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "portal_id", nullable = false)
@@ -39,5 +41,6 @@ class Tablero(
     private fun validar() {
         if (nombre.isBlank()) throw BusinessException("El nombre del tablero es obligatorio")
         if (nombre.length > 150) throw BusinessException("El nombre no puede tener más de 150 caracteres")
+        if ((descripcion?.length ?: 0) > 500) throw BusinessException("La descripción no puede tener más de 500 caracteres")
     }
 }
