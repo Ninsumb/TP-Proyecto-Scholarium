@@ -52,7 +52,7 @@ class PostService(
     }
 
     private fun toResponse(post: Post): PostResponse {
-        val cantidadRespuestas = postRepository.countByPostPadreId(post.id!!)
+        val cantidadRespuestas = postRepository.countAllRespuestasRecursivas(post.id!!)
         return if (post.eliminado) {
             PostResponse(
                 id = post.id,

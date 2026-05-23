@@ -19,6 +19,23 @@ interface PostRepository : JpaRepository<Post, UUID> {
     // Contar respuestas de un post (útil para el response DTO)
     fun countByPostPadreId(postPadreId: UUID): Long
 
+    @Query(
+        value = """
+        WITH RECURSIVE hilo AS (
+            SELECT p.id FROM posts p
+            WHERE p.post_padre_id = :postId
+
+            UNION ALL
+
+            SELECT p.id FROM posts p
+            INNER JOIN hilo h ON p.post_padre_id = h.id
+        )
+        SELECT COUNT(*) FROM hilo
+    """,
+        nativeQuery = true
+    )
+    fun countAllRespuestasRecursivas(postId: UUID): Long
+
     fun findByTableroIdAndPostPadreIsNullAndEliminadoFalseOrderByCreatedAtDesc(tableroId: UUID): List<Post>
 
     @Query(
