@@ -95,6 +95,7 @@ class MateriaService(
         }
     }
 
+    @Transactional(rollbackOn = [Exception::class])
     fun actualizarNombreMateria(
         materiaId: UUID,
         nuevoNombre: String,
@@ -125,6 +126,7 @@ class MateriaService(
     }
 
     //Mueve la materia a una carpeta
+    @Transactional(rollbackOn = [Exception::class])
     fun moverMateria(
         materiaId: UUID,
         nuevaCarpetaId: UUID,
@@ -145,6 +147,10 @@ class MateriaService(
 
         validarAdmin(usuario, portal)
 
+        if (materia.carpeta.id == nuevaCarpetaId) {
+            throw BusinessException("La materia ya se encuentra en esa carpeta")
+        }
+
         //nuevo orden
         val materiasEnCarpeta = materiaRepository.findByCarpetaId(nuevaCarpetaId)
         val nuevoOrden = (materiasEnCarpeta.maxOfOrNull { it.orden } ?: -1) + 1
@@ -153,8 +159,6 @@ class MateriaService(
         //Ahora si mete la carpeta
         materia.carpeta = carpeta
 
-        materiaRepository.save(materia)
-
-        return materia
+        return materiaRepository.save(materia)
     }
 }
