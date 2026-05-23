@@ -32,6 +32,11 @@ export interface LoginResponse {
   refreshToken: string;
 }
 
+
+export interface GoogleLoginRequest {
+  idToken: string;
+}
+
 class AuthService {
   private api = axios.create({
     baseURL: `${API_URL}/auth`,
@@ -45,6 +50,11 @@ class AuthService {
 
   async login(request: LoginRequest): Promise<LoginResponse> {
     const response = await this.api.post<LoginResponse>('/login', request);
+    return response.data;
+  }
+
+  async loginWithGoogle(request: GoogleLoginRequest): Promise<LoginResponse> {
+    const response = await this.api.post<LoginResponse>('/google', request);
     return response.data;
   }
 
