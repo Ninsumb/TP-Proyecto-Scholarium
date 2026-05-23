@@ -42,7 +42,7 @@ class MateriaController(
             nombre = materiaActualizada.nombre,
             carpetaId = materiaActualizada.carpeta.id!!,
             orden = materiaActualizada.orden,
-            createdAt = materiaActualizada.createdAt!!.toInstant()
+            updatedAt = materiaActualizada.updatedAt!!.toInstant()
         )
 
         return ResponseEntity.ok(response)
@@ -67,7 +67,7 @@ class MateriaController(
             nombre = materiaActualizada.nombre,
             carpetaId = materiaActualizada.carpeta.id!!,
             orden = materiaActualizada.orden,
-            createdAt = materiaActualizada.createdAt!!.toInstant()
+            updatedAt = materiaActualizada.updatedAt!!.toInstant()
         )
 
         return ResponseEntity.ok(response)
