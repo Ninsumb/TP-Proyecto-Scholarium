@@ -262,8 +262,8 @@ function ReplyItem({
 
   if (reply.eliminado) {
     return (
-      <div id={`reply-${reply.id}`} className="flex gap-3 py-3 pl-4 relative transition-all">
-        <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border" />
+      <div id={`reply-${reply.id}`} className="flex gap-3 py-4 pl-4 pr-2 relative transition-all border-b border-border last:border-b-0">
+        
         <p className="text-sm text-on-surface-variant italic">Respuesta eliminada por el usuario.</p>
       </div>
     );
@@ -278,8 +278,7 @@ function ReplyItem({
         onCancelar={() => setConfirmDelete(false)}
       />
 
-      <div id={`reply-${reply.id}`} className="flex gap-3 py-3 pl-4 relative transition-all rounded-sm">
-        <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-border" />
+      <div id={`reply-${reply.id}`} className="flex gap-3 py-4 pl-4 pr-2 relative transition-all rounded-sm border-b border-border last:border-b-0">
 
         <div className="flex-shrink-0">
           <div
