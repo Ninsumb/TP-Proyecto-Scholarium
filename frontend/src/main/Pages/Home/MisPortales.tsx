@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { Code, Search, UserPlus, BookOpen } from "lucide-react";
 import { usuarioService } from "../../services/UsuarioService";
 import type { UsuarioPortalResponse } from "../../types/DashboardPortals/UsuarioPortalResponse";
+import { authService } from "../../services/AuthService";
 
 export function Home() {
   const [portales, setPortales] = useState<UsuarioPortalResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const userName = localStorage.getItem("userName") || "Usuario";
+  const userName = authService.getUserName() || "Usuario";
 
   useEffect(() => {
     const fetchPortales = async () => {

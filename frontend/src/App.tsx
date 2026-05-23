@@ -16,6 +16,7 @@ import { ForumBoardView } from './main/Pages/Portal/Foro/Tablero'
 import { AdminDashboard } from './main/Pages/Portal/AdminDashboard'
 import { JoinPortal } from './main/Pages/Portal/Solicitud/Solicitud'
 import { RequestStatus } from './main/Pages/Portal/Solicitud/SolicitudEstado'
+import { ProtectedRoute } from './main/Components/common/ProtectedRoute'
 
 
 function App() {
@@ -29,7 +30,11 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        <Route element={<LayoutMain/>}>
+        <Route element={
+          <ProtectedRoute> 
+            <LayoutMain/> 
+          </ProtectedRoute>
+        }>
           
           <Route path="/home" element={<Home />} /> 
           <Route path="/perfil" element={<Profile />} /> 
