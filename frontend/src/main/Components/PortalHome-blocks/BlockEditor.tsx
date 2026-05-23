@@ -527,7 +527,7 @@ export function BlockEditor({ blocks: initialBlocks, onSave, onCancel, isSaving 
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-foreground text-sm">{block.label}</div>
-                      <div className="text-xs text-on-surface-variant mt-0.5 line-clamp-2">{block.description}</div>
+                      <div className="text-xs text-foreground mt-0.5 line-clamp-2">{block.description}</div>
                     </div>
                   </button>
                 );
@@ -540,7 +540,7 @@ export function BlockEditor({ blocks: initialBlocks, onSave, onCancel, isSaving 
         <main className="flex-1 overflow-y-auto p-8 bg-background">
           <div className="max-w-4xl mx-auto">
             {blocks.length === 0 && (
-              <div className="text-center py-16 text-on-surface-variant">
+              <div className="text-center py-16 text-foreground">
                 <p className="mb-2">No hay bloques aún</p>
                 <p className="text-sm">Selecciona un bloque de la izquierda para comenzar</p>
               </div>

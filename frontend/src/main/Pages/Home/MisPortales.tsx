@@ -139,7 +139,7 @@ export function Home() {
                     <p className="text-sm text-muted-foreground mb-3">
                       {portal.universidad}
                     </p>
-                    <div className="flex items-center gap-2 text-xs text-on-surface-variant uppercase tracking-wide">
+                    <div className="flex items-center gap-2 text-xs text-foreground uppercase tracking-wide">
                       <BookOpen className="w-3 h-3" />
                       <span>{portal.cantidadMiembros} miembros</span>
                     </div>
@@ -155,17 +155,17 @@ export function Home() {
       <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-surface-container-lowest p-6 text-center rounded-sm">
           <div className="text-3xl font-bold text-primary mb-2">{portales.length}</div>
-          <div className="text-sm text-on-surface-variant uppercase tracking-wide">Mis Portales</div>
+          <div className="text-sm text-foreground uppercase tracking-wide">Mis Portales</div>
         </div>
         <div className="bg-surface-container-lowest p-6 text-center rounded-sm">
           <div className="text-3xl font-bold text-primary mb-2">
             {totalMiembros.toLocaleString()}
           </div>
-          <div className="text-sm text-on-surface-variant uppercase tracking-wide">Miembros Totales</div>
+          <div className="text-sm text-foreground uppercase tracking-wide">Miembros Totales</div>
         </div>
         <div className="bg-surface-container-lowest p-6 text-center rounded-sm">
           <div className="text-3xl font-bold text-primary mb-2">24/7</div>
-          <div className="text-sm text-on-surface-variant uppercase tracking-wide">Acceso Disponible</div>
+          <div className="text-sm text-foreground uppercase tracking-wide">Acceso Disponible</div>
         </div>
       </div>
     </div>

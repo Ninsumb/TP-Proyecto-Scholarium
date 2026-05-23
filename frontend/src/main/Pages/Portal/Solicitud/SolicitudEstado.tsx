@@ -61,7 +61,7 @@ export function RequestStatus() {
             <Clock className="w-10 h-10 text-yellow-600" />
           </div>
           <h1 className="mb-3 text-foreground">Solicitud en Revisión</h1>
-          <p className="text-on-surface-variant max-w-2xl mx-auto">
+          <p className="text-foreground max-w-2xl mx-auto">
             Tu solicitud está siendo revisada por un administrador
           </p>
         </div>
@@ -86,7 +86,7 @@ export function RequestStatus() {
             <h3 className="mb-4 text-foreground">Detalles de tu solicitud</h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-on-surface-variant">Fecha de envío:</span>
+                <span className="text-foreground">Fecha de envío:</span>
                 <span className="text-foreground font-medium">
                   {new Date(requestData.submittedAt).toLocaleDateString("es-ES", {
                     day: 'numeric',
@@ -96,15 +96,15 @@ export function RequestStatus() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-on-surface-variant">Número de legajo:</span>
+                <span className="text-foreground">Número de legajo:</span>
                 <span className="text-foreground font-medium">{requestData.studentId}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-on-surface-variant">Carrera:</span>
+                <span className="text-foreground">Carrera:</span>
                 <span className="text-foreground font-medium">{requestData.career}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-on-surface-variant">Email:</span>
+                <span className="text-foreground">Email:</span>
                 <span className="text-foreground font-medium">{requestData.email}</span>
               </div>
             </div>
@@ -116,7 +116,7 @@ export function RequestStatus() {
             style={{ borderRadius: 'var(--radius)' }}
           >
             <Mail className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-on-surface-variant">
+            <p className="text-sm text-foreground">
               Te notificaremos por correo cuando haya novedades.
             </p>
           </div>
@@ -124,7 +124,7 @@ export function RequestStatus() {
           {/* Botón cancelar */}
           <button
             onClick={handleCancelRequest}
-            className="w-full px-6 py-2.5 border border-border hover:bg-accent transition-colors text-on-surface-variant"
+            className="w-full px-6 py-2.5 border border-border hover:bg-accent transition-colors text-foreground"
             style={{ borderRadius: 'var(--radius)' }}
           >
             Cancelar Solicitud
@@ -146,7 +146,7 @@ export function RequestStatus() {
             <X className="w-10 h-10 text-destructive" />
           </div>
           <h1 className="mb-3 text-foreground">Solicitud Rechazada</h1>
-          <p className="text-on-surface-variant max-w-2xl mx-auto">
+          <p className="text-foreground max-w-2xl mx-auto">
             Tu solicitud no pudo ser aprobada
           </p>
         </div>
@@ -171,7 +171,7 @@ export function RequestStatus() {
             <h3 className="mb-4 text-foreground">Detalles</h3>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-on-surface-variant">Fecha de revisión:</span>
+                <span className="text-foreground">Fecha de revisión:</span>
                 <span className="text-foreground font-medium">
                   {requestData.reviewedAt
                     ? new Date(requestData.reviewedAt).toLocaleDateString("es-ES", {
@@ -194,7 +194,7 @@ export function RequestStatus() {
               <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
               <div>
                 <div className="font-medium text-foreground mb-1">Motivo del rechazo:</div>
-                <p className="text-sm text-on-surface-variant">
+                <p className="text-sm text-foreground">
                   {requestData.rejectionReason || "El número de legajo no coincide con nuestros registros"}
                 </p>
               </div>
@@ -202,7 +202,7 @@ export function RequestStatus() {
           </div>
 
           {/* Mensaje */}
-          <p className="text-sm text-on-surface-variant text-center mb-6">
+          <p className="text-sm text-foreground text-center mb-6">
             Si crees que hubo un error, contacta a secretaría académica.
           </p>
 
@@ -240,7 +240,7 @@ export function RequestStatus() {
             <CheckCircle className="w-10 h-10 text-green-600" />
           </div>
           <h1 className="mb-3 text-foreground">¡Solicitud Aprobada!</h1>
-          <p className="text-on-surface-variant max-w-2xl mx-auto">
+          <p className="text-foreground max-w-2xl mx-auto">
             Tu solicitud fue aprobada exitosamente. Ya eres miembro del portal.
           </p>
         </div>

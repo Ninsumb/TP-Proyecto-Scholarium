@@ -205,7 +205,7 @@ export function Subjects() {
           </div>
           <div className="flex-1">
             <h4 className="text-foreground group-hover:text-primary transition-colors">{item.subject.name}</h4>
-            <p className="text-xs text-on-surface-variant uppercase tracking-wide">{item.subject.code}</p>
+            <p className="text-xs text-foreground uppercase tracking-wide">{item.subject.code}</p>
           </div>
           <div className="text-sm text-muted-foreground">
             {item.subject.materials} materiales
@@ -231,7 +231,7 @@ export function Subjects() {
             )}
             <Folder className="w-5 h-5 text-primary flex-shrink-0" />
             <span className="font-medium text-foreground">{item.name}</span>
-            <span className="text-xs text-on-surface-variant ml-2">
+            <span className="text-xs text-foreground ml-2">
               {item.children?.length || 0} elementos
             </span>
           </button>

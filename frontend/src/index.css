@@ -113,6 +113,11 @@
   --sidebar-accent-foreground: #e8edf1;
   --sidebar-border: rgba(169, 180, 185, 0.2);
   --sidebar-ring: #5d8cc7;
+  /* Surface Hierarchy */
+  --surface-container-lowest: #283950;
+  --surface-container-low: #2e4b70;
+  --surface-container: #3267ac;
+  --surface-container-high: #2d78da;
 }
 
 @theme inline {

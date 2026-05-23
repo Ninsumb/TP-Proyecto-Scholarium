@@ -192,7 +192,7 @@ export function ForumBoardsList() {
       <div className="flex items-start justify-between mb-10">
         <div>
           <h1 className="mb-2 text-foreground">Foro de Discusión</h1>
-          <p className="text-on-surface-variant">Comparte dudas, recursos y experiencias con la comunidad</p>
+          <p className="text-foreground">Comparte dudas, recursos y experiencias con la comunidad</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
@@ -214,10 +214,10 @@ export function ForumBoardsList() {
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                  className={`w-full text-left px-3 py-2 text-sm text-foreground transition-colors ${
                     selectedCategory === category
                       ? "bg-primary text-primary-foreground shadow-sm"
-                      : "hover:bg-surface-container text-on-surface-variant"
+                      : "hover:bg-surface-container text-foreground"
                   }`}
                   style={{ borderRadius: "var(--radius)" }}
                 >
@@ -231,8 +231,10 @@ export function ForumBoardsList() {
             <h3 className="mb-4 text-foreground">Estadísticas</h3>
             <div className="space-y-3.5">
               <div className="flex items-center justify-between">
-                <span className="text-on-surface-variant text-sm">Tableros</span>
+
+                <span className="text-foreground text-sm">Tableros</span>
                 <span className="text-foreground font-medium">{tableros.length}</span>
+
               </div>
             </div>
           </div>
@@ -242,14 +244,14 @@ export function ForumBoardsList() {
         <main>
           <div className="mb-6">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground" />
               <input
                 type="text"
                 placeholder="Buscar tableros..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-                style={{ borderRadius: "var(--radius)" }}
+                className="w-full pl-12 pr-4 py-3 border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                style={{ borderRadius: 'var(--radius)' }}
               />
             </div>
           </div>
@@ -293,7 +295,6 @@ export function ForumBoardsList() {
                         <MessageSquare className="w-6 h-6 text-primary" />
                       </div>
                     </div>
-
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4 mb-2">
                         <h4 className="text-foreground group-hover:text-primary transition-colors flex items-center gap-2">

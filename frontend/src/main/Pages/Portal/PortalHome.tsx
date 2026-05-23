@@ -84,7 +84,7 @@ export function HomeWithBlocks() {
     return (
       <div className="max-w-6xl mx-auto px-6 py-16 flex flex-col items-center justify-center">
         <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
-        <p className="text-on-surface-variant">Cargando página de inicio...</p>
+        <p className="text-foreground">Cargando página de inicio...</p>
       </div>
     );
   }
@@ -162,7 +162,7 @@ export function HomeWithBlocks() {
 
       {/* Mensaje si no hay bloques */}
       {blocks.length === 0 && (
-        <div className="text-center py-16 text-on-surface-variant">
+        <div className="text-center py-16 text-foreground">
           <p className="mb-4">Esta página aún no tiene contenido configurado</p>
           {isAdmin && (
             <button

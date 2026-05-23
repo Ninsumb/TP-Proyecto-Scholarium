@@ -82,7 +82,7 @@ export function JoinPortal() {
           <GraduationCap className="w-10 h-10 text-primary" />
         </div>
         <h1 className="mb-3 text-foreground">Solicitar Acceso a la Carrera</h1>
-        <p className="text-on-surface-variant max-w-2xl mx-auto">
+        <p className="text-foreground max-w-2xl mx-auto">
           Completa el formulario para solicitar acceso al portal de <span className="font-medium text-foreground">{portalName}</span>. Un administrador revisará tu solicitud y te enviará una respuesta por correo electrónico.
         </p>
       </div>
@@ -227,7 +227,7 @@ export function JoinPortal() {
             style={{ borderRadius: 'var(--radius)' }}
           >
             <AlertCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-on-surface-variant">
+            <p className="text-sm text-foreground">
               Al enviar esta solicitud, recibirás un correo de confirmación. El tiempo de revisión suele ser de 24-48 horas.
             </p>
           </div>

@@ -62,7 +62,7 @@ export function PortalLayout() {
       <div className="flex">
         {/* Sidebar Lateral */}
         <aside
-          className={`bg-surface-container-high h-screen sticky top-0 overflow-y-auto transition-all duration-300 ${
+          className={`bg-sidebar-border h-screen sticky top-0 overflow-y-auto transition-all duration-300 ${
             isSidebarCollapsed ? 'w-16' : 'w-64'
           }`}
         >
@@ -76,9 +76,9 @@ export function PortalLayout() {
                 title={isSidebarCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
               >
                 {isSidebarCollapsed ? (
-                  <ChevronRight className="w-4 h-4 text-on-surface-variant" />
+                  <ChevronRight className="w-4 h-4 text-foreground" />
                 ) : (
-                  <ChevronLeft className="w-4 h-4 text-on-surface-variant" />
+                  <ChevronLeft className="w-4 h-4 text-foreground" />
                 )}
               </button>
             </div>
@@ -89,14 +89,14 @@ export function PortalLayout() {
                 <h2 className="text-lg font-semibold text-foreground mb-1" style={{ fontFamily: 'Work Sans, sans-serif' }}>
                   {portalName}
                 </h2>
-                <p className="text-xs text-on-surface-variant uppercase tracking-wide">
+                <p className="text-xs text-foreground uppercase tracking-wide">
                   {portal.universidad}
                 </p>
               </div>
             )}
             {!isSidebarCollapsed && isActive(`/portal/${portalId}`) && (
               <div className="mb-8">
-                <p className="text-xs text-on-surface-variant uppercase tracking-wide">Portal Académico</p>
+                <p className="text-xs text-foreground uppercase tracking-wide">Portal Académico</p>
               </div>
             )}
 
@@ -198,7 +198,7 @@ export function PortalLayout() {
             {/* Info del usuario en el portal */}
             {!isSidebarCollapsed && (
               <div className="mt-8 pt-6" style={{ borderTop: '1px solid rgba(169, 180, 185, 0.15)' }}>
-                <div className="text-xs text-on-surface-variant uppercase tracking-wide mb-2">Estado</div>
+                <div className="text-xs text-foreground uppercase tracking-wide mb-2">Estado</div>
                 {isMember ? (
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-primary"></div>
