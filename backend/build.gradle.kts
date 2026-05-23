@@ -38,6 +38,7 @@ dependencies {
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
     implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.7.3")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("com.google.api-client:google-api-client:2.2.0")
     testImplementation("io.mockk:mockk:1.14.9")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")

@@ -1,5 +1,6 @@
 package com.unsam.scholarium.controller
 
+import com.unsam.scholarium.dto.GoogleLoginRequest
 import com.unsam.scholarium.dto.LoginRequest
 import com.unsam.scholarium.dto.LoginResponse
 import com.unsam.scholarium.dto.RegisterRequest
@@ -33,6 +34,11 @@ class AuthController(
     @PostMapping("/login")
     fun login(@RequestBody request: LoginRequest) : LoginResponse {
         return authService.login(request)
+    }
+
+    @PostMapping("/google")
+    fun loginWithGoogle(@RequestBody request: GoogleLoginRequest): LoginResponse {
+        return authService.loginWithGoogle(request)
     }
 
     data class RefreshRequest(val refreshToken: String)
