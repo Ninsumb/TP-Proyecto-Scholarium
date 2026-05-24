@@ -15,6 +15,7 @@ out/
 # Application properties con credenciales reales
 application-local.properties
 application-prod.properties
+application.yml
 ../.env
 
 # Docker
@@ -27,3 +28,6 @@ docker-compose.override.yml
 .DS_Store
 Thumbs.db
 /src/main/resources/application-local.yml
+
+# Dependencies
+package.json

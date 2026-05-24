@@ -64,7 +64,7 @@ export function ExplorePortals() {
     return null;
   };
 
-  const filteredPortals = portales.filter(portal =>
+  const filteredPortals = (portales ?? []).filter(portal =>
     portal.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
     portal.descripcion.toLowerCase().includes(searchQuery.toLowerCase())
   );
