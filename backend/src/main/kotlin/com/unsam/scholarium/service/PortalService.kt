@@ -1,6 +1,7 @@
 package com.unsam.scholarium.service
 
 import com.unsam.scholarium.dto.CarpetaRequest
+import com.unsam.scholarium.dto.MaterialResponse
 import com.unsam.scholarium.dto.PortalBusquedaResponse
 import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.dto.PortalUserResponse
@@ -63,20 +64,6 @@ class PortalService (
         )
 
         return Triple(portal, membresia?.rol, stats)
-    }
-
-    fun getPortalesByUser(email: String): List<PortalUserResponse> {
-        val membresias = membresiaRepository.findAllByUsuarioEmail(email)
-
-        return membresias.map { membresia ->
-            val p = membresia.portal!!
-            PortalUserResponse(
-                id = p.id!!,
-                universidad = p.universidad,
-                carrera = p.carrera,
-                rol = membresia.rol
-            )
-        }
     }
 
     fun getSolicitudesPendientes(idPortal: Long, email: String): List<SolicitudResponse> {

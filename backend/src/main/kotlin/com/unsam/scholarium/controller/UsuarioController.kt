@@ -17,10 +17,6 @@ import org.springframework.web.bind.annotation.RestController
 class UsuarioController (
     private val usuarioService: UsuarioService
 ){
-
-
-    //TODO: ¿Esta función y listarMisPortales en PortalController.kt no son lo mismo?
-
     @GetMapping("/me/portales")
     fun getMisPortales(authentication: Authentication): ResponseEntity<List<UsuarioPortalResponse>> {
 
