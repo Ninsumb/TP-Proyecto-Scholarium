@@ -34,8 +34,8 @@ class Usuario(
     @Column(nullable=true, length = 300)
     var bio: String? = null,
 
-    @Column(nullable = true)
-    var fotoPerfil: String? = null,
+    @Column(nullable=true, name = "foto_perfil", length = 512)
+    var fotoPerfil: String? = null
 ) {
     fun addMembresia(membresia: Membresia) {
         membresias.add(membresia)
