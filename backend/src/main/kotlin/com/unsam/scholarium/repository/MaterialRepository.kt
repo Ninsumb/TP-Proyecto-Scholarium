@@ -20,4 +20,7 @@ interface MaterialRepository : JpaRepository<Material, UUID> {
         materiaId: UUID,
         estado: EstadoMaterial
     ): List<Material>
+
+    @Query("SELECT COUNT(m) FROM Material m WHERE m.usuario.id = :usuarioId")
+    fun countByUsuarioId(usuarioId: Long): Long
 }

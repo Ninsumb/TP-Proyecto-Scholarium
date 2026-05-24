@@ -11,7 +11,7 @@ class Usuario(
     val id: Long? = null,
 
     @Column(nullable = false, length = 100)
-    val nombre: String,
+    var nombre: String,
 
     @Column(unique = true, nullable = false, length = 255)
     val email: String,
@@ -30,6 +30,12 @@ class Usuario(
 
     @Column(nullable = false)
     val activo: Boolean = true,
+
+    @Column(nullable=true, length = 300)
+    var bio: String? = null,
+
+    @Column(nullable = true)
+    var fotoPerfil: String? = null,
 ) {
     fun addMembresia(membresia: Membresia) {
         membresias.add(membresia)
