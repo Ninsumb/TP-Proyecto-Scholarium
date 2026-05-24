@@ -64,7 +64,7 @@ export default function Register() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
             <GraduationCap className="w-12 h-12 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground">Portal Universitario</h1>
+            <h1 className="text-3xl font-bold text-foreground">Scholarium</h1>
           </div>
           <p className="text-muted-foreground">
             Crea tu cuenta para acceder a los portales académicos

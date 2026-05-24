@@ -12,6 +12,7 @@ import com.unsam.scholarium.repository.MembresiaRepository
 import com.unsam.scholarium.repository.UsuarioRepository
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
+import org.springframework.web.multipart.MultipartFile
 
 @Service
 class UsuarioService(
@@ -19,7 +20,8 @@ class UsuarioService(
     private val membresiaRepository: MembresiaRepository,
     private val carpetaRepository: CarpetaRepository,
     private val materiaRepository: MateriaRepository,
-    private val materialRepository: MaterialRepository
+    private val materialRepository: MaterialRepository,
+    private val cloudinaryService: CloudinaryFileStorageService
 ) {
 
     fun getMisPortales(email: String): List<UsuarioPortalResponse> {
@@ -88,5 +90,17 @@ class UsuarioService(
         usuarioRepository.save(usuario)
 
         return getMiPerfil(email)
+    }
+
+    @Transactional
+    fun actualizarFotoPerfil(email: String, archivo: MultipartFile): String {
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("El usuario no existe")
+
+        val url = cloudinaryService.uploadFotoPerfil(archivo, usuario.id!!)
+        usuario.fotoPerfil = url
+        usuarioRepository.save(usuario)
+
+        return url
     }
 }

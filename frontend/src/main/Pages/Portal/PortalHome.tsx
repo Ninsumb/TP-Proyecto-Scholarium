@@ -9,12 +9,19 @@ import { portalService } from "../../services/Portal/PortalService";
 interface PortalContext {
   isMember: boolean;
   isAdmin: boolean;
+  isGuest: boolean;
+  portal: {
+    carrera: string;
+    universidad: string;
+    descripcion: string | null;
+  };
 }
 
 export function HomeWithBlocks() {
   const { portalId } = useParams();
   const context = useOutletContext<PortalContext>();
   const isAdmin = context?.isAdmin || false;
+  const portal = context?.portal;
 
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -22,7 +29,6 @@ export function HomeWithBlocks() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Cargar bloques al montar el componente
   useEffect(() => {
     const fetchBlocks = async () => {
       if (!portalId) {
@@ -61,14 +67,10 @@ export function HomeWithBlocks() {
       setIsEditing(false);
     } catch (err: any) {
       console.error("Error al guardar bloques:", err);
-      
-      // Mostrar mensaje de error específico del backend
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data?.error || 
+      const errorMessage = err.response?.data?.message ||
+                          err.response?.data?.error ||
                           "Error al guardar los cambios";
       setError(errorMessage);
-      
-      // No cerramos el editor para que el usuario pueda corregir
     } finally {
       setIsSaving(false);
     }
@@ -79,7 +81,6 @@ export function HomeWithBlocks() {
     setError(null);
   };
 
-  // Estado de carga
   if (isLoading) {
     return (
       <div className="max-w-6xl mx-auto px-6 py-16 flex flex-col items-center justify-center">
@@ -89,11 +90,10 @@ export function HomeWithBlocks() {
     );
   }
 
-  // Mostrar error si hay
   if (error && !isEditing) {
     return (
       <div className="max-w-6xl mx-auto px-6 py-16">
-        <div 
+        <div
           className="bg-destructive/10 border border-destructive/20 text-destructive p-4 mb-6"
           style={{ borderRadius: 'var(--radius)' }}
         >
@@ -117,7 +117,7 @@ export function HomeWithBlocks() {
     return (
       <>
         {error && (
-          <div 
+          <div
             className="fixed top-4 right-4 z-[60] bg-destructive/10 border border-destructive/20 text-destructive p-4 shadow-lg max-w-md"
             style={{ borderRadius: 'var(--radius)' }}
           >
@@ -131,9 +131,9 @@ export function HomeWithBlocks() {
             </button>
           </div>
         )}
-        <BlockEditor 
-          blocks={blocks} 
-          onSave={handleSave} 
+        <BlockEditor
+          blocks={blocks}
+          onSave={handleSave}
           onCancel={handleCancel}
           isSaving={isSaving}
         />
@@ -141,40 +141,59 @@ export function HomeWithBlocks() {
     );
   }
 
-  return (
+ return (
     <div className="max-w-6xl mx-auto px-6 py-8">
-      {/* Botón de edición para admins */}
-      {isAdmin && (
-        <div className="flex justify-end mb-6">
-          <button
-            onClick={() => setIsEditing(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm"
-            style={{ borderRadius: 'var(--radius)' }}
-          >
-            <Edit2 className="w-4 h-4" />
-            Editar Página
-          </button>
-        </div>
-      )}
 
-      {/* Renderizar bloques */}
-      {blocks.map((block) => renderBlock(block))}
+      {/* Header estático del portal */}
+      <div className="mb-8 px-8 py-10 bg-muted/40 rounded-lg border border-border">
+        <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest mb-3">
+          {portal?.universidad}
+        </p>
+        <h1 className="text-5xl font-bold text-foreground leading-tight mb-4">
+          {portal?.carrera}
+        </h1>
+        {portal?.descripcion && (
+          <p className="text-lg text-muted-foreground leading-relaxed max-w-3xl">
+            {portal.descripcion}
+          </p>
+        )}
+      </div>
 
-      {/* Mensaje si no hay bloques */}
-      {blocks.length === 0 && (
-        <div className="text-center py-16 text-foreground">
-          <p className="mb-4">Esta página aún no tiene contenido configurado</p>
-          {isAdmin && (
+      {/* Contenedor de bloques */}
+      <div>
+        {/* Botón editar — solo admins */}
+        {isAdmin && (
+          <div className="flex justify-end mb-6">
             <button
               onClick={() => setIsEditing(true)}
-              className="px-6 py-3 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors"
+              className="p-2 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm"
               style={{ borderRadius: 'var(--radius)' }}
+              title="Editar página"
             >
-              Configurar Página de Inicio
+              <Edit2 className="w-4 h-4" />
             </button>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+
+        {/* Renderizar bloques */}
+        {blocks.map((block) => renderBlock(block))}
+
+        {/* Mensaje si no hay bloques */}
+        {blocks.length === 0 && (
+          <div className="text-center py-16 text-foreground">
+            <p className="mb-4">Esta página aún no tiene contenido configurado</p>
+            {isAdmin && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="px-6 py-3 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors"
+                style={{ borderRadius: 'var(--radius)' }}
+              >
+                Configurar Página de Inicio
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

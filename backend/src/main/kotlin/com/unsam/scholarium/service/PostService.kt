@@ -72,7 +72,11 @@ class PostService(
                 titulo = post.titulo,
                 contenido = post.contenido,
                 tableroId = post.tablero.id!!,
-                autor = AutorDTO(id = post.autor.id!!, nombre = post.autor.nombre),
+                autor = AutorDTO(
+                    id = post.autor.id!!,
+                    nombre = post.autor.nombre,
+                    fotoPerfil = post.autor.fotoPerfil
+                ),
                 postPadreId = post.postPadre?.id,
                 cantidadRespuestas = cantidadRespuestas,
                 eliminado = false,

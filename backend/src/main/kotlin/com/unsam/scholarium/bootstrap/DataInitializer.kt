@@ -1,5 +1,7 @@
 package com.unsam.scholarium.bootstrap
 
+import com.cloudinary.Cloudinary
+import com.cloudinary.utils.ObjectUtils
 import com.unsam.scholarium.model.*
 import com.unsam.scholarium.repository.*
 import org.springframework.context.annotation.Bean
@@ -22,10 +24,33 @@ class DataInitializer {
         foroRepo: ForoRepository,
         etiquetaRepo: EtiquetaRepository,
         postRepo: PostRepository,
+        cloudinary: Cloudinary,
         passwordEncoder: PasswordEncoder
     ) = CommandLineRunner {
 
         if (usuarioRepo.count() == 0L) {
+
+            fun subirFotoBootstrap(rutaRecurso: String, usuarioId: Long): String? {
+                return try {
+                    val inputStream = DataInitializer::class.java
+                        .getResourceAsStream(rutaRecurso) ?: return null
+                    val bytes = inputStream.readBytes()
+
+                    val result = cloudinary.uploader().upload(
+                        bytes,
+                        ObjectUtils.asMap(
+                            "folder",        "scholarium/fotos-perfil",
+                            "public_id",     "usuario-$usuarioId",
+                            "overwrite",     true,
+                            "resource_type", "image"
+                        )
+                    )
+                    result["secure_url"].toString()
+                } catch (e: Exception) {
+                    println("⚠️ No se pudo subir foto para usuario $usuarioId: ${e.message}")
+                    null
+                }
+            }
 
             // ── Usuarios ──────────────────────────────────────────────────
             val admin = usuarioRepo.save(
@@ -35,6 +60,8 @@ class DataInitializer {
                     password = passwordEncoder.encode("1234")
                 )
             )
+            admin.fotoPerfil = subirFotoBootstrap("/bootstrap-assets/test.jpg", admin.id!!)
+            usuarioRepo.save(admin)
             val solicitante = usuarioRepo.save(
                 Usuario(
                     nombre = "Juan",
@@ -42,6 +69,8 @@ class DataInitializer {
                     password = passwordEncoder.encode("1234")
                 )
             )
+            solicitante.fotoPerfil = subirFotoBootstrap("/bootstrap-assets/juan.jpg", solicitante.id!!)
+            usuarioRepo.save(solicitante)
             val noAdmin = usuarioRepo.save(
                 Usuario(
                     nombre = "Pedro",
@@ -49,6 +78,8 @@ class DataInitializer {
                     password = passwordEncoder.encode("1234")
                 )
             )
+            noAdmin.fotoPerfil = subirFotoBootstrap("/bootstrap-assets/pedro.jpg", noAdmin.id!!)
+            usuarioRepo.save(noAdmin)
 
             // ── Portal ────────────────────────────────────────────────────
             val portal = portalRepo.save(

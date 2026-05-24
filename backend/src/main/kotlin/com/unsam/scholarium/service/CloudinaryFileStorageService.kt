@@ -41,6 +41,28 @@ class CloudinaryFileStorageService(
         }
     }
 
+    fun uploadFotoPerfil(file: MultipartFile, usuarioId: Long): String {
+        validar(file)
+
+        return try {
+            val result = cloudinary.uploader().upload(
+                file.bytes,
+                ObjectUtils.asMap(
+                    "folder",        "scholarium/fotos-perfil",
+                    "public_id",     "usuario-$usuarioId",
+                    "overwrite",     true,
+                    "resource_type", "image",
+                    "transformation", listOf(
+                        mapOf("width" to 256, "height" to 256, "crop" to "fill", "gravity" to "face")
+                    )
+                )
+            )
+            result["secure_url"].toString()
+        } catch (e: Exception) {
+            throw BusinessException("Error al subir foto de perfil: ${e.message}")
+        }
+    }
+
     override fun delete(publicId: String): Boolean {
         return try {
             val result = cloudinary.uploader().destroy(
@@ -55,6 +77,8 @@ class CloudinaryFileStorageService(
         }
     }
 }
+
+
 
 private fun validar(file: MultipartFile) {
     val allowedTypes = setOf(

@@ -17,6 +17,7 @@ export interface TableroResponse {
 export interface AutorDTO {
   id: number;
   nombre: string;
+  fotoPerfil: string | null;
 }
 
 export interface PostResponse {
