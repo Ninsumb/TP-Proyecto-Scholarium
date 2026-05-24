@@ -270,4 +270,25 @@ class PortalService (
             PortalMapper.toBusquedaResponse(portal)
         }
     }
+
+    @Transactional(rollbackOn = [Exception::class])
+    fun removerMiembro(portalId: Long, usuarioObjetivoId: Long, emailAdmin: String) {
+        val portal = validarPortal(portalId)
+        val admin = validarUsuario(emailAdmin)
+
+        val membresiaAdmin = membresiaRepository.findByUsuarioIdAndPortalId(admin.id!!, portalId)
+        if (membresiaAdmin?.rol != RolMembresia.ADMIN)
+            throw NotAdminException("Solo los administradores pueden remover miembros")
+
+        val usuarioObjetivo = usuarioRepository.findById(usuarioObjetivoId).getOrNull()
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        if (admin.id == usuarioObjetivo.id)
+            throw BusinessException("No podés removerte a vos mismo del portal")
+
+        val membresiaObjetivo = membresiaRepository.findByUsuarioIdAndPortalId(usuarioObjetivoId, portalId)
+            ?: throw ElementDoesNotExistException("El usuario no es miembro de este portal")
+
+        membresiaRepository.delete(membresiaObjetivo)
+    }
 }

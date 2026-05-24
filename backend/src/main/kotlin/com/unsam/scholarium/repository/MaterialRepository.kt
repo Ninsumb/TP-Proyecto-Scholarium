@@ -35,4 +35,7 @@ interface MaterialRepository : JpaRepository<Material, UUID> {
     fun findPendientesByPortalId(
         @Param("portalId") portalId: Long
     ): List<Material>
+
+    @Query("SELECT COUNT(m) FROM Material m WHERE m.usuario.id = :usuarioId")
+    fun countByUsuarioId(usuarioId: Long): Long
 }
