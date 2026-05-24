@@ -2,7 +2,7 @@ package com.unsam.scholarium.controller
 
 import com.unsam.scholarium.dto.CarpetaRequest
 import com.unsam.scholarium.dto.CarpetaResponse
-import com.unsam.scholarium.dto.MoverCarpetaBodyRequestDTO
+import com.unsam.scholarium.dto.MaterialPendienteDTO
 import com.unsam.scholarium.dto.PortalBusquedaResponse
 import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.dto.PortalUserResponse
@@ -10,11 +10,12 @@ import com.unsam.scholarium.dto.SolicitudRequest
 import com.unsam.scholarium.dto.SolicitudResponse
 import com.unsam.scholarium.mapper.PortalMapper
 import com.unsam.scholarium.model.Portal
+import com.unsam.scholarium.service.MaterialService
 import com.unsam.scholarium.service.PortalService
-import org.hibernate.validator.constraints.UUID
 import org.springframework.security.core.Authentication
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -30,7 +31,8 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/portales")
 @CrossOrigin(origins = ["http://localhost:5173"])
 class PortalController (
-    private val portalService: PortalService
+    private val portalService: PortalService,
+    private val materialService: MaterialService
 ) {
     @GetMapping("/{id}")
     fun obtenerPortal(
@@ -44,16 +46,6 @@ class PortalController (
         return PortalMapper.toDetalleDTO(detalleData)
     }
 
-    //TODO: ¿Esta función y getMisPortales en UsuarioController.kt no son lo mismo?
-
-    @GetMapping()
-    fun listarMisPortales(
-        authentication: Authentication
-    ): List<PortalUserResponse> {
-        val email = authentication.name
-        return portalService.getPortalesByUser(email)
-    }
-
     @GetMapping("/{id}/solicitudes")
 fun obtenerSolicitudesPendientes(
         @PathVariable id: Long,
@@ -62,6 +54,16 @@ fun obtenerSolicitudesPendientes(
         val email = authentication.name
 
         return portalService.getSolicitudesPendientes(id, email)
+    }
+
+    @GetMapping("/{id}/material/pendiente")
+    fun obtenerMaterialPendiente(
+        @PathVariable id: Long,
+        authentication: Authentication
+    ): List<MaterialPendienteDTO> {
+        val email = authentication.name
+
+        return materialService.getMaterialPendiente(id, email)
     }
 
     @PostMapping
@@ -76,9 +78,8 @@ fun obtenerSolicitudesPendientes(
         return ResponseEntity.status(HttpStatus.CREATED).build()
     }
 
-    //TODO: 1) ¿Por qué se llama "placeholder"? 2) ¿Dónde deberían ir las request de Solicitud?
     @PostMapping("/{id}/solicitudes")
-    fun placeholder(
+    fun crearSolicitud(
         @PathVariable id: Long,
         @RequestBody dto: SolicitudRequest,
         authentication: Authentication
@@ -125,8 +126,6 @@ fun obtenerSolicitudesPendientes(
 
         return ResponseEntity.status(HttpStatus.OK).body("Carpeta renombrada a ${nuevoNombre}")
     }
-
-    @PutMapping("/{idPortal}/materias/{id}/mover")
 
     @PatchMapping
     fun patchPortal(

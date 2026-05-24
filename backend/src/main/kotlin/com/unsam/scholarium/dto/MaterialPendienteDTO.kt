@@ -5,38 +5,42 @@ import com.unsam.scholarium.model.TipoMaterial
 import java.util.Date
 import java.util.UUID
 
-data class UploadedByResponse(
-    val id: Long,
-    val nombre: String
-)
-
-data class MaterialPublicadoResponse(
+data class MaterialPendienteDTO (
     val id: UUID,
     val nombre: String,
     val descripcion: String,
     val tipo: TipoMaterial,
-    val archivoUrl: String,
+    val url: String,
     val tamanio: Long,
     val tipoArchivo: String,
-    val uploadedBy: UploadedByResponse,
+    val materia: MateriaResumenDTO,
+    val uploadedByEmail: String,
     val createdAt: Date
 ) {
     companion object {
-        fun fromEntity(material: Material): MaterialPublicadoResponse {
-            return MaterialPublicadoResponse(
+        fun fromEntity(material: Material): MaterialPendienteDTO {
+            return MaterialPendienteDTO(
                 id = material.id!!,
                 nombre = material.nombre,
                 descripcion = material.descripcion,
                 tipo = material.tipo,
-                archivoUrl = material.url,
+                url = material.url,
                 tamanio = material.tamanio,
                 tipoArchivo = material.tipoArchivo,
-                uploadedBy = UploadedByResponse(
-                    id = material.usuario.id!!,
-                    nombre = material.usuario.nombre
+                materia = MateriaResumenDTO(
+                    id = material.materia.id!!,
+                    nombre = material.materia.nombre,
+                    carpeta = material.materia.carpeta.nombre
                 ),
+                uploadedByEmail = material.usuario.email,
                 createdAt = material.createdAt
             )
         }
     }
 }
+
+data class MateriaResumenDTO(
+    val id: UUID,
+    val nombre: String,
+    val carpeta: String
+)
