@@ -157,32 +157,6 @@ export function AdminDashboard() {
         <p className="text-muted-foreground">Gestiona solicitudes de usuarios y aprobación de materiales</p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-card border border-border rounded-lg p-6">
-          <div className="flex items-center justify-between mb-2">
-            <Users className="w-8 h-8 text-primary" />
-            <span className="text-2xl text-card-foreground">{pendingUsers}</span>
-          </div>
-          <h3 className="text-sm text-muted-foreground">Solicitudes de Usuario Pendientes</h3>
-        </div>
-
-        <div className="bg-card border border-border rounded-lg p-6">
-          <div className="flex items-center justify-between mb-2">
-            <FileText className="w-8 h-8 text-primary" />
-            <span className="text-2xl text-card-foreground">{pendingMaterials}</span>
-          </div>
-          <h3 className="text-sm text-muted-foreground">Materiales Pendientes de Revisión</h3>
-        </div>
-
-        <div className="bg-card border border-border rounded-lg p-6">
-          <div className="flex items-center justify-between mb-2">
-            <Clock className="w-8 h-8 text-primary" />
-            <span className="text-2xl text-card-foreground">{pendingUsers + pendingMaterials}</span>
-          </div>
-          <h3 className="text-sm text-muted-foreground">Total de Tareas Pendientes</h3>
-        </div>
-      </div>
-
       <div className="bg-card border border-border rounded-lg overflow-hidden">
         <div className="border-b border-border">
           <div className="flex">
