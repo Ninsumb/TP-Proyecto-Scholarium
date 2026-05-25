@@ -26,7 +26,8 @@ export function ExplorePortals() {
   const [portales, setPortales] = useState<Portal[]>([]);
   const [filteredPortals, setFilteredPortals] = useState<Portal[]>([])
   const [loading, setLoading] = useState<boolean>(true);
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [universidadSearchQuery, setUniversidadSearchQuery] = useState<string>("");
+  const [carreraSearchQuery, setCarreraSearchQuery] = useState<string>("");
 
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -99,10 +100,17 @@ export function ExplorePortals() {
 
   useEffect(() => {
     const delayInputTimeoutId = setTimeout(() => {
-      setFiltroCarrera(searchQuery);
+      setFiltroCarrera(carreraSearchQuery);
     }, 500);
     return () => clearTimeout(delayInputTimeoutId);
-}, [searchQuery, 500]);
+  }, [carreraSearchQuery, 500]);
+
+  useEffect(() => {
+    const delayInputTimeoutId = setTimeout(() => {
+      setFiltroUniversidad(universidadSearchQuery);
+    }, 500);
+    return () => clearTimeout(delayInputTimeoutId);
+  }, [universidadSearchQuery, 500]);
 
 
 
@@ -122,9 +130,20 @@ export function ExplorePortals() {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Filtrar resultados..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Buscar por universidad..."
+          value={universidadSearchQuery}
+          onChange={(e) => setUniversidadSearchQuery(e.target.value)}
+          className="w-full pl-12 pr-4 py-3 text-foreground bg-surface-container-lowest border-2 border-black/5 rounded-sm focus:ring-2 focus:ring-primary outline-none"
+        />
+      </div>
+
+      <div className="mb-8 relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Buscar por carrera..."
+          value={carreraSearchQuery}
+          onChange={(e) => setCarreraSearchQuery(e.target.value)}
           className="w-full pl-12 pr-4 py-3 text-foreground bg-surface-container-lowest border-2 border-black/5 rounded-sm focus:ring-2 focus:ring-primary outline-none"
         />
       </div>
