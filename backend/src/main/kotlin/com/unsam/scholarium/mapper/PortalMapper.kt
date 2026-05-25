@@ -1,5 +1,6 @@
 package com.unsam.scholarium.mapper
 
+import com.unsam.scholarium.dto.PortalBusquedaDTO
 import com.unsam.scholarium.dto.PortalBusquedaResponse
 import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.model.Portal
@@ -24,8 +25,8 @@ object PortalMapper {
         )
     }
 
-    fun toBusquedaResponse(portal: Portal): PortalBusquedaResponse {
-        return PortalBusquedaResponse(
+    fun toBusquedaResponse(portal: Portal): PortalBusquedaDTO {
+        return PortalBusquedaDTO(
             id = portal.id,
             universidad = portal.universidad,
             carrera = portal.carrera,

@@ -29,6 +29,7 @@ import com.unsam.scholarium.mapper.PortalMapper
 import com.unsam.scholarium.model.Etiqueta
 import com.unsam.scholarium.repository.EtiquetaRepository
 import jakarta.transaction.Transactional
+import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
@@ -272,15 +273,23 @@ class PortalService (
         portalRepository.save(portal)
     }
 
-    fun buscarPortales(universidad: String?, carrera: String?): List<PortalBusquedaResponse> {
+    fun buscarPortales(universidad: String?, carrera: String?, pagina: Int = 0): PortalBusquedaResponse {
 
-        val resultados = portalRepository.buscarPortales(
+        val page = PageRequest.of(pagina, 6)
+
+        val pagina = portalRepository.buscarPortales(
             universidad?.takeIf { it.isNotBlank() },
-            carrera?.takeIf { it.isNotBlank() }
+            carrera?.takeIf { it.isNotBlank() },
+            page
         )
 
-        return resultados.map { portal ->
-            PortalMapper.toBusquedaResponse(portal)
-        }
+        val resultados = pagina.content
+
+        return PortalBusquedaResponse(
+            portales = resultados.map { portal ->
+            PortalMapper.toBusquedaResponse(portal) },
+            page = pagina.number,
+            total = pagina.totalPages
+        )
     }
 }

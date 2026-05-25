@@ -1,6 +1,8 @@
 package com.unsam.scholarium.repository
 
 import com.unsam.scholarium.model.Portal
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
@@ -18,6 +20,7 @@ interface PortalRepository : JpaRepository<Portal, Long> {
 """)
     fun buscarPortales(
         @Param("universidad") universidad: String?,
-        @Param("carrera") carrera: String?
-    ): List<Portal>
+        @Param("carrera") carrera: String?,
+        pageable: Pageable
+    ): Page<Portal>
 }
