@@ -85,10 +85,19 @@ class DataInitializer {
             val portal = portalRepo.save(
                 Portal(
                     universidad = "Universidad Nacional de San Martín",
-                    carrera = "Tecnicatura en Programación Informática"
+                    carrera = "Tecnicatura en Programación Informática",
+                    descripcion = "Portal de la carrera de Programacion, Full Stack, C y lenguajes raros."
                 )
             )
 
+            portalRepo.save(Portal(universidad = "Universidad Nacional de San Martín", carrera = "Tecnicatura en Redes Informáticas", descripcion = "Maria Claudia"))
+            portalRepo.save(Portal(universidad = "Universidad Nacional de San Martín", carrera = "Licenciatura en Ciencias de Datos", descripcion = "ven datos"))
+            portalRepo.save(Portal(universidad = "Universidad Nacional de San Martín", carrera = "Ingenieria Espacial", descripcion = "Tampoco es que es ciencia de cohetes lol"))
+            portalRepo.save(Portal(universidad = "Universidad Nacional de San Martín", carrera = "Ingenieria en Alimentos", descripcion = "Estudian el diseño y la construccion de los alimentos"))
+            portalRepo.save(Portal(universidad = "UTN", carrera = "Ingenieria Electronica", descripcion = "Ley del culon"))
+            portalRepo.save(Portal(universidad = "UTN", carrera = "Ingenieria Informatica", descripcion = "Dijkstra"))
+            portalRepo.save(Portal(universidad = "UADE", carrera = "Cualquier Carrera", descripcion = "Te vendemos el titulo por $3241234214"))
+            
             // ── Membresías ────────────────────────────────────────────────
             membresiaRepo.save(
                 Membresia(
@@ -100,6 +109,7 @@ class DataInitializer {
             membresiaRepo.save(
                 Membresia(
                     usuario = noAdmin,
+
                     portal = portal,
                     rol = RolMembresia.MIEMBRO
                 )

@@ -139,11 +139,12 @@ fun obtenerSolicitudesPendientes(
     @GetMapping("/buscar")
     fun buscarPortales(
         @RequestParam(required = false) universidad: String?,
-        @RequestParam(required = false) carrera: String?
-    ): ResponseEntity<List<PortalBusquedaResponse>> {
+        @RequestParam(required = false) carrera: String?,
+        @RequestParam(required = false) pagina: Int = 0
+    ): ResponseEntity<PortalBusquedaResponse> {
 
         return ResponseEntity.ok(
-            portalService.buscarPortales(universidad, carrera)
+            portalService.buscarPortales(universidad, carrera, pagina)
         )
     }
 

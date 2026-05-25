@@ -11,4 +11,6 @@ export interface Portal {
 
 export interface buscarPortalesResponse {
     portales: Portal[];
+    page: number;
+    total: number;
 }
