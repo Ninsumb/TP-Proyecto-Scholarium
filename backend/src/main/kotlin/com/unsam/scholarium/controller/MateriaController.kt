@@ -85,4 +85,15 @@ class MateriaController(
         return ResponseEntity.ok(materiales)
     }
 
+    @GetMapping("/{materiaId}/material/buscar")
+    fun buscarMaterialPublicado(
+        @PathVariable materiaId: UUID,
+        @RequestParam("nombre") nombre: String,
+    authentication: Authentication
+    ): ResponseEntity<List<MaterialPublicadoResponse>> {
+        val email = authentication.name
+        val materiales = materialService.buscarMaterialPublicado(materiaId, nombre, email)
+        return ResponseEntity.ok(materiales)
+    }
+
 }

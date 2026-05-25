@@ -73,4 +73,14 @@ class MaterialController(private val materialService: MaterialService) {
         val response = MaterialResponse.fromEntity(material)
         return ResponseEntity.ok(response)
     }
+
+        @GetMapping("/{materialId}/descargar")
+        fun descargarMaterial(
+            @PathVariable materialId: UUID,
+            authentication: Authentication
+    ): ResponseEntity<Map<String, String>> {
+        val email = authentication.name
+        val url = materialService.descargarMaterial(materialId, email)
+        return ResponseEntity.ok(mapOf("url" to url))
+    }
 }

@@ -13,10 +13,31 @@ class MaterialService {
 
     const { data } = await apiClient.post<MaterialResponse>(
       `/material/materias/${materiaId}/material`,
-      fd,
-      // Sin Content-Type explícito: axios lo setea automático para FormData
+      fd
     );
     return data;
+  }
+
+  async listarMaterialPublicado(materiaId: string): Promise<MaterialResponse[]> {
+    const { data } = await apiClient.get<MaterialResponse[]>(
+      `/materias/${materiaId}/material`
+    );
+    return data;
+  }
+
+  async buscarMaterial(materiaId: string, nombre: string): Promise<MaterialResponse[]> {
+    const { data } = await apiClient.get<MaterialResponse[]>(
+      `/materias/${materiaId}/material/buscar`,
+      { params: { nombre } }
+    );
+    return data;
+  }
+
+  async obtenerUrlDescarga(materialId: string): Promise<string> {
+    const { data } = await apiClient.get<{ url: string }>(
+      `/material/${materialId}/descargar`
+    );
+    return data.url;
   }
 }
 

@@ -176,4 +176,47 @@ class MaterialService(
             .findByMateriaIdAndEstadoOrderByCreatedAtDesc(materiaId, EstadoMaterial.PUBLICADO)
             .map { MaterialPublicadoResponse.fromEntity(it) }
     }
+
+    fun buscarMaterialPublicado(materiaId: UUID, nombre: String, email: String): List<MaterialPublicadoResponse> {
+    val materia = materiaRepository.findById(materiaId).getOrNull()
+        ?: throw ElementDoesNotExistException("Materia no encontrada")
+    
+    val usuario = usuarioRepository.findByEmail(email)
+        ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+    val portal = materia.carpeta.portal
+    val esMiembro = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.MIEMBRO)
+    val esAdmin = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+
+    if (!esMiembro && !esAdmin) {
+        throw UnauthorizedException("No sos miembro de este portal")
+    }
+
+    return materialRepository
+        .findByMateriaIdAndEstadoAndNombreContainingIgnoreCaseOrderByCreatedAtDesc(materiaId, EstadoMaterial.PUBLICADO, nombre)
+        .map { MaterialPublicadoResponse.fromEntity(it) }
+}
+
+fun descargarMaterial(materialId: UUID, email: String): String {
+    val material = materialRepository.findById(materialId)
+        .orElseThrow { ElementDoesNotExistException("Material no encontrado") }
+
+    val usuario = usuarioRepository.findByEmail(email)
+        ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+    val portal = material.materia.carpeta.portal
+    val esMiembro = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.MIEMBRO)
+    val esAdmin = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+
+    if (!esMiembro && !esAdmin) {
+        throw UnauthorizedException("No tenés permisos para descargar este material")
+    }
+
+    if (material.estado != EstadoMaterial.PUBLICADO) {
+        throw BusinessException("El material no se encuentra publicado")
+    }
+
+    
+    return material.url
+}
 }
