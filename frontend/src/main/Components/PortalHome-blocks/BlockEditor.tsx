@@ -9,6 +9,7 @@ import type {
   RichTextBlock,
   ImageTextBlock,
   CTABlock,
+  ImageOnlyBlock
 } from "./BlockComponents.tsx";
 import { renderBlock } from "./BlockComponents.tsx";
 
@@ -21,6 +22,7 @@ const availableBlocks = [
   { type: 'richText', label: 'Texto Enriquecido', description: 'Contenido Markdown', icon: FileCode },
   { type: 'imageText', label: 'Imagen + Texto', description: 'Imagen lateral con texto', icon: ImageIcon },
   { type: 'cta', label: 'Call to Action', description: 'Botón destacado', icon: Megaphone },
+  { type: 'imageOnly', label: 'Imagen', description: 'Imagen con título y descripción opcionales', icon: ImageIcon },
 ];
 
 // Formularios de edición para cada tipo de bloque
@@ -361,6 +363,46 @@ function CTABlockForm({ data, onChange }: { data: CTABlock['data']; onChange: (d
   );
 }
 
+function ImageOnlyBlockForm({ data, onChange }: { data: ImageOnlyBlock['data']; onChange: (data: any) => void }) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block mb-2 text-sm font-medium">Título (opcional)</label>
+        <input
+          type="text"
+          value={data.title || ''}
+          onChange={(e) => onChange({ ...data, title: e.target.value })}
+          className="w-full px-3 py-2 border border-border bg-input-background text-foreground text-sm"
+          style={{ borderRadius: 'var(--radius)' }}
+          placeholder="Título de la imagen..."
+        />
+      </div>
+      <div>
+        <label className="block mb-2 text-sm font-medium">URL de Imagen</label>
+        <input
+          type="text"
+          value={data.imageUrl}
+          onChange={(e) => onChange({ ...data, imageUrl: e.target.value })}
+          className="w-full px-3 py-2 border border-border bg-input-background text-foreground text-sm"
+          style={{ borderRadius: 'var(--radius)' }}
+          placeholder="https://..."
+        />
+      </div>
+      <div>
+        <label className="block mb-2 text-sm font-medium">Descripción (opcional)</label>
+        <input
+          type="text"
+          value={data.caption || ''}
+          onChange={(e) => onChange({ ...data, caption: e.target.value })}
+          className="w-full px-3 py-2 border border-border bg-input-background text-foreground text-sm"
+          style={{ borderRadius: 'var(--radius)' }}
+          placeholder="Descripción breve de la imagen..."
+        />
+      </div>
+    </div>
+  );
+}
+
 interface BlockEditorProps {
   blocks: Block[];
   onSave: (blocks: Block[]) => void;
@@ -426,6 +468,9 @@ export function BlockEditor({ blocks: initialBlocks, onSave, onCancel, isSaving 
         break;
       case 'cta':
         newBlock = { type: 'cta', id, data: { text: '¿Te interesa unirte?', buttonText: 'Solicitar Acceso', buttonLink: '#' } };
+        break;
+      case 'imageOnly':
+        newBlock = { type: 'imageOnly', id, data: { imageUrl: '', title: '', caption: '' } };
         break;
       default:
         return;
@@ -639,6 +684,12 @@ export function BlockEditor({ blocks: initialBlocks, onSave, onCancel, isSaving 
             )}
             {selectedBlock.type === 'cta' && (
               <CTABlockForm
+                data={selectedBlock.data}
+                onChange={(data) => updateBlock(selectedBlock.id, data)}
+              />
+            )}
+            {selectedBlock.type === 'imageOnly' && (
+              <ImageOnlyBlockForm
                 data={selectedBlock.data}
                 onChange={(data) => updateBlock(selectedBlock.id, data)}
               />

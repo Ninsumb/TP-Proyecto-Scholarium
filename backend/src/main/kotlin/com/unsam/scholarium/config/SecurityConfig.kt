@@ -2,7 +2,6 @@ package com.unsam.scholarium.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
@@ -29,6 +28,8 @@ class SecurityConfig {
                         "/api/health",
                         "/api/auth/login",
                         "/api/auth/register",
+                        "/api/auth/google",
+                        "/api/auth/refresh",
                         "/error",
                     ).permitAll()
                     //.requestMatchers(HttpMethod.POST, "/api/portales").permitAll()
@@ -50,7 +51,7 @@ class SecurityConfig {
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
-        configuration.allowedOrigins = listOf("http://localhost:5173") // Tu frontend
+        configuration.allowedOrigins = listOf("http://localhost:5173")
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
         configuration.allowedHeaders = listOf("*")
         configuration.allowCredentials = true

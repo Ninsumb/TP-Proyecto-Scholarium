@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { Code, Search, UserPlus, BookOpen } from "lucide-react";
 import { usuarioService } from "../../services/UsuarioService";
 import type { UsuarioPortalResponse } from "../../types/DashboardPortals/UsuarioPortalResponse";
+import { authService } from "../../services/AuthService";
 
 export function Home() {
   const [portales, setPortales] = useState<UsuarioPortalResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const userName = localStorage.getItem("userName") || "Usuario";
+  const userName = authService.getUserName() || "Usuario";
 
   useEffect(() => {
     const fetchPortales = async () => {
@@ -149,24 +150,6 @@ export function Home() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* Stats Section */}
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-surface-container-lowest p-6 text-center rounded-sm">
-          <div className="text-3xl font-bold text-primary mb-2">{portales.length}</div>
-          <div className="text-sm text-foreground uppercase tracking-wide">Mis Portales</div>
-        </div>
-        <div className="bg-surface-container-lowest p-6 text-center rounded-sm">
-          <div className="text-3xl font-bold text-primary mb-2">
-            {totalMiembros.toLocaleString()}
-          </div>
-          <div className="text-sm text-foreground uppercase tracking-wide">Miembros Totales</div>
-        </div>
-        <div className="bg-surface-container-lowest p-6 text-center rounded-sm">
-          <div className="text-3xl font-bold text-primary mb-2">24/7</div>
-          <div className="text-sm text-foreground uppercase tracking-wide">Acceso Disponible</div>
-        </div>
       </div>
     </div>
   );

@@ -1,5 +1,4 @@
-import axios from 'axios';
-import type { AxiosInstance } from 'axios';
+import apiClient from './apiClient';
 import type { buscarPortalesResponse } from '../types/Portales';
 import type { Portal } from '../types/Portales';
 

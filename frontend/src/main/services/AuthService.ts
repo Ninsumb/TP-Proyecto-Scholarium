@@ -4,10 +4,10 @@ import { jwtDecode } from 'jwt-decode';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:9001/api';
 
 interface JwtPayload {
-  sub: string       
-  userId: number
-  nombre: string
-  exp: number
+  sub: string;
+  userId: number;
+  nombre: string;
+  exp: number;
 }
 
 export interface RegisterRequest {
@@ -29,6 +29,12 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
+  refreshToken: string;
+}
+
+
+export interface GoogleLoginRequest {
+  idToken: string;
 }
 
 class AuthService {
@@ -47,38 +53,48 @@ class AuthService {
     return response.data;
   }
 
-  
+  async loginWithGoogle(request: GoogleLoginRequest): Promise<LoginResponse> {
+    const response = await this.api.post<LoginResponse>('/google', request);
+    return response.data;
+  }
+
   saveSession(loginResponse: LoginResponse): void {
     localStorage.setItem('token', loginResponse.token);
+    localStorage.setItem('refreshToken', loginResponse.refreshToken);
   }
 
   clearSession(): void {
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
   }
 
   getToken(): string | null {
     return localStorage.getItem('token');
   }
 
+  getRefreshToken(): string | null {
+    return localStorage.getItem('refreshToken');
+  }
+
   isAuthenticated(): boolean {
     const token = this.getToken();
-    if(!token) return false;
-    try{
-      const {exp} = jwtDecode<JwtPayload>(token)
-      if (!exp) return true
-      return Date.now() < exp * 1000
+    if (!token) return false;
+    try {
+      const { exp } = jwtDecode<JwtPayload>(token);
+      if (!exp) return true;
+      return Date.now() < exp * 1000;
     } catch {
-      return false
+      return false;
     }
   }
 
-  private getPayload(): JwtPayload | null{
-    const token = this.getToken()
-    if(!token) return null
-    try{
-      return jwtDecode<JwtPayload>(token)
-    }catch{
-      return null
+  private getPayload(): JwtPayload | null {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      return jwtDecode<JwtPayload>(token);
+    } catch {
+      return null;
     }
   }
 
@@ -92,6 +108,19 @@ class AuthService {
 
   getUserId(): number | null {
     return this.getPayload()?.userId ?? null;
+  }
+
+  async tryRefresh(): Promise<boolean> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) return false;
+    try {
+      const response = await this.api.post<LoginResponse>('/refresh', { refreshToken });
+      this.saveSession(response.data);
+      return true;
+    } catch {
+      this.clearSession();
+      return false;
+    }
   }
 }
 

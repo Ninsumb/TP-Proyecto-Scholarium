@@ -1,6 +1,5 @@
 package com.unsam.scholarium.dto
 
-import com.unsam.scholarium.model.EstadoMaterial
 import com.unsam.scholarium.model.Material
 import com.unsam.scholarium.model.TipoMaterial
 import java.util.Date

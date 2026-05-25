@@ -6,6 +6,7 @@ import java.util.UUID
 data class TableroResponse(
     val id: UUID,
     val nombre: String,
+    val descripcion: String?,
     val etiqueta: EtiquetaSimpleResponse,
     val createdAt: Instant,
     val updatedAt: Instant?

@@ -8,5 +8,5 @@ data class MateriaResponse(
     val nombre: String,
     val carpetaId: UUID,
     val orden: Int,
-    val createdAt: Instant
+    val updatedAt: Instant
 )

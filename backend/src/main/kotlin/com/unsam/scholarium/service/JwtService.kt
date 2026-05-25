@@ -46,8 +46,37 @@ class JwtService(
         return extractAllClaims(token).subject
     }
 
-    fun isTokenValid(token:String): Boolean {
+    fun isTokenValid(token: String): Boolean {
         val claims = extractAllClaims(token)
+        val isRefresh = claims["tokenType"] == "refresh"
+        if (isRefresh) return false
         return claims.expiration.after(Date())
+    }
+
+    @Value("\${jwt.refresh-expiration-ms}")
+    private val refreshExpirationMs: Long = 0L
+
+    fun generateRefreshToken(email: String): String {
+        val now = Date()
+        val expiration = Date(now.time + refreshExpirationMs)
+
+        return Jwts.builder()
+            .subject(email)
+            .claim("tokenType", "refresh")
+            .issuedAt(now)
+            .expiration(expiration)
+            .signWith(getSigningKey())
+            .compact()
+    }
+
+    fun isRefreshTokenValid(token: String): Boolean {
+        return try {
+            val claims = extractAllClaims(token)
+            val isRefresh = claims["tokenType"] == "refresh"
+            val notExpired = claims.expiration.after(Date())
+            isRefresh && notExpired
+        } catch (e: Exception) {
+            false
+        }
     }
 }

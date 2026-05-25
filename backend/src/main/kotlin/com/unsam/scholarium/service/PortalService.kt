@@ -1,6 +1,7 @@
 package com.unsam.scholarium.service
 
 import com.unsam.scholarium.dto.CarpetaRequest
+import com.unsam.scholarium.dto.MaterialResponse
 import com.unsam.scholarium.dto.PortalBusquedaResponse
 import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.dto.PortalUserResponse
@@ -64,20 +65,6 @@ class PortalService (
         )
 
         return Triple(portal, membresia?.rol, stats)
-    }
-
-    fun getPortalesByUser(email: String): List<PortalUserResponse> {
-        val membresias = membresiaRepository.findAllByUsuarioEmail(email)
-
-        return membresias.map { membresia ->
-            val p = membresia.portal!!
-            PortalUserResponse(
-                id = p.id!!,
-                universidad = p.universidad,
-                carrera = p.carrera,
-                rol = membresia.rol
-            )
-        }
     }
 
     fun getSolicitudesPendientes(idPortal: Long, email: String): List<SolicitudResponse> {
@@ -291,5 +278,26 @@ class PortalService (
             page = pagina.number,
             total = pagina.totalPages
         )
+    }
+
+    @Transactional(rollbackOn = [Exception::class])
+    fun removerMiembro(portalId: Long, usuarioObjetivoId: Long, emailAdmin: String) {
+        val portal = validarPortal(portalId)
+        val admin = validarUsuario(emailAdmin)
+
+        val membresiaAdmin = membresiaRepository.findByUsuarioIdAndPortalId(admin.id!!, portalId)
+        if (membresiaAdmin?.rol != RolMembresia.ADMIN)
+            throw NotAdminException("Solo los administradores pueden remover miembros")
+
+        val usuarioObjetivo = usuarioRepository.findById(usuarioObjetivoId).getOrNull()
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        if (admin.id == usuarioObjetivo.id)
+            throw BusinessException("No podés removerte a vos mismo del portal")
+
+        val membresiaObjetivo = membresiaRepository.findByUsuarioIdAndPortalId(usuarioObjetivoId, portalId)
+            ?: throw ElementDoesNotExistException("El usuario no es miembro de este portal")
+
+        membresiaRepository.delete(membresiaObjetivo)
     }
 }

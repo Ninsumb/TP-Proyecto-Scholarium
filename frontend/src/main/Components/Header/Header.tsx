@@ -3,7 +3,8 @@ import { GraduationCap, User, LogOut, FileText } from "lucide-react";
 import { Sun } from "lucide-react";
 import { Moon } from "lucide-react";
 import { useState } from "react";
-import { useSwitchTheme } from "../../hooks/useSwitchTheme";
+import { useSwitchTheme } from "../../Hooks/useSwitchTheme";
+import { authService } from "../../services/AuthService";
 
 export type HeaderProps = {
   darkTheme: Boolean
@@ -14,15 +15,12 @@ export const Header = (props: HeaderProps) => {
   const navigate = useNavigate();
   //const { darkTheme, switchTheme } = useSwitchTheme();
   
-  const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem("userName");
-    localStorage.removeItem("userUniversity");
+const handleLogout = () => {
+    authService.clearSession();
     navigate("/login");
-  };
+};
 
-  const userName = localStorage.getItem("userName") || "Usuario";
+  const userName = authService.getUserName() || "Usuario";
   // Número de solicitudes pendientes (mock - en producción vendría de backend)
   const solicitudesPendientes = 1;
 

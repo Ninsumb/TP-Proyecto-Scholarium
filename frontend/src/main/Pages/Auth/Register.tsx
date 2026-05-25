@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { GraduationCap } from "lucide-react";
 import { authService } from "../../services/AuthService";
+import GoogleAuthButton from "../../Components/Auth/GoogleAuthButton";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -31,14 +32,12 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      // Primero registramos
       await authService.register({
         nombre: formData.nombre,
         email: formData.email,
         password: formData.password,
       });
 
-      // Luego hacemos login automático
       const loginResponse = await authService.login({
         email: formData.email,
         password: formData.password,
@@ -65,7 +64,7 @@ export default function Register() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
             <GraduationCap className="w-12 h-12 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground">Portal Universitario</h1>
+            <h1 className="text-3xl font-bold text-foreground">Scholarium</h1>
           </div>
           <p className="text-muted-foreground">
             Crea tu cuenta para acceder a los portales académicos
@@ -83,6 +82,12 @@ export default function Register() {
             </div>
           )}
 
+          
+          
+
+          
+
+          {/* FORMULARIO TRADICIONAL */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label
@@ -176,6 +181,24 @@ export default function Register() {
               {isLoading ? "Creando cuenta..." : "Crear Cuenta"}
             </button>
           </form>
+
+          {/* DIVISOR */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-card text-muted-foreground">
+                O
+              </span>
+            </div>
+          </div>
+
+          <GoogleAuthButton 
+            mode="register" 
+            onError={setError} 
+            onLoading={setIsLoading} 
+          />
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
             ¿Ya tienes cuenta?{" "}
