@@ -30,7 +30,8 @@ object PortalMapper {
             universidad = portal.universidad,
             carrera = portal.carrera,
             descripcion = portal.descripcion,
-            cantidadMiembros = portal.membresias.size
+            estudiantes = portal.membresias.size,
+            logoUrl = portal.logoUrl
         )
     }
 }

@@ -5,5 +5,6 @@ data class PortalBusquedaResponse(
     val universidad: String,
     val carrera: String,
     val descripcion: String?,
-    val cantidadMiembros: Int
+    val estudiantes: Int,
+    val logoUrl: String?
 )

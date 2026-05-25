@@ -50,7 +50,8 @@ class DataInitializer {
             val portal = portalRepo.save(
                 Portal(
                     universidad = "Universidad Nacional de San Martín",
-                    carrera = "Tecnicatura en Programación Informática"
+                    carrera = "Tecnicatura en Programación Informática",
+                    descripcion = "Portal de la carrera de Programacion, Full Stack, C y lenguajes raros."
                 )
             )
 
