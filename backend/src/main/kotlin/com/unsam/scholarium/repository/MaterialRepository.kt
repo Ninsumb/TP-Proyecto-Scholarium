@@ -17,11 +17,17 @@ interface MaterialRepository : JpaRepository<Material, UUID> {
     fun countByPortalId(portalId: Long): Int
     fun tipo(tipo: TipoMaterial): MutableList<Material>
 
+    fun findByMateriaIdAndEstadoOrderByCreatedAtDesc(
+        materiaId: UUID,
+        estado: EstadoMaterial
+    ): List<Material>
+
     fun findByMateriaIdAndEstadoAndNombreContainingIgnoreCaseOrderByCreatedAtDesc(
-    materiaId: UUID,
-    estado: EstadoMaterial,
-    nombre: String
-): List<Material>
+        materiaId: UUID,
+        estado: EstadoMaterial,
+        nombre: String
+    ): List<Material>
+
 
     @Query("""
     SELECT mat
