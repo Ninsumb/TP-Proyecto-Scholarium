@@ -4,7 +4,7 @@ import { Edit2, Loader2 } from "lucide-react";
 import type { Block } from "../../Components/PortalHome-blocks/BlockComponents";
 import { renderBlock } from "../../Components/PortalHome-blocks/BlockComponents";
 import { BlockEditor } from "../../Components/PortalHome-blocks/BlockEditor";
-import { portalService } from "../../services/Portal/PortalService";
+import { portalService } from "../../services/Portal/InternalPortalService";
 
 interface PortalContext {
   isMember: boolean;

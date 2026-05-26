@@ -1,34 +1,26 @@
-import apiClient from './apiClient';
-import type { buscarPortalesResponse } from '../types/Portales';
-import type { Portal } from '../types/Portales';
+// services/PortalService.ts
+// Nota: este es el service para búsqueda de portales (ExplorarPortales).
+// No confundir con services/Portal/PortalService.ts (detalle de portal interno).
 
+import apiClient from './apiClient';
+import type { BuscarPortalesResponse, CrearPortalRequest, CrearPortalResponse } from '../types/Portales';
 
 class PortalService {
-    private api: AxiosInstance;
-    constructor() {
-        this.api = axios.create({
-            baseURL: `${import.meta.env.VITE_API_URL || 'http://localhost:9001/api'}/portales`,
-            headers: { 'Content-Type': 'application/json' },
-        });
+  async getPortales(
+    universidad: string,
+    carrera: string,
+    pagina: number
+  ): Promise<BuscarPortalesResponse> {
+    const response = await apiClient.get<BuscarPortalesResponse>('/portales/buscar', {
+      params: { universidad, carrera, pagina },
+    });
+    return response.data;
+  }
 
-        // Interceptor para agregar el token
-        this.api.interceptors.request.use(
-        (config) => {
-            const token = localStorage.getItem('token');
-            if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-            }
-            return config;
-        },
-        (error) => Promise.reject(error)
-        );
-    }
-
-    async getPortales(universidad: string, carrera: string, pagina: number): Promise<buscarPortalesResponse> {
-        const response = await this.api.get<buscarPortalesResponse>('/buscar', { params: { universidad, carrera, pagina } });
-        return response.data;
-    }
-
+  async crearPortal(request: CrearPortalRequest): Promise<CrearPortalResponse> {
+    const response = await apiClient.post<CrearPortalResponse>('/portales', request);
+    return response.data;
+  }
 }
 
 export const portalService = new PortalService();

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { portalService } from '../services/Portal/PortalService';
+import { portalService } from '../services/Portal/InternalPortalService';
 import type { PortalDetailResponse, RolUsuario } from '../types/Portal/Portal';
 import { getRolFromPortal } from '../types/Portal/Portal';
 
