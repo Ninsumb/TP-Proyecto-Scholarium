@@ -12,6 +12,8 @@ import org.springframework.stereotype.Repository
 interface MateriaRepository : JpaRepository<Materia, UUID> {
     fun findByCarpetaId(carpetaId: UUID): List<Materia>
 
+    fun findByCarpetaPortalIdOrderByOrdenAsc(portalId: Long): List<Materia>
+
     @Query("""
     SELECT COUNT(m)
     FROM Materia m
@@ -20,7 +22,6 @@ interface MateriaRepository : JpaRepository<Materia, UUID> {
     fun countByPortal(@Param("portal") portal: Portal): Long
 
     fun existsByCarpetaId(carpetaId: UUID): Boolean
-
 
     @Query("SELECT COUNT(m) FROM Materia m WHERE m.carpeta.portal.id = :portalId")
     fun countByPortalId(portalId: Long): Int

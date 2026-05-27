@@ -2,8 +2,8 @@ package com.unsam.scholarium.controller
 
 import com.unsam.scholarium.dto.CarpetaRequest
 import com.unsam.scholarium.dto.CarpetaResponse
-import com.unsam.scholarium.dto.MoverCarpetaBodyRequestDTO
 import com.unsam.scholarium.dto.PortalBusquedaResponse
+import com.unsam.scholarium.dto.PortalEstructuraDTO
 import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.dto.PortalUserResponse
 import com.unsam.scholarium.dto.SolicitudRequest
@@ -11,7 +11,6 @@ import com.unsam.scholarium.dto.SolicitudResponse
 import com.unsam.scholarium.mapper.PortalMapper
 import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.service.PortalService
-import org.hibernate.validator.constraints.UUID
 import org.springframework.security.core.Authentication
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -62,6 +61,18 @@ fun obtenerSolicitudesPendientes(
         val email = authentication.name
 
         return portalService.getSolicitudesPendientes(id, email)
+    }
+
+    @GetMapping("/{id}/estructura")
+    fun obtenerEstructuraPortal(
+        @PathVariable id: Long,
+        authentication: Authentication
+    ): ResponseEntity<PortalEstructuraDTO> {
+        val email = authentication.name
+
+        return ResponseEntity.ok(
+            portalService.getEstructuraPortal(id, email)
+        )
     }
 
     @PostMapping
