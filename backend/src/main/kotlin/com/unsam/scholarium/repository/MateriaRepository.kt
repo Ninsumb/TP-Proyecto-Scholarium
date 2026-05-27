@@ -12,7 +12,16 @@ import org.springframework.stereotype.Repository
 interface MateriaRepository : JpaRepository<Materia, UUID> {
     fun findByCarpetaId(carpetaId: UUID): List<Materia>
 
-    fun findByCarpetaPortalIdOrderByOrdenAsc(portalId: Long): List<Materia>
+    @Query("""
+    SELECT m
+    FROM Materia m
+    JOIN FETCH m.carpeta c
+    WHERE c.portal.id = :portalId
+    ORDER BY m.orden ASC
+""")
+    fun findAllByPortalIdWithCarpeta(
+        @Param("portalId") portalId: Long
+    ): List<Materia>
 
     @Query("""
     SELECT COUNT(m)

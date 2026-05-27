@@ -106,10 +106,10 @@ class PortalService(
             throw UnauthorizedException("No tenés permisos para visualizar esta estructura")
 
         val carpetas = carpetaRepository
-            .findByPortalIdOrderByOrdenAsc(id)
+            .findAllByPortalIdWithPadre(id)
 
         val materias = materiaRepository
-            .findByCarpetaPortalIdOrderByOrdenAsc(id)
+            .findAllByPortalIdWithCarpeta(id)
 
         val materiasPorCarpeta = materias.groupBy { it.carpeta.id }
 
@@ -126,7 +126,7 @@ class PortalService(
                         MateriaArbolDTO(
                             id = it.id!!,
                             nombre = it.nombre,
-                            foroId = null, // o it.foro?.id
+                            foroId = null, // o it.foro?.id cuando esté implementado en materia
                             orden = it.orden
                         )
                     }
