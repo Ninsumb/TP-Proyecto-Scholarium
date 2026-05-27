@@ -46,7 +46,7 @@ export default function Login() {
           <div className="flex items-center justify-center gap-2 mb-4">
             <GraduationCap className="w-12 h-12 text-primary" />
             <h1 className="text-3xl font-bold text-foreground">
-              Portal Universitario
+              Scholarium
             </h1>
           </div>
           <p className="text-muted-foreground">

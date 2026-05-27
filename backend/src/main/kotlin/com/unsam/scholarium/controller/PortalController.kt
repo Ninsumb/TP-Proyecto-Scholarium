@@ -2,19 +2,23 @@ package com.unsam.scholarium.controller
 
 import com.unsam.scholarium.dto.CarpetaRequest
 import com.unsam.scholarium.dto.CarpetaResponse
+import com.unsam.scholarium.dto.CrearPortalRequest
+import com.unsam.scholarium.dto.CrearPortalResponse
+import com.unsam.scholarium.dto.MaterialPendienteDTO
 import com.unsam.scholarium.dto.PortalBusquedaResponse
 import com.unsam.scholarium.dto.PortalEstructuraDTO
 import com.unsam.scholarium.dto.PortalResponse
-import com.unsam.scholarium.dto.PortalUserResponse
 import com.unsam.scholarium.dto.SolicitudRequest
 import com.unsam.scholarium.dto.SolicitudResponse
 import com.unsam.scholarium.mapper.PortalMapper
 import com.unsam.scholarium.model.Portal
+import com.unsam.scholarium.service.MaterialService
 import com.unsam.scholarium.service.PortalService
 import org.springframework.security.core.Authentication
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.CrossOrigin
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -28,8 +32,9 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/portales")
 @CrossOrigin(origins = ["http://localhost:5173"])
-class PortalController (
-    private val portalService: PortalService
+class PortalController(
+    private val portalService: PortalService,
+    private val materialService: MaterialService
 ) {
     @GetMapping("/{id}")
     fun obtenerPortal(
@@ -37,29 +42,16 @@ class PortalController (
         authentication: Authentication
     ): PortalResponse {
         val email = authentication.name
-
         val detalleData = portalService.getDetalleById(id, email)
-
         return PortalMapper.toDetalleDTO(detalleData)
     }
 
-    //TODO: ¿Esta función y getMisPortales en UsuarioController.kt no son lo mismo?
-
-    @GetMapping()
-    fun listarMisPortales(
-        authentication: Authentication
-    ): List<PortalUserResponse> {
-        val email = authentication.name
-        return portalService.getPortalesByUser(email)
-    }
-
     @GetMapping("/{id}/solicitudes")
-fun obtenerSolicitudesPendientes(
+    fun obtenerSolicitudesPendientes(
         @PathVariable id: Long,
         authentication: Authentication
     ): List<SolicitudResponse> {
         val email = authentication.name
-
         return portalService.getSolicitudesPendientes(id, email)
     }
 
@@ -75,29 +67,38 @@ fun obtenerSolicitudesPendientes(
         )
     }
 
-    @PostMapping
-    fun crearPortal(
-        @RequestBody portal: Portal,
+    @GetMapping("/{id}/material/pendiente")
+    fun obtenerMaterialPendiente(
+        @PathVariable id: Long,
         authentication: Authentication
-    ): ResponseEntity<Void> {
+    ): List<MaterialPendienteDTO> {
         val email = authentication.name
-
-        portalService.createPortal(portal, email)
-
-        return ResponseEntity.status(HttpStatus.CREATED).build()
+        return materialService.getMaterialPendiente(id, email)
     }
 
-    //TODO: 1) ¿Por qué se llama "placeholder"? 2) ¿Dónde deberían ir las request de Solicitud?
+    /**
+     * Crea un Portal nuevo.
+     * Devuelve 201 con el id del portal creado en el body,
+     * para que el front pueda redirigir al usuario directamente a /portal/{id}.
+     */
+    @PostMapping
+    fun crearPortal(
+        @RequestBody request: CrearPortalRequest,
+        authentication: Authentication
+    ): ResponseEntity<CrearPortalResponse> {
+        val email = authentication.name
+        val portalCreado = portalService.createPortal(request, email)
+        return ResponseEntity.status(HttpStatus.CREATED).body(PortalMapper.toCrearPortalResponse(portalCreado))
+    }
+
     @PostMapping("/{id}/solicitudes")
-    fun placeholder(
+    fun crearSolicitud(
         @PathVariable id: Long,
         @RequestBody dto: SolicitudRequest,
         authentication: Authentication
     ): ResponseEntity<Void> {
         val email = authentication.name
-
         portalService.createSolicitud(id, email, dto)
-
         return ResponseEntity.status(HttpStatus.CREATED).build()
     }
 
@@ -107,11 +108,8 @@ fun obtenerSolicitudesPendientes(
         @RequestBody dto: CarpetaRequest,
         authentication: Authentication
     ): ResponseEntity<CarpetaResponse> {
-
         val email = authentication.name
-
         val carpeta = portalService.createCarpeta(id, email, dto)
-
         val response = CarpetaResponse(
             id = carpeta.id!!,
             nombre = carpeta.nombre,
@@ -120,7 +118,6 @@ fun obtenerSolicitudesPendientes(
             orden = carpeta.orden,
             createdAt = carpeta.createdAt
         )
-
         return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }
 
@@ -133,11 +130,8 @@ fun obtenerSolicitudesPendientes(
     ): ResponseEntity<String> {
         val email = authentication.name
         portalService.renameCarpeta(idPortal, id, email, nuevoNombre)
-
-        return ResponseEntity.status(HttpStatus.OK).body("Carpeta renombrada a ${nuevoNombre}")
+        return ResponseEntity.status(HttpStatus.OK).body("Carpeta renombrada a $nuevoNombre")
     }
-
-    @PutMapping("/{idPortal}/materias/{id}/mover")
 
     @PatchMapping
     fun patchPortal(
@@ -150,11 +144,20 @@ fun obtenerSolicitudesPendientes(
     @GetMapping("/buscar")
     fun buscarPortales(
         @RequestParam(required = false) universidad: String?,
-        @RequestParam(required = false) carrera: String?
-    ): ResponseEntity<List<PortalBusquedaResponse>> {
+        @RequestParam(required = false) carrera: String?,
+        @RequestParam(required = false) pagina: Int = 0
+    ): ResponseEntity<PortalBusquedaResponse> {
+        return ResponseEntity.ok(portalService.buscarPortales(universidad, carrera, pagina))
+    }
 
-        return ResponseEntity.ok(
-            portalService.buscarPortales(universidad, carrera)
-        )
+    @DeleteMapping("/{portalId}/miembros/{usuarioId}")
+    fun removerMiembro(
+        @PathVariable portalId: Long,
+        @PathVariable usuarioId: Long,
+        authentication: Authentication
+    ): ResponseEntity<Void> {
+        val email = authentication.name
+        portalService.removerMiembro(portalId, usuarioId, email)
+        return ResponseEntity.noContent().build()
     }
 }

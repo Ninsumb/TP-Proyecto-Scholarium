@@ -1,59 +1,162 @@
-import { useState } from "react";
+// pages/Home/CrearPortal.tsx
+
+import { useState, useRef, useContext } from "react";
 import { useNavigate } from "react-router";
-import { ArrowLeft, GraduationCap, Palette } from "lucide-react";
+import {
+  ArrowLeft, Upload, Palette, X, Check, Search,
+  GraduationCap, BookOpen, Code, Briefcase, FlaskConical,
+  Calculator, Languages, Network, BarChart2, Rocket, Cpu, Terminal,
+  type LucideIcon
+} from "lucide-react";
+import { portalService } from "../../services/PortalService";
+import { PortalAvatar } from "../../Components/common/PortalAvatar";
+import { MainContext } from "../../types/MainContext";
 
-const ICON_OPTIONS = [
-  { value: "GraduationCap", label: "Birrete", color: "bg-blue-600" },
-  { value: "Calculator", label: "Calculadora", color: "bg-purple-600" },
-  { value: "Beaker", label: "Química", color: "bg-green-600" },
-  { value: "BookOpen", label: "Libro", color: "bg-orange-600" },
-  { value: "Briefcase", label: "Maletín", color: "bg-indigo-600" },
-  { value: "Code", label: "Código", color: "bg-teal-600" },
+// ─── Íconos disponibles ───────────────────────────────────────────────────────
+const ICONOS_DISPONIBLES: { value: string; label: string; Icon: LucideIcon }[] = [
+  { value: "GraduationCap", label: "Birrete",      Icon: GraduationCap },
+  { value: "BookOpen",      label: "Libro",         Icon: BookOpen },
+  { value: "Code",          label: "Código",        Icon: Code },
+  { value: "Briefcase",     label: "Maletín",       Icon: Briefcase },
+  { value: "FlaskConical",  label: "Laboratorio",   Icon: FlaskConical },
+  { value: "Calculator",    label: "Calculadora",   Icon: Calculator },
+  { value: "Languages",     label: "Idiomas",       Icon: Languages },
+  { value: "Network",       label: "Redes",         Icon: Network },
+  { value: "BarChart2",     label: "Datos",         Icon: BarChart2 },
+  { value: "Rocket",        label: "Cohete",        Icon: Rocket },
+  { value: "Cpu",           label: "CPU",           Icon: Cpu },
+  { value: "Terminal",      label: "Terminal",      Icon: Terminal },
 ];
 
-const COLOR_OPTIONS = [
-  { value: "bg-blue-600", label: "Azul" },
-  { value: "bg-purple-600", label: "Púrpura" },
-  { value: "bg-green-600", label: "Verde" },
-  { value: "bg-orange-600", label: "Naranja" },
-  { value: "bg-indigo-600", label: "Índigo" },
-  { value: "bg-teal-600", label: "Turquesa" },
-  { value: "bg-red-600", label: "Rojo" },
-  { value: "bg-pink-600", label: "Rosa" },
+// ─── Paleta de colores ────────────────────────────────────────────────────────
+const COLORES_DISPONIBLES = [
+  { hex: "#2563EB", label: "Azul" },
+  { hex: "#7C3AED", label: "Púrpura" },
+  { hex: "#059669", label: "Verde" },
+  { hex: "#D97706", label: "Naranja" },
+  { hex: "#DC2626", label: "Rojo" },
+  { hex: "#BE185D", label: "Rosa" },
+  { hex: "#0891B2", label: "Cian" },
+  { hex: "#4F46E5", label: "Índigo" },
+  { hex: "#65A30D", label: "Lima" },
+  { hex: "#B45309", label: "Marrón" },
+  { hex: "#0F766E", label: "Esmeralda" },
+  { hex: "#9333EA", label: "Violeta" },
 ];
+
+type ModoVisual = "icono" | "imagen";
+
+interface FormState {
+  carrera: string;
+  universidad: string;
+  unidadAcademica: string;
+  descripcion: string;
+}
 
 export function CreatePortal() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    nombre: "",
-    descripcion: "",
+  const { showToast } = useContext(MainContext);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Campos del formulario ──
+  const [form, setForm] = useState<FormState>({
+    carrera: "",
     universidad: "",
-    facultad: "",
-    duracion: "",
-    icono: "GraduationCap",
-    color: "bg-blue-600",
+    unidadAcademica: "",
+    descripcion: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Aquí iría la lógica para crear el portal en el backend
-    console.log("Crear portal:", formData);
-    
-    // Simulación: crear el portal y redirigir
-    alert("Portal creado exitosamente!");
-    navigate("/home");
+  // ── Identidad visual ──
+  const [modoVisual, setModoVisual] = useState<ModoVisual>("icono");
+  const [iconoSeleccionado, setIconoSeleccionado] = useState("GraduationCap");
+  const [colorSeleccionado, setColorSeleccionado] = useState("#2563EB");
+  const [busquedaIcono, setBusquedaIcono] = useState("");
+  const [imagenFile, setImagenFile] = useState<File | null>(null);
+  const [imagenPreviewUrl, setImagenPreviewUrl] = useState<string | null>(null);
+
+  // ── Estado de envío ──
+  const [loading, setLoading] = useState(false);
+  const [errorDuplicado, setErrorDuplicado] = useState<string | null>(null);
+
+  // ─── Handlers formulario ──────────────────────────────────────────────────
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    // Limpiar error de duplicado cuando el usuario edita universidad o carrera
+    if (name === "universidad" || name === "carrera") {
+      setErrorDuplicado(null);
+    }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  // ─── Handlers imagen ─────────────────────────────────────────────────────
+  const handleImagenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImagenFile(file);
+    const url = URL.createObjectURL(file);
+    setImagenPreviewUrl(url);
   };
+
+  const handleQuitarImagen = () => {
+    setImagenFile(null);
+    if (imagenPreviewUrl) URL.revokeObjectURL(imagenPreviewUrl);
+    setImagenPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // ─── Íconos filtrados por búsqueda ────────────────────────────────────────
+  const iconosFiltrados = ICONOS_DISPONIBLES.filter((i) =>
+    i.label.toLowerCase().includes(busquedaIcono.toLowerCase())
+  );
+
+  // ─── Submit ───────────────────────────────────────────────────────────────
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorDuplicado(null);
+
+    if (!form.carrera.trim() || !form.universidad.trim()) return;
+
+    setLoading(true);
+    try {
+      // TODO: si modoVisual === "imagen" y hay imagenFile,
+      //       subir primero a Cloudinary y obtener la URL.
+      //       Por ahora el campo logoUrl se deja null hasta implementar esa lógica.
+      // const logoUrl = imagenFile ? await cloudinaryService.upload(imagenFile) : undefined;
+
+      const response = await portalService.crearPortal({
+        carrera: form.carrera.trim(),
+        universidad: form.universidad.trim(),
+        unidadAcademica: form.unidadAcademica.trim() || undefined,
+        descripcion: form.descripcion.trim() || undefined,
+        // identidad visual
+        logoUrl: undefined, // TODO: reemplazar con logoUrl cuando esté Cloudinary
+        iconoPortal: modoVisual === "icono" ? iconoSeleccionado : undefined,
+        colorPortal: modoVisual === "icono" ? colorSeleccionado : undefined,
+      });
+
+      showToast("¡Portal creado exitosamente!", "success");
+      navigate(`/portal/${response.id}`);
+    } catch (err: any) {
+      const mensaje = err.response?.data?.message || err.response?.data || "";
+      if (typeof mensaje === "string" && mensaje.includes("Ya existe un portal")) {
+        setErrorDuplicado(
+          "Ya existe un portal para esa universidad y carrera. Podés buscarlo en Explorar Portales."
+        );
+      } else {
+        showToast("Ocurrió un error al crear el portal. Intentá de nuevo.", "error");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ─── Preview live ─────────────────────────────────────────────────────────
+  const previewLogoUrl = modoVisual === "imagen" ? imagenPreviewUrl : null;
+  const previewIcono = modoVisual === "icono" ? iconoSeleccionado : null;
+  const previewColor = modoVisual === "icono" ? colorSeleccionado : null;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <button
         onClick={() => navigate("/home")}
         className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
@@ -64,195 +167,341 @@ export function CreatePortal() {
 
       <div className="bg-surface-container-lowest p-8 rounded-sm">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2" style={{ fontFamily: 'Work Sans, sans-serif' }}>
+          <h1
+            className="text-3xl font-bold text-foreground mb-2"
+            style={{ fontFamily: "Work Sans, sans-serif" }}
+          >
             Crear Nuevo Portal
           </h1>
           <p className="text-muted-foreground">
-            Completa la información para crear un portal de carrera universitaria
+            Completá los datos para crear el portal de tu carrera. El nombre de
+            la carrera y la universidad son obligatorios.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Información Básica */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground" style={{ fontFamily: 'Work Sans, sans-serif' }}>
-              Información Básica
+        <form onSubmit={handleSubmit} className="space-y-8">
+
+          {/* ── Información básica ─────────────────────────────────────── */}
+          <section className="space-y-4">
+            <h3
+              className="text-lg font-semibold text-foreground"
+              style={{ fontFamily: "Work Sans, sans-serif" }}
+            >
+              Información básica
             </h3>
 
+            {/* Carrera */}
             <div>
-              <label htmlFor="nombre" className="block text-sm font-medium text-foreground mb-2">
-                Nombre de la Carrera *
+              <label htmlFor="carrera" className="block text-sm font-medium text-foreground mb-2">
+                Nombre de la carrera <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
-                id="nombre"
-                name="nombre"
+                id="carrera"
+                name="carrera"
                 required
-                value={formData.nombre}
+                value={form.carrera}
                 onChange={handleChange}
                 placeholder="Ej: Ingeniería Informática"
                 className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                style={{ border: '2px solid rgba(169, 180, 185, 0.15)' }}
+                style={{ border: "2px solid rgba(169, 180, 185, 0.15)" }}
               />
             </div>
 
+            {/* Universidad */}
             <div>
-              <label htmlFor="descripcion" className="block text-sm font-medium text-foreground mb-2">
-                Descripción *
-              </label>
-              <textarea
-                id="descripcion"
-                name="descripcion"
-                required
-                rows={3}
-                value={formData.descripcion}
-                onChange={handleChange}
-                placeholder="Describe brevemente la carrera..."
-                className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                style={{ border: '2px solid rgba(169, 180, 185, 0.15)' }}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="universidad" className="block text-sm font-medium text-foreground mb-2">
-                  Universidad *
-                </label>
-                <input
-                  type="text"
-                  id="universidad"
-                  name="universidad"
-                  required
-                  value={formData.universidad}
-                  onChange={handleChange}
-                  placeholder="Ej: Universidad de Buenos Aires"
-                  className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  style={{ border: '2px solid rgba(169, 180, 185, 0.15)' }}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="facultad" className="block text-sm font-medium text-foreground mb-2">
-                  Facultad *
-                </label>
-                <input
-                  type="text"
-                  id="facultad"
-                  name="facultad"
-                  required
-                  value={formData.facultad}
-                  onChange={handleChange}
-                  placeholder="Ej: Facultad de Ingeniería"
-                  className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  style={{ border: '2px solid rgba(169, 180, 185, 0.15)' }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="duracion" className="block text-sm font-medium text-foreground mb-2">
-                Duración
+              <label htmlFor="universidad" className="block text-sm font-medium text-foreground mb-2">
+                Universidad <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
-                id="duracion"
-                name="duracion"
-                value={formData.duracion}
+                id="universidad"
+                name="universidad"
+                required
+                value={form.universidad}
                 onChange={handleChange}
-                placeholder="Ej: 5 años"
+                placeholder="Ej: Universidad de Buenos Aires"
                 className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                style={{ border: '2px solid rgba(169, 180, 185, 0.15)' }}
+                style={{ border: "2px solid rgba(169, 180, 185, 0.15)" }}
               />
             </div>
-          </div>
 
-          {/* Personalización Visual */}
-          <div className="space-y-4 pt-6" style={{ borderTop: '1px solid rgba(169, 180, 185, 0.15)' }}>
-            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2" style={{ fontFamily: 'Work Sans, sans-serif' }}>
+            {/* Error duplicado — aparece solo si el back devuelve conflicto */}
+            {errorDuplicado && (
+              <p className="text-sm text-destructive">{errorDuplicado}</p>
+            )}
+
+            {/* Unidad académica */}
+            <div>
+              <label htmlFor="unidadAcademica" className="block text-sm font-medium text-foreground mb-1">
+                Facultad / Unidad Académica{" "}
+                <span className="text-muted-foreground font-normal">(opcional)</span>
+              </label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Ayuda a distinguir tu portal en búsquedas. Ej: "Facultad de Ciencias Exactas".
+              </p>
+              <input
+                type="text"
+                id="unidadAcademica"
+                name="unidadAcademica"
+                value={form.unidadAcademica}
+                onChange={handleChange}
+                placeholder="Ej: Escuela de Ciencia y Tecnología"
+                className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                style={{ border: "2px solid rgba(169, 180, 185, 0.15)" }}
+              />
+            </div>
+
+            {/* Descripción */}
+            <div>
+              <label htmlFor="descripcion" className="block text-sm font-medium text-foreground mb-1">
+                Descripción corta{" "}
+                <span className="text-muted-foreground font-normal">(opcional)</span>
+              </label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Se muestra en las cards de búsqueda. Máximo 300 caracteres.
+              </p>
+              <textarea
+                id="descripcion"
+                name="descripcion"
+                rows={2}
+                maxLength={300}
+                value={form.descripcion}
+                onChange={handleChange}
+                placeholder="Describe brevemente la carrera..."
+                className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                style={{ border: "2px solid rgba(169, 180, 185, 0.15)" }}
+              />
+              <p className="text-xs text-muted-foreground text-right mt-1">
+                {form.descripcion.length}/300
+              </p>
+            </div>
+          </section>
+
+          {/* ── Identidad visual ───────────────────────────────────────── */}
+          <section
+            className="space-y-5 pt-6"
+            style={{ borderTop: "1px solid rgba(169, 180, 185, 0.15)" }}
+          >
+            <h3
+              className="text-lg font-semibold text-foreground flex items-center gap-2"
+              style={{ fontFamily: "Work Sans, sans-serif" }}
+            >
               <Palette className="w-5 h-5" />
-              Personalización Visual
+              Identidad visual{" "}
+              <span className="text-muted-foreground font-normal text-sm">(opcional)</span>
             </h3>
 
-            <div>
-              <label htmlFor="icono" className="block text-sm font-medium text-foreground mb-2">
-                Icono
-              </label>
-              <select
-                id="icono"
-                name="icono"
-                value={formData.icono}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                style={{ border: '2px solid rgba(169, 180, 185, 0.15)' }}
+            {/* Selector de modo */}
+            <div
+              className="grid grid-cols-2 gap-2 p-1 rounded-sm"
+              style={{ background: "rgba(169, 180, 185, 0.1)" }}
+            >
+              <button
+                type="button"
+                onClick={() => setModoVisual("icono")}
+                className={`py-2 px-4 rounded-sm text-sm font-medium transition-all ${
+                  modoVisual === "icono"
+                    ? "bg-surface-container-lowest text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
-                {ICON_OPTIONS.map((icon) => (
-                  <option key={icon.value} value={icon.value}>
-                    {icon.label}
-                  </option>
-                ))}
-              </select>
+                Ícono + color
+              </button>
+              <button
+                type="button"
+                onClick={() => setModoVisual("imagen")}
+                className={`py-2 px-4 rounded-sm text-sm font-medium transition-all ${
+                  modoVisual === "imagen"
+                    ? "bg-surface-container-lowest text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Subir imagen
+              </button>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Color del Portal
-              </label>
-              <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
-                {COLOR_OPTIONS.map((colorOption) => (
-                  <button
-                    key={colorOption.value}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, color: colorOption.value })}
-                    className={`${colorOption.value} w-12 h-12 rounded-sm transition-all ${
-                      formData.color === colorOption.value
-                        ? "ring-2 ring-primary ring-offset-2"
-                        : "hover:scale-105"
-                    }`}
-                    title={colorOption.label}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Preview */}
-            <div className="pt-4">
-              <label className="block text-sm font-medium text-foreground mb-3">
-                Vista Previa
-              </label>
-              <div className="bg-surface-container-low p-6 rounded-sm">
-                <div className="flex items-start gap-4">
-                  <div className={`${formData.color} p-3 rounded-sm`}>
-                    <GraduationCap className="w-6 h-6 text-white" />
+            {/* Panel ícono+color */}
+            {modoVisual === "icono" && (
+              <div className="space-y-4">
+                {/* Buscador de íconos */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Ícono
+                  </label>
+                  <div className="relative mb-3">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Buscar ícono..."
+                      value={busquedaIcono}
+                      onChange={(e) => setBusquedaIcono(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 text-sm bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      style={{ border: "2px solid rgba(169, 180, 185, 0.15)" }}
+                    />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground mb-1">
-                      {formData.nombre || "Nombre de la Carrera"}
+                  <div className="grid grid-cols-6 gap-2">
+                    {iconosFiltrados.map(({ value, label, Icon }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setIconoSeleccionado(value)}
+                        title={label}
+                        className={`relative flex flex-col items-center gap-1 p-3 rounded-sm transition-all ${
+                          iconoSeleccionado === value
+                            ? "ring-2 ring-primary bg-primary/10"
+                            : "hover:bg-surface-container-low"
+                        }`}
+                      >
+                        <Icon className="w-5 h-5 text-foreground" />
+                        <span className="text-xs text-muted-foreground truncate w-full text-center">
+                          {label}
+                        </span>
+                        {iconoSeleccionado === value && (
+                          <div className="absolute top-1 right-1">
+                            <Check className="w-3 h-3 text-primary" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                    {iconosFiltrados.length === 0 && (
+                      <p className="col-span-6 text-sm text-muted-foreground text-center py-4">
+                        No hay íconos que coincidan con "{busquedaIcono}".
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Paleta de colores */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Color de fondo
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    {COLORES_DISPONIBLES.map(({ hex, label }) => (
+                      <button
+                        key={hex}
+                        type="button"
+                        onClick={() => setColorSeleccionado(hex)}
+                        title={label}
+                        className="relative w-10 h-10 rounded-sm transition-all hover:scale-110"
+                        style={{ backgroundColor: hex }}
+                      >
+                        {colorSeleccionado === hex && (
+                          <Check className="absolute inset-0 m-auto w-5 h-5 text-white" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Panel imagen */}
+            {modoVisual === "imagen" && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Imagen del portal
+                </label>
+                {imagenPreviewUrl ? (
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={imagenPreviewUrl}
+                      alt="Preview"
+                      className="w-16 h-16 rounded-sm object-cover"
+                    />
+                    <div>
+                      <p className="text-sm text-foreground mb-1">{imagenFile?.name}</p>
+                      <button
+                        type="button"
+                        onClick={handleQuitarImagen}
+                        className="inline-flex items-center gap-1 text-sm text-destructive hover:underline"
+                      >
+                        <X className="w-3 h-3" />
+                        Quitar imagen
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex flex-col items-center gap-2 py-8 rounded-sm border-2 border-dashed text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
+                    style={{ borderColor: "rgba(169, 180, 185, 0.3)" }}
+                  >
+                    <Upload className="w-6 h-6" />
+                    <span className="text-sm">Hacé click para elegir una imagen</span>
+                    <span className="text-xs">PNG, JPG, WEBP — máx. 2MB</span>
+                  </button>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleImagenChange}
+                  className="hidden"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  La subida a Cloudinary se implementa próximamente. Por ahora el portal se crea sin imagen.
+                </p>
+              </div>
+            )}
+
+            {/* Preview de la card */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-3">
+                Vista previa
+              </label>
+              <div
+                className="bg-surface-container-low p-5 rounded-sm"
+                style={{ border: "1px solid rgba(169, 180, 185, 0.1)" }}
+              >
+                <div className="flex items-start gap-4">
+                  <PortalAvatar
+                    logoUrl={previewLogoUrl}
+                    iconoPortal={previewIcono}
+                    colorPortal={previewColor}
+                    carrera={form.carrera || "Nombre de la carrera"}
+                    size="md"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground truncate">
+                      {form.carrera || "Nombre de la carrera"}
                     </h3>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {formData.descripcion || "Descripción de la carrera"}
+                    <p className="text-sm text-muted-foreground truncate">
+                      {form.universidad || "Universidad"}
                     </p>
-                    {formData.universidad && (
-                      <p className="text-xs text-foreground">
-                        {formData.universidad}
+                    {form.unidadAcademica && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {form.unidadAcademica}
+                      </p>
+                    )}
+                    {form.descripcion && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        {form.descripcion}
                       </p>
                     )}
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Botones de Acción */}
-          <div className="flex gap-4 pt-6">
+          {/* ── Botones ────────────────────────────────────────────────── */}
+          <div
+            className="flex gap-4 pt-6"
+            style={{ borderTop: "1px solid rgba(169, 180, 185, 0.15)" }}
+          >
             <button
               type="submit"
-              className="px-6 py-3 rounded-sm transition-all font-medium"
-              style={{ 
-                background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)',
-                color: 'var(--primary-foreground)'
+              disabled={loading || !form.carrera.trim() || !form.universidad.trim()}
+              className="px-6 py-3 rounded-sm transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)",
+                color: "var(--primary-foreground)",
               }}
             >
-              Crear Portal
+              {loading ? "Creando portal..." : "Crear portal"}
             </button>
             <button
               type="button"

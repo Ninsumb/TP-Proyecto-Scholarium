@@ -1,5 +1,6 @@
 package com.unsam.scholarium.service
 
+import com.unsam.scholarium.dto.MaterialPendienteDTO
 import com.unsam.scholarium.dto.MaterialPublicadoResponse
 import com.unsam.scholarium.dto.MaterialResponse
 import com.unsam.scholarium.exception.BusinessException
@@ -13,6 +14,7 @@ import com.unsam.scholarium.model.TipoMaterial
 import com.unsam.scholarium.repository.MateriaRepository
 import com.unsam.scholarium.repository.MaterialRepository
 import com.unsam.scholarium.repository.MembresiaRepository
+import com.unsam.scholarium.repository.PortalRepository
 import com.unsam.scholarium.repository.UsuarioRepository
 import jakarta.persistence.EntityNotFoundException
 import jakarta.transaction.Transactional
@@ -28,7 +30,23 @@ class MaterialService(
     private val materialRepository: MaterialRepository,
     private val usuarioRepository: UsuarioRepository,
     private val membresiaRepository: MembresiaRepository,
+    private val portalRepository: PortalRepository
 ) {
+    fun getMaterialPendiente(portalId: Long, email: String): List<MaterialPendienteDTO> {
+        val portal = portalRepository.findById(portalId)
+            .orElseThrow { ElementDoesNotExistException("Portal no encontrado") }
+
+        val membresia = membresiaRepository
+            .findByUsuarioEmailAndPortalId(email, portal.id!!)
+            ?: throw UnauthorizedException("No pertenece al portal")
+
+        if (membresia.rol != RolMembresia.ADMIN) throw UnauthorizedException("No es admin")
+
+        return materialRepository
+            .findPendientesByPortalId(portalId)
+            .map { MaterialPendienteDTO.fromEntity(it) }
+    }
+
     fun aprobarMaterial(materialId: UUID, email: String): Material {
 
         val material = materialRepository.findById(materialId)
@@ -111,7 +129,7 @@ class MaterialService(
         val material = materialRepository.findById(materialId)
             .orElseThrow { ElementDoesNotExistException("Material no encontrado") }
 
-        if(material.estado == EstadoMaterial.PUBLICADO ||
+        if (material.estado == EstadoMaterial.PUBLICADO ||
             material.estado == EstadoMaterial.RECHAZADO) {
             throw BusinessException("El material ya fue procesado")
         }
@@ -158,4 +176,47 @@ class MaterialService(
             .findByMateriaIdAndEstadoOrderByCreatedAtDesc(materiaId, EstadoMaterial.PUBLICADO)
             .map { MaterialPublicadoResponse.fromEntity(it) }
     }
+
+    fun buscarMaterialPublicado(materiaId: UUID, nombre: String, email: String): List<MaterialPublicadoResponse> {
+    val materia = materiaRepository.findById(materiaId).getOrNull()
+        ?: throw ElementDoesNotExistException("Materia no encontrada")
+    
+    val usuario = usuarioRepository.findByEmail(email)
+        ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+    val portal = materia.carpeta.portal
+    val esMiembro = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.MIEMBRO)
+    val esAdmin = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+
+    if (!esMiembro && !esAdmin) {
+        throw UnauthorizedException("No sos miembro de este portal")
+    }
+
+    return materialRepository
+        .findByMateriaIdAndEstadoAndNombreContainingIgnoreCaseOrderByCreatedAtDesc(materiaId, EstadoMaterial.PUBLICADO, nombre)
+        .map { MaterialPublicadoResponse.fromEntity(it) }
+}
+
+fun descargarMaterial(materialId: UUID, email: String): String {
+    val material = materialRepository.findById(materialId)
+        .orElseThrow { ElementDoesNotExistException("Material no encontrado") }
+
+    val usuario = usuarioRepository.findByEmail(email)
+        ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+    val portal = material.materia.carpeta.portal
+    val esMiembro = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.MIEMBRO)
+    val esAdmin = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+
+    if (!esMiembro && !esAdmin) {
+        throw UnauthorizedException("No tenés permisos para descargar este material")
+    }
+
+    if (material.estado != EstadoMaterial.PUBLICADO) {
+        throw BusinessException("El material no se encuentra publicado")
+    }
+
+    
+    return material.url
+}
 }

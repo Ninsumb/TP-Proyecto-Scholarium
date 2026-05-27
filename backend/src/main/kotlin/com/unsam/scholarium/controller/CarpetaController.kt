@@ -64,7 +64,7 @@ class CarpetaController(
             nombre = materiaCreada.nombre,
             carpetaId = materiaCreada.carpeta.id!!,
             orden = materiaCreada.orden,
-            createdAt = materiaCreada.createdAt!!.toInstant()
+            updatedAt = materiaCreada.updatedAt!!.toInstant()
         )
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response)

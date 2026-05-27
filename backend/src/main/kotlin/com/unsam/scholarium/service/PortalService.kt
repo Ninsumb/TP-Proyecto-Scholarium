@@ -3,10 +3,9 @@ package com.unsam.scholarium.service
 import com.unsam.scholarium.dto.CarpetaArbolDTO
 import com.unsam.scholarium.dto.CarpetaRequest
 import com.unsam.scholarium.dto.MateriaArbolDTO
+import com.unsam.scholarium.dto.CrearPortalRequest
 import com.unsam.scholarium.dto.PortalBusquedaResponse
 import com.unsam.scholarium.dto.PortalEstructuraDTO
-import com.unsam.scholarium.dto.PortalResponse
-import com.unsam.scholarium.dto.PortalUserResponse
 import com.unsam.scholarium.dto.SolicitudRequest
 import com.unsam.scholarium.dto.SolicitudResponse
 import com.unsam.scholarium.dto.UsuarioResumenDTO
@@ -15,32 +14,31 @@ import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.ItemConflictException
 import com.unsam.scholarium.exception.NotAdminException
 import com.unsam.scholarium.exception.UnauthorizedException
+import com.unsam.scholarium.mapper.PortalMapper
 import com.unsam.scholarium.model.Carpeta
 import com.unsam.scholarium.model.Estado
+import com.unsam.scholarium.model.Etiqueta
 import com.unsam.scholarium.model.Membresia
 import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.model.Solicitud
 import com.unsam.scholarium.model.Usuario
 import com.unsam.scholarium.repository.CarpetaRepository
+import com.unsam.scholarium.repository.EtiquetaRepository
 import com.unsam.scholarium.repository.MateriaRepository
 import com.unsam.scholarium.repository.MaterialRepository
 import com.unsam.scholarium.repository.MembresiaRepository
 import com.unsam.scholarium.repository.PortalRepository
 import com.unsam.scholarium.repository.SolicitudRepository
 import com.unsam.scholarium.repository.UsuarioRepository
-import com.unsam.scholarium.mapper.PortalMapper
-import com.unsam.scholarium.model.Etiqueta
-import com.unsam.scholarium.repository.EtiquetaRepository
 import jakarta.transaction.Transactional
-import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import java.util.UUID
 import kotlin.jvm.optionals.getOrNull
 
 @Service
-class PortalService (
+class PortalService(
     private val portalRepository: PortalRepository,
     private val materiaRepository: MateriaRepository,
     private val materialRepository: MaterialRepository,
@@ -57,8 +55,7 @@ class PortalService (
         val usuario = usuarioRepository.findByEmail(email)
             ?: throw ElementDoesNotExistException("Usuario no encontrado")
 
-        val membresia = membresiaRepository
-            .findByUsuarioIdAndPortalId(usuario.id!!, id)
+        val membresia = membresiaRepository.findByUsuarioIdAndPortalId(usuario.id!!, id)
 
         val stats = listOf(
             membresiaRepository.countByPortalId(id),
@@ -67,20 +64,6 @@ class PortalService (
         )
 
         return Triple(portal, membresia?.rol, stats)
-    }
-
-    fun getPortalesByUser(email: String): List<PortalUserResponse> {
-        val membresias = membresiaRepository.findAllByUsuarioEmail(email)
-
-        return membresias.map { membresia ->
-            val p = membresia.portal!!
-            PortalUserResponse(
-                id = p.id!!,
-                universidad = p.universidad,
-                carrera = p.carrera,
-                rol = membresia.rol
-            )
-        }
     }
 
     fun getSolicitudesPendientes(idPortal: Long, email: String): List<SolicitudResponse> {
@@ -115,7 +98,7 @@ class PortalService (
             .orElseThrow { ElementDoesNotExistException("Portal no encontrado") }
 
         val membresia = membresiaRepository
-            .findByUsuarioEmailAndPortalId(id, email)
+            .findByUsuarioEmailAndPortalId(email, id)
             ?: throw UnauthorizedException("No pertenece al portal")
 
         if (membresia.rol != RolMembresia.ADMIN &&
@@ -174,31 +157,61 @@ class PortalService (
         )
     }
 
+    /**
+     * Crea un Portal nuevo y retorna la entidad persistida para que el controller
+     * pueda mapear el id y devolverlo al front.
+     *
+     * Flujo:
+     * 1. Normalizar universidad y carrera para validar unicidad.
+     * 2. Verificar que no exista un portal con esos valores normalizados.
+     * 3. Crear el Portal con los valores ORIGINALES (no normalizados).
+     * 4. Crear la Membresia del creador como ADMIN.
+     * 5. Crear la Etiqueta "GENERAL" por defecto.
+     * Todo en una misma transacción.
+     */
     @Transactional(rollbackOn = [Exception::class])
-    fun createPortal(portal: Portal, email: String) {
-        if (portalRepository.existsByUniversidadAndCarrera(portal.universidad, portal.carrera)) {
+    fun createPortal(request: CrearPortalRequest, email: String): Portal {
+        val universidadNormalizada = Portal.normalizarParaUnicidad(request.universidad)
+        val carreraNormalizada = Portal.normalizarParaUnicidad(request.carrera)
+
+        if (portalRepository.existePortalConValoresNormalizados(
+                universidadNormalizada,
+                carreraNormalizada
+            )
+        ) {
             throw BusinessException("Ya existe un portal para esa universidad y carrera")
         }
 
         val usuario = usuarioRepository.findByEmail(email)
             ?: throw ElementDoesNotExistException("Usuario no encontrado")
 
+        val portal = Portal(
+            universidad = request.universidad.trim(),
+            carrera = request.carrera.trim(),
+            unidadAcademica = request.unidadAcademica?.trim(),
+            descripcion = request.descripcion?.trim(),
+            logoUrl = request.logoUrl,
+            iconoPortal = request.iconoPortal,
+            colorPortal = request.colorPortal,
+        )
+
         val membresiaAdmin = Membresia(
             usuario = usuario,
             portal = portal,
             rol = RolMembresia.ADMIN
         )
-
         portal.addMembresia(membresiaAdmin)
 
-        portalRepository.save(portal)
+        val portalGuardado = portalRepository.save(portal)
 
         etiquetaRepository.save(
             Etiqueta(
                 nombre = "GENERAL",
-                portal = portal
+                portal = portalGuardado
             )
         )
+
+        return portalGuardado
     }
 
     @Transactional(rollbackOn = [Exception::class])
@@ -238,7 +251,7 @@ class PortalService (
 
     fun validarMembresiaUsuario(usuario: Usuario, idPortal: Long, rolMembresia: RolMembresia) {
         val membresia = membresiaRepository.findByUsuarioIdAndPortalId(usuario.id!!, idPortal)
-        if (membresia?.rol != rolMembresia) throw NotAdminException("Solo los administradores pueden crear carpetas")
+        if (membresia?.rol != rolMembresia) throw NotAdminException("Solo los administradores pueden realizar esta acción")
     }
 
     @Transactional(rollbackOn = [Exception::class])
@@ -250,9 +263,8 @@ class PortalService (
         val padre = request.carpetaPadreId?.let {
             val carpetaEncontrada = carpetaRepository.findById(it).getOrNull()
                 ?: throw ElementDoesNotExistException("La carpeta padre no existe")
-
-            if (carpetaEncontrada.portal != portal) throw BusinessException("La carpeta padre no pertenece a este portal")
-
+            if (carpetaEncontrada.portal != portal)
+                throw BusinessException("La carpeta padre no pertenece a este portal")
             carpetaEncontrada
         }
 
@@ -274,81 +286,62 @@ class PortalService (
     }
 
     fun renameCarpeta(idPortal: Long, idCarpeta: UUID, email: String, nuevoNombre: String) {
-        val portal = validarPortal(idPortal)
+        validarPortal(idPortal)
         val usuario = validarUsuario(email)
         validarMembresiaUsuario(usuario, idPortal, RolMembresia.ADMIN)
 
-        //Si nuevoNombre esta vacio, lo saca cagando
         if (nuevoNombre.isEmpty())
-            throw BusinessException("El nuevo nombre de la carpeta no puede estar vacio")
-
-        //Si nuevoNombre es demasiado largo lo saca cagando tambien
+            throw BusinessException("El nuevo nombre de la carpeta no puede estar vacío")
         if (nuevoNombre.length > 100)
             throw BusinessException("El nuevo nombre no puede pasar de los 100 caracteres")
 
         val carpeta = carpetaRepository.findById(idCarpeta).getOrNull()
-        if (carpeta == null)
-            throw ElementDoesNotExistException("La carpeta ${idCarpeta} no existe.")
+            ?: throw ElementDoesNotExistException("La carpeta $idCarpeta no existe.")
 
-        //Valida si ya hay otra carpeta con el mismo nombre
         if (carpetaRepository.findByNombre(nuevoNombre).getOrNull(0) != null)
             throw ItemConflictException("Ya hay una carpeta con el mismo nombre")
 
         carpeta.nombre = nuevoNombre
-
         carpetaRepository.save(carpeta)
     }
 
-   /* fun moverCarpeta(idPortal: Long, idCarpeta: UUID, email: String, parentFolderId: java.util.UUID) {
-        val portal = validarPortal(idPortal)
-        val usuario = validarUsuario(email)
-        validarMembresiaUsuario(usuario, idPortal, RolMembresia.ADMIN)
-
-        val carpeta = carpetaRepository.findById(idCarpeta).getOrNull()
-        if (carpeta == null)
-            throw ElementDoesNotExistException("La carpeta ${idCarpeta} no existe.")
-
-        if (parentFolderId == null) {
-            carpeta.carpetaPadre = null
-            carpetaRepository.save(carpeta)
-        }
-
-        //Bucle que checkea ciclos prohibidos
-        var carpetaParent = carpetaRepository.findById(parentFolderId).get()
-
-        if (carpetaParent.portal != carpeta.portal)
-            throw BusinessException("Operacion invalida: mover la carpeta dentro de una carpeta que no pertenece al mismo portal")
-
-        while (true) {
-            //Llego a root? rompe el ciclo
-            if (carpetaParent.carpetaPadre == null)
-                break
-
-            if (carpeta.id == carpetaParent.id)
-                throw BusinessException("Operación inválida: movería la carpeta dentro de sí misma (ciclo detectado)")
-
-            carpetaParent = carpetaParent.carpetaPadre!!
-        }
-
-        carpeta.carpetaPadre = carpetaParent
-
-        carpetaRepository.save(carpeta)
-    }
-*/
     @Transactional(rollbackOn = [Exception::class])
     fun patch(portal: Portal, adminId: Long) {
         portalRepository.save(portal)
     }
 
-    fun buscarPortales(universidad: String?, carrera: String?): List<PortalBusquedaResponse> {
-
-        val resultados = portalRepository.buscarPortales(
+    fun buscarPortales(universidad: String?, carrera: String?, pagina: Int = 0): PortalBusquedaResponse {
+        val page = PageRequest.of(pagina, 6)
+        val resultado = portalRepository.buscarPortales(
             universidad?.takeIf { it.isNotBlank() },
-            carrera?.takeIf { it.isNotBlank() }
+            carrera?.takeIf { it.isNotBlank() },
+            page
         )
+        return PortalBusquedaResponse(
+            portales = resultado.content.map { PortalMapper.toBusquedaDTO(it) },
+            page = resultado.number,
+            total = resultado.totalPages
+        )
+    }
 
-        return resultados.map { portal ->
-            PortalMapper.toBusquedaResponse(portal)
-        }
+    @Transactional(rollbackOn = [Exception::class])
+    fun removerMiembro(portalId: Long, usuarioObjetivoId: Long, emailAdmin: String) {
+        val portal = validarPortal(portalId)
+        val admin = validarUsuario(emailAdmin)
+
+        val membresiaAdmin = membresiaRepository.findByUsuarioIdAndPortalId(admin.id!!, portalId)
+        if (membresiaAdmin?.rol != RolMembresia.ADMIN)
+            throw NotAdminException("Solo los administradores pueden remover miembros")
+
+        val usuarioObjetivo = usuarioRepository.findById(usuarioObjetivoId).getOrNull()
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        if (admin.id == usuarioObjetivo.id)
+            throw BusinessException("No podés removerte a vos mismo del portal")
+
+        val membresiaObjetivo = membresiaRepository.findByUsuarioIdAndPortalId(usuarioObjetivoId, portalId)
+            ?: throw ElementDoesNotExistException("El usuario no es miembro de este portal")
+
+        membresiaRepository.delete(membresiaObjetivo)
     }
 }

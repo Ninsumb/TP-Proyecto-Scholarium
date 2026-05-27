@@ -1,5 +1,6 @@
 // ForumBoardView.tsx
 import { useState, useEffect, useRef } from "react";
+import { Avatar } from "../../../Components/Avatar";
 import { Link, useParams } from "react-router";
 import {
   ChevronRight,
@@ -280,16 +281,7 @@ function ReplyItem({
 
       <div id={`reply-${reply.id}`} className="flex gap-3 py-4 pl-4 pr-2 relative transition-all rounded-sm border-b border-border last:border-b-0">
 
-        <div className="flex-shrink-0">
-          <div
-            className="w-9 h-9 bg-primary/15 flex items-center justify-center text-primary"
-            style={{ borderRadius: "var(--radius)" }}
-          >
-            <span className="text-xs font-medium">
-              {reply.autor!.nombre.slice(0, 2).toUpperCase()}
-            </span>
-          </div>
-        </div>
+        <Avatar nombre={reply.autor!.nombre} fotoPerfil={reply.autor!.fotoPerfil} size="sm" />
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
@@ -539,16 +531,8 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, onEliminado, onEd
 
       <div className="py-5 px-5">
         <div className="flex gap-4">
-          <div className="flex-shrink-0">
-            <div
-              className="w-11 h-11 bg-primary/15 flex items-center justify-center text-primary"
-              style={{ borderRadius: "var(--radius)" }}
-            >
-              <span className="text-sm font-medium">
-                {post.autor!.nombre.slice(0, 2).toUpperCase()}
-              </span>
-            </div>
-          </div>
+
+          <Avatar nombre={post.autor!.nombre} fotoPerfil={post.autor!.fotoPerfil} size="md" />
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 mb-2">

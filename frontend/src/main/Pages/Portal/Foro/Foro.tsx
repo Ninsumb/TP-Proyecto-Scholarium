@@ -226,18 +226,6 @@ export function ForumBoardsList() {
               ))}
             </div>
           </div>
-
-          <div className="bg-surface-container-lowest p-5 shadow-sm" style={{ borderRadius: "var(--radius)" }}>
-            <h3 className="mb-4 text-foreground">Estadísticas</h3>
-            <div className="space-y-3.5">
-              <div className="flex items-center justify-between">
-
-                <span className="text-foreground text-sm">Tableros</span>
-                <span className="text-foreground font-medium">{tableros.length}</span>
-
-              </div>
-            </div>
-          </div>
         </aside>
 
         {/* Contenido principal */}

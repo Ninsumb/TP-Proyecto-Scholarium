@@ -1,4 +1,4 @@
-import apiClient from '../../services/apiClient';
+import apiClient from '../apiClient';
 import type { PortalDetailResponse } from '../../types/Portal/Portal';
 import type { Block } from '../../Components/PortalHome-blocks/BlockComponents';
 
@@ -18,7 +18,7 @@ export interface BloqueBackendResponse {
   orden: number;
 }
 
-class PortalService {
+class InternalPortalService {
   async getPortalDetail(portalId: number): Promise<PortalDetailResponse> {
     const response = await apiClient.get<PortalDetailResponse>(`/portales/${portalId}`);
     return response.data;
@@ -35,4 +35,4 @@ class PortalService {
   }
 }
 
-export const portalService = new PortalService();
+export const portalService = new InternalPortalService();
