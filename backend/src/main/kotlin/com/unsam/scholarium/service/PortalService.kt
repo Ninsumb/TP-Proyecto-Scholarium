@@ -2,13 +2,14 @@ package com.unsam.scholarium.service
 
 import com.unsam.scholarium.dto.CarpetaArbolDTO
 import com.unsam.scholarium.dto.CarpetaRequest
+
 import com.unsam.scholarium.dto.MateriaArbolDTO
 import com.unsam.scholarium.dto.CrearPortalRequest
-import com.unsam.scholarium.dto.PortalBusquedaResponse
 import com.unsam.scholarium.dto.PortalEstructuraDTO
-import com.unsam.scholarium.dto.SolicitudRequest
-import com.unsam.scholarium.dto.SolicitudResponse
-import com.unsam.scholarium.dto.UsuarioResumenDTO
+import com.unsam.scholarium.dto.CarpetaResponse
+import com.unsam.scholarium.dto.CrearPortalRequest
+import com.unsam.scholarium.dto.PortalBusquedaResponse
+import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.ItemConflictException
@@ -16,20 +17,19 @@ import com.unsam.scholarium.exception.NotAdminException
 import com.unsam.scholarium.exception.UnauthorizedException
 import com.unsam.scholarium.mapper.PortalMapper
 import com.unsam.scholarium.model.Carpeta
-import com.unsam.scholarium.model.Estado
 import com.unsam.scholarium.model.Etiqueta
 import com.unsam.scholarium.model.Membresia
+import com.unsam.scholarium.model.PlantillaSolicitud
 import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.model.RolMembresia
-import com.unsam.scholarium.model.Solicitud
 import com.unsam.scholarium.model.Usuario
 import com.unsam.scholarium.repository.CarpetaRepository
 import com.unsam.scholarium.repository.EtiquetaRepository
 import com.unsam.scholarium.repository.MateriaRepository
 import com.unsam.scholarium.repository.MaterialRepository
 import com.unsam.scholarium.repository.MembresiaRepository
+import com.unsam.scholarium.repository.PlantillaSolicitudRepository
 import com.unsam.scholarium.repository.PortalRepository
-import com.unsam.scholarium.repository.SolicitudRepository
 import com.unsam.scholarium.repository.UsuarioRepository
 import jakarta.transaction.Transactional
 import org.springframework.data.domain.PageRequest
@@ -45,8 +45,8 @@ class PortalService(
     private val carpetaRepository: CarpetaRepository,
     private val membresiaRepository: MembresiaRepository,
     private val usuarioRepository: UsuarioRepository,
-    private val solicitudRepository: SolicitudRepository,
-    private val etiquetaRepository: EtiquetaRepository
+    private val etiquetaRepository: EtiquetaRepository,
+    private val plantillaSolicitudRepository: PlantillaSolicitudRepository,
 ) {
     fun getDetalleById(id: Long, email: String): Triple<Portal, RolMembresia?, List<Int>> {
         val portal = portalRepository.findById(id).getOrNull()
@@ -66,32 +66,8 @@ class PortalService(
         return Triple(portal, membresia?.rol, stats)
     }
 
-    fun getSolicitudesPendientes(idPortal: Long, email: String): List<SolicitudResponse> {
-        portalRepository.findById(idPortal).getOrNull()
-            ?: throw ElementDoesNotExistException("Portal $idPortal no encontrado")
 
-        val usuario = usuarioRepository.findByEmail(email)
-            ?: throw ElementDoesNotExistException("Usuario no encontrado")
 
-        val membresia = membresiaRepository.findByUsuarioIdAndPortalId(usuario.id!!, idPortal)
-            ?: throw NotAdminException("No sos miembro del portal")
-
-        if (membresia.rol != RolMembresia.ADMIN) throw NotAdminException("No sos ADMIN del portal")
-
-        val solicitudes = solicitudRepository.findAllByEstadoAndPortalId(Estado.PENDIENTE, idPortal)
-
-        return solicitudes.map { solicitud ->
-            SolicitudResponse(
-                solicitud.id!!,
-                UsuarioResumenDTO(
-                    solicitud.usuario.id!!,
-                    solicitud.usuario.nombre,
-                    solicitud.usuario.email
-                ),
-                solicitud.fechaSolicitud.toString()
-            )
-        }
-    }
 
     fun getEstructuraPortal(id: Long, email: String): PortalEstructuraDTO {
         val portal = portalRepository.findById(id)
@@ -157,28 +133,23 @@ class PortalService(
         )
     }
 
+
     /**
-     * Crea un Portal nuevo y retorna la entidad persistida para que el controller
-     * pueda mapear el id y devolverlo al front.
+     * Crea un Portal nuevo y retorna la entidad persistida.
      *
-     * Flujo:
-     * 1. Normalizar universidad y carrera para validar unicidad.
-     * 2. Verificar que no exista un portal con esos valores normalizados.
-     * 3. Crear el Portal con los valores ORIGINALES (no normalizados).
-     * 4. Crear la Membresia del creador como ADMIN.
-     * 5. Crear la Etiqueta "GENERAL" por defecto.
-     * Todo en una misma transacción.
+     * Flujo (todo en una sola transacción):
+     * 1. Normalizar y validar unicidad de universidad+carrera.
+     * 2. Crear el Portal.
+     * 3. Crear la Membresia del creador como ADMIN.
+     * 4. Crear la Etiqueta "GENERAL" por defecto.
+     * 5. Crear la PlantillaSolicitud con estado abierta=true y requisitos por defecto.
      */
     @Transactional(rollbackOn = [Exception::class])
     fun createPortal(request: CrearPortalRequest, email: String): Portal {
         val universidadNormalizada = Portal.normalizarParaUnicidad(request.universidad)
         val carreraNormalizada = Portal.normalizarParaUnicidad(request.carrera)
 
-        if (portalRepository.existePortalConValoresNormalizados(
-                universidadNormalizada,
-                carreraNormalizada
-            )
-        ) {
+        if (portalRepository.existePortalConValoresNormalizados(universidadNormalizada, carreraNormalizada)) {
             throw BusinessException("Ya existe un portal para esa universidad y carrera")
         }
 
@@ -204,50 +175,28 @@ class PortalService(
 
         val portalGuardado = portalRepository.save(portal)
 
-        etiquetaRepository.save(
-            Etiqueta(
-                nombre = "GENERAL",
-                portal = portalGuardado
+        // Etiqueta general por defecto
+        etiquetaRepository.save(Etiqueta(nombre = "GENERAL", portal = portalGuardado))
+
+        // PlantillaSolicitud: abierta por defecto con mensaje de bienvenida
+        plantillaSolicitudRepository.save(
+            PlantillaSolicitud(
+                portal = portalGuardado,
+                requisitos = PlantillaSolicitud.REQUISITOS_DEFAULT,
+                abierta = true,
             )
         )
 
         return portalGuardado
     }
 
-    @Transactional(rollbackOn = [Exception::class])
-    fun createSolicitud(idPortal: Long, email: String, request: SolicitudRequest) {
-        val portal = portalRepository.findById(idPortal).getOrNull()
+    fun validarPortal(idPortal: Long): Portal =
+        portalRepository.findById(idPortal).getOrNull()
             ?: throw ElementDoesNotExistException("Portal no encontrado")
 
-        val usuario = usuarioRepository.findByEmail(email)
+    fun validarUsuario(email: String): Usuario =
+        usuarioRepository.findByEmail(email)
             ?: throw ElementDoesNotExistException("Usuario no encontrado")
-
-        val esMiembro = membresiaRepository.existsByUsuarioIdAndPortalId(usuario.id!!, idPortal)
-        if (esMiembro) throw BusinessException("Ya sos miembro del portal")
-
-        val tienePendiente = solicitudRepository.existsByUsuarioAndPortalAndEstado(usuario, portal, Estado.PENDIENTE)
-        if (tienePendiente) throw BusinessException("Ya tenés una solicitud pendiente")
-
-        val solicitud = Solicitud(
-            usuario = usuario,
-            portal = portal,
-            titulo = request.titulo,
-            descripcion = request.descripcion,
-            estado = Estado.PENDIENTE
-        )
-
-        solicitudRepository.save(solicitud)
-    }
-
-    fun validarPortal(idPortal: Long): Portal {
-        return portalRepository.findById(idPortal).getOrNull()
-            ?: throw ElementDoesNotExistException("Portal no encontrado")
-    }
-
-    fun validarUsuario(email: String): Usuario {
-        return usuarioRepository.findByEmail(email)
-            ?: throw ElementDoesNotExistException("Usuario no encontrado")
-    }
 
     fun validarMembresiaUsuario(usuario: Usuario, idPortal: Long, rolMembresia: RolMembresia) {
         val membresia = membresiaRepository.findByUsuarioIdAndPortalId(usuario.id!!, idPortal)

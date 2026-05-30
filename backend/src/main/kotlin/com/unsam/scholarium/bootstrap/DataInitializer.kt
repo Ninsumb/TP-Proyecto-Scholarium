@@ -24,6 +24,8 @@ class DataInitializer {
         foroRepo: ForoRepository,
         etiquetaRepo: EtiquetaRepository,
         postRepo: PostRepository,
+        plantillaRepo: PlantillaSolicitudRepository,
+        bloqueoRepo: PortalBloqueoRepository,
         cloudinary: Cloudinary,
         passwordEncoder: PasswordEncoder
     ) = CommandLineRunner {
@@ -58,20 +60,34 @@ class DataInitializer {
             admin.fotoPerfil = subirFotoBootstrap("/bootstrap-assets/test.jpg", admin.id!!)
             usuarioRepo.save(admin)
 
+            // Solicitante con solicitud PENDIENTE
             val solicitante = usuarioRepo.save(
-                Usuario(nombre = "Juan", email = "juan@test.com", password = passwordEncoder.encode("1234"))
+                Usuario(nombre = "Juan García", email = "juan@test.com", password = passwordEncoder.encode("1234"))
             )
             solicitante.fotoPerfil = subirFotoBootstrap("/bootstrap-assets/juan.jpg", solicitante.id!!)
             usuarioRepo.save(solicitante)
 
+            // Miembro normal
             val noAdmin = usuarioRepo.save(
-                Usuario(nombre = "Pedro", email = "pedro@test.com", password = passwordEncoder.encode("1234"))
+                Usuario(nombre = "Pedro López", email = "pedro@test.com", password = passwordEncoder.encode("1234"))
             )
             noAdmin.fotoPerfil = subirFotoBootstrap("/bootstrap-assets/pedro.jpg", noAdmin.id!!)
             usuarioRepo.save(noAdmin)
 
+            // Usuario con solicitud RECHAZADA (para probar la vista de estado rechazado)
+            val rechazado = usuarioRepo.save(
+                Usuario(nombre = "María Fernández", email = "maria@test.com", password = passwordEncoder.encode("1234"))
+            )
+            usuarioRepo.save(rechazado)
+
+            // Usuario bloqueado (para probar que no puede enviar solicitudes)
+            val bloqueado = usuarioRepo.save(
+                Usuario(nombre = "Carlos Gomez", email = "carlos@test.com", password = passwordEncoder.encode("1234"))
+            )
+            usuarioRepo.save(bloqueado)
+
             // ── Portales ──────────────────────────────────────────────────
-            // El portal principal tiene identidad visual con ícono+color
+            // Todos se guardan en variables para crearles PlantillaSolicitud.
             val portal = portalRepo.save(
                 Portal(
                     universidad = "Universidad Nacional de San Martín",
@@ -82,8 +98,7 @@ class DataInitializer {
                     colorPortal = "#2563EB"
                 )
             )
-
-            portalRepo.save(Portal(
+            val portalRedes = portalRepo.save(Portal(
                 universidad = "Universidad Nacional de San Martín",
                 carrera = "Tecnicatura en Redes Informáticas",
                 unidadAcademica = "Escuela de Ciencia y Tecnología",
@@ -91,42 +106,42 @@ class DataInitializer {
                 iconoPortal = "Network",
                 colorPortal = "#7C3AED"
             ))
-            portalRepo.save(Portal(
+            val portalDatos = portalRepo.save(Portal(
                 universidad = "Universidad Nacional de San Martín",
                 carrera = "Licenciatura en Ciencias de Datos",
                 descripcion = "Datos, modelos y predicciones.",
                 iconoPortal = "BarChart2",
                 colorPortal = "#059669"
             ))
-            portalRepo.save(Portal(
+            val portalEspacial = portalRepo.save(Portal(
                 universidad = "Universidad Nacional de San Martín",
                 carrera = "Ingeniería Espacial",
                 descripcion = "Sí, es ciencia de cohetes.",
                 iconoPortal = "Rocket",
                 colorPortal = "#DC2626"
             ))
-            portalRepo.save(Portal(
+            val portalAlimentos = portalRepo.save(Portal(
                 universidad = "Universidad Nacional de San Martín",
                 carrera = "Ingeniería en Alimentos",
                 descripcion = "Diseño y construcción de alimentos.",
                 iconoPortal = "FlaskConical",
                 colorPortal = "#D97706"
             ))
-            portalRepo.save(Portal(
+            val portalElectronica = portalRepo.save(Portal(
                 universidad = "UTN",
                 carrera = "Ingeniería Electrónica",
-                descripcion = "Ley del culón y más.",
+                descripcion = "xD.",
                 iconoPortal = "Cpu",
                 colorPortal = "#0891B2"
             ))
-            portalRepo.save(Portal(
+            val portalInformaticaUTN = portalRepo.save(Portal(
                 universidad = "UTN",
                 carrera = "Ingeniería Informática",
                 descripcion = "Dijkstra y amigos.",
                 iconoPortal = "Terminal",
                 colorPortal = "#4F46E5"
             ))
-            portalRepo.save(Portal(
+            val portalUADE = portalRepo.save(Portal(
                 universidad = "UADE",
                 carrera = "Cualquier Carrera",
                 descripcion = "Te vendemos el título.",
@@ -138,14 +153,54 @@ class DataInitializer {
             membresiaRepo.save(Membresia(usuario = admin, portal = portal, rol = RolMembresia.ADMIN))
             membresiaRepo.save(Membresia(usuario = noAdmin, portal = portal, rol = RolMembresia.MIEMBRO))
 
-            // ── Solicitud ─────────────────────────────────────────────────
+            // ── PlantillaSolicitud ─────────────────────────────────────────
+            // Los portales se crean directamente en el repo (sin pasar por createPortal),
+            // así que hay que crearles la PlantillaSolicitud a mano.
+            // El portal principal tiene requisitos personalizados; el resto usa el texto default.
+            plantillaRepo.save(
+                PlantillaSolicitud(
+                    portal = portal,
+                    requisitos = "Para unirte al portal de Tecnicatura en Programación, " +
+                            "por favor incluí tu nombre completo y en qué año de la carrera estás cursando. " +
+                            "Si ya tenés experiencia previa en programación, ¡contanos un poco!",
+                    abierta = true,
+                )
+            )
+            listOf(portalRedes, portalDatos, portalEspacial, portalAlimentos, portalElectronica, portalInformaticaUTN, portalUADE).forEach { p ->
+                plantillaRepo.save(PlantillaSolicitud(portal = p, abierta = true))
+            }
+
+            // ── Solicitudes ────────────────────────────────────────────────
+            // PENDIENTE: juan quiere unirse
             solicitudRepo.save(
                 Solicitud(
                     usuario = solicitante,
                     portal = portal,
-                    titulo = "Solicitud de ingreso",
-                    estado = Estado.PENDIENTE,
-                    descripcion = "Quiero unirme al portal de Programación"
+                    nombreCompleto = "Juan García",
+                    descripcion = "Soy alumno regular de primer año. Quiero acceder a los materiales " +
+                            "de Algoritmos y participar del foro para hacer consultas.",
+                )
+            )
+
+            // RECHAZADA: maria fue rechazada con motivo
+            val solicitudRechazada = Solicitud(
+                usuario = rechazado,
+                portal = portal,
+                nombreCompleto = "María Fernández",
+                descripcion = "Quiero unirme para ver los apuntes.",
+            )
+            solicitudRechazada.estado = Estado.RECHAZADA
+            solicitudRechazada.motivoRechazo =
+                "No pudimos verificar que seas alumna regular de la carrera. " +
+                        "Por favor reenvía la solicitud con más información sobre tu situación académica."
+            solicitudRepo.save(solicitudRechazada)
+
+            // BLOQUEADO: carlos está bloqueado y no puede enviar solicitudes
+            bloqueoRepo.save(
+                PortalBloqueo(
+                    portal = portal,
+                    usuario = bloqueado,
+                    motivo = "Comportamiento inapropiado en el foro. Bloqueado por los admins.",
                 )
             )
 
@@ -204,6 +259,12 @@ class DataInitializer {
             postRepo.save(Post(titulo = "Resumen de criterios de convergencia", contenido = "Armé un resumen con los criterios de la razón, la raíz y comparación para series. Lo comparto por si le sirve a alguien antes del parcial.", tablero = tableroMatem, autor = noAdmin))
 
             println("✅ Datos de prueba cargados correctamente.")
+            println("   Usuarios de prueba:")
+            println("   - test@test.com / 1234  → ADMIN del portal principal")
+            println("   - pedro@test.com / 1234 → MIEMBRO del portal principal")
+            println("   - juan@test.com / 1234  → tiene solicitud PENDIENTE")
+            println("   - maria@test.com / 1234 → tiene solicitud RECHAZADA (puede reenviar)")
+            println("   - carlos@test.com / 1234 → BLOQUEADO (no puede enviar solicitudes)")
         } else {
             println("ℹ️ La base de datos ya tiene datos, omitiendo inicialización...")
         }

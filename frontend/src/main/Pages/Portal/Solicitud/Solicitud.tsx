@@ -1,246 +1,413 @@
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router";
-import { GraduationCap, AlertCircle } from "lucide-react";
-import { useToast } from "../../../hooks/useToast";
+// pages/Portal/Solicitud/Solicitud.tsx
+//
+// Flujo de carga:
+// 1. Si el usuario es ADMIN o MIEMBRO del portal → mostrar vista "ya sos miembro".
+// 2. Cargar en paralelo: PlantillaSolicitud + solicitud propia del usuario.
+//    - Si el portal está cerrado → vista "portal cerrado".
+//    - Si el usuario tiene una solicitud PENDIENTE → redirigir a /solicitud-estado.
+//    - Si el usuario está bloqueado → vista "bloqueado" (el backend lo rechazará igual,
+//      pero la UX no debe dejarlo llegar al formulario).
+// 3. Mostrar el formulario limpio.
+//
+// Todos los errores del backend se muestran como toast, nunca inline raro.
+
+import { useState, useEffect, useContext } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  GraduationCap,
+  AlertCircle,
+  BookOpen,
+  Loader2,
+  Lock,
+  ShieldOff,
+  CheckCircle,
+} from "lucide-react";
+import { solicitudService } from "../../../services/SolicitudService";
+import type { PlantillaSolicitudResponse } from "../../../services/SolicitudService";
+import { MainContext } from "../../../types/MainContext";
+import { usePortalContext } from "../../../Hooks/usePortalContext";
+
+type PreCheckState =
+  | "loading"
+  | "already_member"
+  | "portal_closed"
+  | "blocked"
+  | "ready";
 
 export function JoinPortal() {
   const { portalId } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useContext(MainContext);
+
+  // usePortalContext nos da el rol del usuario en este portal (ADMIN / MIEMBRO / GUEST)
+  const { isMember, isAdmin, portalId: id } = usePortalContext();
+
+  const [preCheck, setPreCheck] = useState<PreCheckState>("loading");
+  const [plantilla, setPlantilla] = useState<PlantillaSolicitudResponse | null>(null);
+
+  const [nombreCompleto, setNombreCompleto] = useState("");
+  const [descripcion, setDescripcion] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    studentId: "",
-    career: "",
-    enrollmentYear: "",
-    message: "",
-  });
+useEffect(() => {
+  if (!id) return;
 
-  const portalNames: Record<string, string> = {
-    "ingenieria-informatica": "Ingeniería Informática",
-    "administracion": "Administración de Empresas",
-    "ingenieria-quimica": "Ingeniería Química",
-    "matematicas": "Matemáticas",
-    "letras": "Letras",
-    "medicina": "Medicina",
+  // Si todavía está cargando el portal context
+  if (!portalId) return;
+
+  // Ya es miembro/admin → no tiene sentido mostrar solicitud
+  if (isMember || isAdmin) {
+    showToast("Ya sos miembro de este portal", "info");
+    setPreCheck("already_member");
+    return;
+  }
+
+  const runPreCheck = async () => {
+    try {
+      const [plantillaData, miSolicitud, bloqueado] = await Promise.all([
+        solicitudService.getPlantilla(id),
+        solicitudService.getMiSolicitud(id).catch(() => null),
+        solicitudService.estoyBloqueado(id),
+      ]);
+
+      setPlantilla(plantillaData);
+
+      if (bloqueado) {
+        setPreCheck("blocked");
+        return;
+      }
+
+      // Portal cerrado
+      if (!plantillaData.abierta) {
+        setPreCheck("portal_closed");
+        return;
+      }
+
+      // Solicitud pendiente → ir al estado automáticamente
+      if (miSolicitud?.estado === "PENDIENTE") {
+        showToast("Ya tenés una solicitud pendiente", "info");
+
+        navigate(`/portal/${id}/solicitud-estado`, {
+          replace: true,
+        });
+
+        return;
+      }
+
+      setPreCheck("ready");
+    } catch (err: any) {
+      const raw =
+        err.response?.data?.message ??
+        err.response?.data ??
+        "";
+
+      const mensaje =
+        typeof raw === "string" ? raw.toLowerCase() : "";
+
+      if (mensaje.includes("bloqueado")) {
+        setPreCheck("blocked");
+        return;
+      }
+
+      showToast(
+        "No se pudo validar tu estado en este portal",
+        "error"
+      );
+
+      setPreCheck("ready");
+    }
   };
 
-  const portalName = portalNames[portalId || ""] || "Portal";
-
-  const careers = [
-    "Ingeniería Informática",
-    "Administración de Empresas",
-    "Ingeniería Química",
-    "Matemáticas",
-    "Letras",
-    "Medicina",
-  ];
-
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
+  runPreCheck();
+}, [id, isMember, isAdmin, portalId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!descripcion.trim()) {
+      showToast("La descripción es obligatoria", "error");
+      return;
+    }
+
     setIsSubmitting(true);
+    try {
+      await solicitudService.crearSolicitud(id, {
+        nombreCompleto: nombreCompleto.trim() || undefined,
+        descripcion: descripcion.trim(),
+      });
+      showToast("Solicitud enviada correctamente", "success");
+      navigate(`/portal/${id}/solicitud-estado`);
+    } catch (err: any) {
+        const raw =
+          err.response?.data?.message ??
+          err.response?.data ??
+          "";
 
-    // Simulación de envío
-    setTimeout(() => {
-      // Guardar solicitud en localStorage (mock)
-      const requestData = {
-        ...formData,
-        portalId,
-        status: "pending",
-        submittedAt: new Date().toISOString(),
-      };
-      localStorage.setItem(`portal-request-${portalId}`, JSON.stringify(requestData));
+        const mensaje =
+          typeof raw === "string" && raw.trim()
+            ? raw
+            : "Error al enviar la solicitud";
 
-      useToast().showToast("Solicitud enviada correctamente", 'success');
-      setIsSubmitting(false);
+        // Ya es miembro
+        if (mensaje.toLowerCase().includes("ya sos miembro")) {
+          showToast("Ya sos miembro de este portal", "info");
 
-      // Redirigir a la vista de solicitud pendiente
-      navigate(`/portal/${portalId}/solicitud-estado`);
-    }, 1500);
-  };
+          navigate(`/portal/${id}`, {
+            replace: true,
+          });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+          return;
+        }
 
+        // Ya tiene pendiente
+        if (mensaje.toLowerCase().includes("pendiente")) {
+          showToast(
+            "Ya tenés una solicitud pendiente para este portal",
+            "info"
+          );
+
+          navigate(`/portal/${id}/solicitud-estado`, {
+            replace: true,
+          });
+
+          return;
+        }
+
+        // Bloqueado
+        if (
+          mensaje.toLowerCase().includes("bloqueado") ||
+          mensaje.toLowerCase().includes("no podés enviar")
+        ) {
+          showToast(
+            "No podés enviar solicitudes a este portal",
+            "error"
+          );
+
+          setPreCheck("blocked");
+          return;
+        }
+
+        showToast(mensaje, "error");
+      } finally {
+            setIsSubmitting(false);
+          }
+        };
+
+  // ── Loading ──────────────────────────────────────────────────────────────
+  if (preCheck === "loading") {
+    return (
+      <div className="flex items-center justify-center py-32">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // ── Ya es miembro / admin ────────────────────────────────────────────────
+  if (preCheck === "already_member") {
+    return (
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center">
+          <div
+            className="w-14 h-14 bg-primary/10 flex items-center justify-center mx-auto mb-5"
+            style={{ borderRadius: "var(--radius)" }}
+          >
+            <CheckCircle className="w-7 h-7 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-3">
+            Ya sos parte de este portal
+          </h1>
+          <p className="text-muted-foreground text-sm mb-6">
+            Tenés acceso completo a todos los contenidos.
+          </p>
+          <button
+            onClick={() => navigate(`/portal/${id}`)}
+            className="px-6 py-2.5 font-medium shadow-sm transition-colors"
+            style={{
+              background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)",
+              color: "var(--primary-foreground)",
+              borderRadius: "var(--radius)",
+            }}
+          >
+            Ir al portal
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Portal cerrado ───────────────────────────────────────────────────────
+  if (preCheck === "portal_closed") {
+    return (
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center">
+          <div
+            className="w-14 h-14 bg-muted flex items-center justify-center mx-auto mb-5"
+            style={{ borderRadius: "var(--radius)" }}
+          >
+            <Lock className="w-7 h-7 text-muted-foreground" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-3">
+            Portal cerrado temporalmente
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Los administradores de este portal no están aceptando solicitudes en este momento.
+            Intentalo más adelante.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Bloqueado ────────────────────────────────────────────────────────────
+  if (preCheck === "blocked") {
+    return (
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center">
+          <div
+            className="w-14 h-14 bg-destructive/10 flex items-center justify-center mx-auto mb-5"
+            style={{ borderRadius: "var(--radius)" }}
+          >
+            <ShieldOff className="w-7 h-7 text-destructive" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-3">
+            No podés enviar solicitudes a este portal
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Un administrador restringió tu acceso a este portal.
+            Si creés que es un error, ponete en contacto con los administradores.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Formulario ───────────────────────────────────────────────────────────
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* Header */}
       <div className="text-center mb-10">
         <div
-          className="w-16 h-16 bg-primary/10 flex items-center justify-center mx-auto mb-4"
-          style={{ borderRadius: 'var(--radius)' }}
+          className="w-14 h-14 bg-primary/10 flex items-center justify-center mx-auto mb-4"
+          style={{ borderRadius: "var(--radius)" }}
         >
-          <GraduationCap className="w-10 h-10 text-primary" />
+          <GraduationCap className="w-8 h-8 text-primary" />
         </div>
-        <h1 className="mb-3 text-foreground">Solicitar Acceso a la Carrera</h1>
-        <p className="text-foreground max-w-2xl mx-auto">
-          Completa el formulario para solicitar acceso al portal de <span className="font-medium text-foreground">{portalName}</span>. Un administrador revisará tu solicitud y te enviará una respuesta por correo electrónico.
+        <h1 className="text-2xl font-bold text-foreground mb-2">
+          Solicitar acceso al portal
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          Completá el formulario y un administrador revisará tu solicitud.
         </p>
       </div>
+
+      {/* Requisitos del portal */}
+      {plantilla?.requisitos && (
+        <div
+          className="flex gap-3 p-4 mb-6 bg-primary/5 border border-primary/20"
+          style={{ borderRadius: "var(--radius)" }}
+        >
+          <BookOpen className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-foreground mb-1">Requisitos del portal</p>
+            <p className="text-sm text-muted-foreground whitespace-pre-line">
+              {plantilla.requisitos}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Formulario */}
       <div
         className="bg-surface-container-lowest p-8 shadow-sm"
-        style={{ borderRadius: 'var(--radius)' }}
+        style={{ borderRadius: "var(--radius)" }}
       >
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Nombre */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block mb-2 text-foreground">
-                Nombre <span className="text-destructive">*</span>
-              </label>
-              <input
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                required
-                placeholder="Tu nombre"
-                className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-                style={{ borderRadius: 'var(--radius)' }}
-              />
-            </div>
-            <div>
-              <label className="block mb-2 text-foreground">
-                Apellido <span className="text-destructive">*</span>
-              </label>
-              <input
-                type="text"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-                required
-                placeholder="Tu apellido"
-                className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-                style={{ borderRadius: 'var(--radius)' }}
-              />
-            </div>
-          </div>
-
-          {/* Email */}
+          {/* Nombre completo */}
           <div>
-            <label className="block mb-2 text-foreground">
-              Correo Electrónico Institucional <span className="text-destructive">*</span>
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              placeholder="tunombre@universidad.edu"
-              className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-              style={{ borderRadius: 'var(--radius)' }}
-            />
-          </div>
-
-          {/* Número de Legajo */}
-          <div>
-            <label className="block mb-2 text-foreground">
-              Número de Legajo <span className="text-destructive">*</span>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Nombre completo{" "}
+              <span className="text-muted-foreground font-normal">(opcional)</span>
             </label>
             <input
               type="text"
-              name="studentId"
-              value={formData.studentId}
-              onChange={handleChange}
-              required
-              placeholder="Ej: 12345678"
+              value={nombreCompleto}
+              onChange={(e) => setNombreCompleto(e.target.value)}
+              placeholder="Tu nombre y apellido real"
+              maxLength={200}
               className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-              style={{ borderRadius: 'var(--radius)' }}
+              style={{ borderRadius: "var(--radius)" }}
             />
-          </div>
-
-          {/* Carrera y Año */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block mb-2 text-foreground">
-                Carrera <span className="text-destructive">*</span>
-              </label>
-              <select
-                name="career"
-                value={formData.career}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-                style={{ borderRadius: 'var(--radius)' }}
-              >
-                <option value="">Selecciona tu carrera</option>
-                {careers.map((career) => (
-                  <option key={career} value={career}>
-                    {career}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block mb-2 text-foreground">
-                Año de Ingreso <span className="text-destructive">*</span>
-              </label>
-              <select
-                name="enrollmentYear"
-                value={formData.enrollmentYear}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-                style={{ borderRadius: 'var(--radius)' }}
-              >
-                <option value="">Selecciona el año</option>
-                {years.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Mensaje adicional */}
-          <div>
-            <label className="block mb-2 text-foreground">
-              Mensaje adicional / Motivo de Ingreso
-            </label>
-            <textarea
-              name="message"
-              value={formData.message}
-              onChange={handleChange}
-              rows={4}
-              placeholder="¿Algo más que quieras agregar?"
-              className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none transition-all"
-              style={{ borderRadius: 'var(--radius)' }}
-            />
-          </div>
-
-          {/* Aviso */}
-          <div
-            className="flex gap-3 p-4 bg-primary/5 border border-primary/20"
-            style={{ borderRadius: 'var(--radius)' }}
-          >
-            <AlertCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-foreground">
-              Al enviar esta solicitud, recibirás un correo de confirmación. El tiempo de revisión suele ser de 24-48 horas.
+            <p className="text-xs text-muted-foreground mt-1">
+              Algunos portales lo piden para verificar que sos alumno regular.
             </p>
           </div>
 
-          {/* Botón de envío */}
+          {/* Descripción */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Mensaje <span className="text-destructive">*</span>
+            </label>
+            <textarea
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              required
+              rows={5}
+              maxLength={1000}
+              placeholder={
+                plantilla?.requisitos
+                  ? "Respondé a los requisitos del portal indicados arriba..."
+                  : "Contanos quién sos y por qué querés unirte a este portal..."
+              }
+              className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none transition-all"
+              style={{ borderRadius: "var(--radius)" }}
+            />
+            <div className="flex justify-between mt-1">
+              <p className="text-xs text-muted-foreground">
+                Máx. 1000 caracteres.
+              </p>
+              <p
+                className={`text-xs ${
+                  descripcion.length > 900 ? "text-destructive" : "text-muted-foreground"
+                }`}
+              >
+                {descripcion.length}/1000
+              </p>
+            </div>
+          </div>
+
+          {/* Aviso de no cancelación */}
+          <div
+            className="flex gap-3 p-4 bg-yellow-500/5 border border-yellow-500/20"
+            style={{ borderRadius: "var(--radius)" }}
+          >
+            <AlertCircle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground">
+              Una vez enviada, tu solicitud quedará en estado{" "}
+              <strong>Pendiente</strong> y no podrás editarla ni cancelarla. Los
+              administradores del portal la verán y te avisarán.
+            </p>
+          </div>
+
+          {/* Botón */}
           <button
             type="submit"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="w-full px-6 py-3 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-            style={{ borderRadius: 'var(--radius)' }}
+            disabled={isSubmitting || !descripcion.trim()}
+            className="w-full px-6 py-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm font-medium"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)",
+              color: "var(--primary-foreground)",
+              borderRadius: "var(--radius)",
+            }}
           >
-            {isSubmitting ? "Enviando..." : "Enviar Solicitud"}
+            {isSubmitting ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Enviando...
+              </span>
+            ) : (
+              "Enviar solicitud"
+            )}
           </button>
         </form>
       </div>

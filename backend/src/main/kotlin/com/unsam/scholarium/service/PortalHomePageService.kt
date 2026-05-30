@@ -143,7 +143,7 @@ class PortalHomePageService(
             ),
             Block(
                 type = "textSection",
-                id = "default-stats-info",
+                id = "default-infolist-info",
                 data = mapOf(
                     "title" to "¡La lista de información es realmente útil!",
                     "content" to "Ideal para datos de contacto y recursos rápidos: emails de la facultad, enlaces a grupos de estudiantes, horarios de atención del departamento, y todo lo que un ingresante ansía. Centralizar esa información acá ahorra mucho tiempo."

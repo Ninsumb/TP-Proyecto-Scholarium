@@ -1,3 +1,4 @@
+/*
 package com.unsam.scholarium.dto
 
 data class SolicitudResponse (
@@ -10,4 +11,4 @@ data class UsuarioResumenDTO(
     val id: Long,
     val nombre: String,
     val email: String
-)
+)*/

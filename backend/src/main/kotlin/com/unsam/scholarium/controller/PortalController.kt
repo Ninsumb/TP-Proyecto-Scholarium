@@ -46,14 +46,6 @@ class PortalController(
         return PortalMapper.toDetalleDTO(detalleData)
     }
 
-    @GetMapping("/{id}/solicitudes")
-    fun obtenerSolicitudesPendientes(
-        @PathVariable id: Long,
-        authentication: Authentication
-    ): List<SolicitudResponse> {
-        val email = authentication.name
-        return portalService.getSolicitudesPendientes(id, email)
-    }
 
     @GetMapping("/{id}/estructura")
     fun obtenerEstructuraPortal(
@@ -66,6 +58,7 @@ class PortalController(
             portalService.getEstructuraPortal(id, email)
         )
     }
+
 
     @GetMapping("/{id}/material/pendiente")
     fun obtenerMaterialPendiente(
@@ -89,17 +82,6 @@ class PortalController(
         val email = authentication.name
         val portalCreado = portalService.createPortal(request, email)
         return ResponseEntity.status(HttpStatus.CREATED).body(PortalMapper.toCrearPortalResponse(portalCreado))
-    }
-
-    @PostMapping("/{id}/solicitudes")
-    fun crearSolicitud(
-        @PathVariable id: Long,
-        @RequestBody dto: SolicitudRequest,
-        authentication: Authentication
-    ): ResponseEntity<Void> {
-        val email = authentication.name
-        portalService.createSolicitud(id, email, dto)
-        return ResponseEntity.status(HttpStatus.CREATED).build()
     }
 
     @PostMapping("/{id}/carpetas")
