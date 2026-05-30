@@ -87,6 +87,7 @@ class DataInitializer {
             usuarioRepo.save(bloqueado)
 
             // ── Portales ──────────────────────────────────────────────────
+            // Todos se guardan en variables para crearles PlantillaSolicitud.
             val portal = portalRepo.save(
                 Portal(
                     universidad = "Universidad Nacional de San Martín",
@@ -97,8 +98,7 @@ class DataInitializer {
                     colorPortal = "#2563EB"
                 )
             )
-
-            portalRepo.save(Portal(
+            val portalRedes = portalRepo.save(Portal(
                 universidad = "Universidad Nacional de San Martín",
                 carrera = "Tecnicatura en Redes Informáticas",
                 unidadAcademica = "Escuela de Ciencia y Tecnología",
@@ -106,42 +106,42 @@ class DataInitializer {
                 iconoPortal = "Network",
                 colorPortal = "#7C3AED"
             ))
-            portalRepo.save(Portal(
+            val portalDatos = portalRepo.save(Portal(
                 universidad = "Universidad Nacional de San Martín",
                 carrera = "Licenciatura en Ciencias de Datos",
                 descripcion = "Datos, modelos y predicciones.",
                 iconoPortal = "BarChart2",
                 colorPortal = "#059669"
             ))
-            portalRepo.save(Portal(
+            val portalEspacial = portalRepo.save(Portal(
                 universidad = "Universidad Nacional de San Martín",
                 carrera = "Ingeniería Espacial",
                 descripcion = "Sí, es ciencia de cohetes.",
                 iconoPortal = "Rocket",
                 colorPortal = "#DC2626"
             ))
-            portalRepo.save(Portal(
+            val portalAlimentos = portalRepo.save(Portal(
                 universidad = "Universidad Nacional de San Martín",
                 carrera = "Ingeniería en Alimentos",
                 descripcion = "Diseño y construcción de alimentos.",
                 iconoPortal = "FlaskConical",
                 colorPortal = "#D97706"
             ))
-            portalRepo.save(Portal(
+            val portalElectronica = portalRepo.save(Portal(
                 universidad = "UTN",
                 carrera = "Ingeniería Electrónica",
-                descripcion = "Ley del culón y más.",
+                descripcion = "xD.",
                 iconoPortal = "Cpu",
                 colorPortal = "#0891B2"
             ))
-            portalRepo.save(Portal(
+            val portalInformaticaUTN = portalRepo.save(Portal(
                 universidad = "UTN",
                 carrera = "Ingeniería Informática",
                 descripcion = "Dijkstra y amigos.",
                 iconoPortal = "Terminal",
                 colorPortal = "#4F46E5"
             ))
-            portalRepo.save(Portal(
+            val portalUADE = portalRepo.save(Portal(
                 universidad = "UADE",
                 carrera = "Cualquier Carrera",
                 descripcion = "Te vendemos el título.",
@@ -154,8 +154,9 @@ class DataInitializer {
             membresiaRepo.save(Membresia(usuario = noAdmin, portal = portal, rol = RolMembresia.MIEMBRO))
 
             // ── PlantillaSolicitud ─────────────────────────────────────────
-            // Se crea automáticamente en createPortal, pero en el bootstrap
-            // los portales se crean directamente en el repo, así que las creamos a mano.
+            // Los portales se crean directamente en el repo (sin pasar por createPortal),
+            // así que hay que crearles la PlantillaSolicitud a mano.
+            // El portal principal tiene requisitos personalizados; el resto usa el texto default.
             plantillaRepo.save(
                 PlantillaSolicitud(
                     portal = portal,
@@ -165,6 +166,9 @@ class DataInitializer {
                     abierta = true,
                 )
             )
+            listOf(portalRedes, portalDatos, portalEspacial, portalAlimentos, portalElectronica, portalInformaticaUTN, portalUADE).forEach { p ->
+                plantillaRepo.save(PlantillaSolicitud(portal = p, abierta = true))
+            }
 
             // ── Solicitudes ────────────────────────────────────────────────
             // PENDIENTE: juan quiere unirse
@@ -259,7 +263,7 @@ class DataInitializer {
             println("   - test@test.com / 1234  → ADMIN del portal principal")
             println("   - pedro@test.com / 1234 → MIEMBRO del portal principal")
             println("   - juan@test.com / 1234  → tiene solicitud PENDIENTE")
-            println("   - maria@test.com / 1234 → tiene solicitud RECHAZADA")
+            println("   - maria@test.com / 1234 → tiene solicitud RECHAZADA (puede reenviar)")
             println("   - carlos@test.com / 1234 → BLOQUEADO (no puede enviar solicitudes)")
         } else {
             println("ℹ️ La base de datos ya tiene datos, omitiendo inicialización...")

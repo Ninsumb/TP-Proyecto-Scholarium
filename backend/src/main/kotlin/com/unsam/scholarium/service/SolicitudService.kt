@@ -10,6 +10,7 @@ import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.NotAdminException
 import com.unsam.scholarium.model.Estado
 import com.unsam.scholarium.model.Membresia
+import com.unsam.scholarium.model.PlantillaSolicitud
 import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.model.Solicitud
 import com.unsam.scholarium.repository.MembresiaRepository
@@ -222,6 +223,9 @@ class SolicitudService(
      * Devuelve la PlantillaSolicitud de un portal.
      * Accesible por cualquier usuario (incluso no miembro), ya que se muestra
      * ANTES de que el usuario complete el formulario de solicitud.
+     *
+     * Si el portal no tiene plantilla configurada, o tiene plantilla con requisitos vacíos,
+     * devuelve el texto por defecto para que el usuario siempre vea algo orientativo.
      */
     fun getPlantilla(idPortal: Long): PlantillaSolicitudResponse {
         portalRepository.findById(idPortal).getOrNull()
@@ -229,12 +233,13 @@ class SolicitudService(
 
         val plantilla = plantillaSolicitudRepository.findByPortalId(idPortal)
             ?: return PlantillaSolicitudResponse(
-                requisitos = null,
+                requisitos = PlantillaSolicitud.REQUISITOS_DEFAULT,
                 abierta = true
             )
 
         return PlantillaSolicitudResponse(
-            requisitos = plantilla.requisitos,
+            requisitos = plantilla.requisitos?.takeIf { it.isNotBlank() }
+                ?: PlantillaSolicitud.REQUISITOS_DEFAULT,
             abierta = plantilla.abierta,
         )
     }
