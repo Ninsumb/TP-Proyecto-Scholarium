@@ -6,6 +6,7 @@ import com.unsam.scholarium.dto.CrearPortalRequest
 import com.unsam.scholarium.dto.CrearPortalResponse
 import com.unsam.scholarium.dto.MaterialPendienteDTO
 import com.unsam.scholarium.dto.PortalBusquedaResponse
+import com.unsam.scholarium.dto.PortalEstructuraDTO
 import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.dto.SolicitudRequest
 import com.unsam.scholarium.dto.SolicitudResponse
@@ -44,6 +45,20 @@ class PortalController(
         val detalleData = portalService.getDetalleById(id, email)
         return PortalMapper.toDetalleDTO(detalleData)
     }
+
+
+    @GetMapping("/{id}/estructura")
+    fun obtenerEstructuraPortal(
+        @PathVariable id: Long,
+        authentication: Authentication
+    ): ResponseEntity<PortalEstructuraDTO> {
+        val email = authentication.name
+
+        return ResponseEntity.ok(
+            portalService.getEstructuraPortal(id, email)
+        )
+    }
+
 
     @GetMapping("/{id}/material/pendiente")
     fun obtenerMaterialPendiente(

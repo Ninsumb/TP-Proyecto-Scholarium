@@ -3,6 +3,8 @@ package com.unsam.scholarium.repository
 import com.unsam.scholarium.model.Carpeta
 import com.unsam.scholarium.model.Portal
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import java.util.UUID
 
@@ -16,4 +18,14 @@ interface CarpetaRepository : JpaRepository<Carpeta, UUID> {
 
     fun existsByCarpetaPadreId(carpetaPadreId: UUID): Boolean
 
+    @Query("""
+    SELECT DISTINCT c
+    FROM Carpeta c
+    LEFT JOIN FETCH c.carpetaPadre
+    WHERE c.portal.id = :portalId
+    ORDER BY c.orden ASC
+""")
+    fun findAllByPortalIdWithPadre(
+        @Param("portalId") portalId: Long
+    ): List<Carpeta>
 }

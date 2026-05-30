@@ -1,6 +1,11 @@
 package com.unsam.scholarium.service
 
+import com.unsam.scholarium.dto.CarpetaArbolDTO
 import com.unsam.scholarium.dto.CarpetaRequest
+
+import com.unsam.scholarium.dto.MateriaArbolDTO
+import com.unsam.scholarium.dto.CrearPortalRequest
+import com.unsam.scholarium.dto.PortalEstructuraDTO
 import com.unsam.scholarium.dto.CarpetaResponse
 import com.unsam.scholarium.dto.CrearPortalRequest
 import com.unsam.scholarium.dto.PortalBusquedaResponse
@@ -9,6 +14,7 @@ import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.ItemConflictException
 import com.unsam.scholarium.exception.NotAdminException
+import com.unsam.scholarium.exception.UnauthorizedException
 import com.unsam.scholarium.mapper.PortalMapper
 import com.unsam.scholarium.model.Carpeta
 import com.unsam.scholarium.model.Etiqueta
@@ -59,6 +65,74 @@ class PortalService(
 
         return Triple(portal, membresia?.rol, stats)
     }
+
+
+
+
+    fun getEstructuraPortal(id: Long, email: String): PortalEstructuraDTO {
+        val portal = portalRepository.findById(id)
+            .orElseThrow { ElementDoesNotExistException("Portal no encontrado") }
+
+        val membresia = membresiaRepository
+            .findByUsuarioEmailAndPortalId(email, id)
+            ?: throw UnauthorizedException("No pertenece al portal")
+
+        if (membresia.rol != RolMembresia.ADMIN &&
+            membresia.rol != RolMembresia.MIEMBRO)
+            throw UnauthorizedException("No tenés permisos para visualizar esta estructura")
+
+        val carpetas = carpetaRepository
+            .findAllByPortalIdWithPadre(id)
+
+        val materias = materiaRepository
+            .findAllByPortalIdWithCarpeta(id)
+
+        val materiasPorCarpeta = materias.groupBy { it.carpeta.id }
+
+        val carpetasMap = carpetas.associate { carpeta ->
+
+            carpeta.id!! to CarpetaArbolDTO(
+                id = carpeta.id,
+                nombre = carpeta.nombre,
+                carpetaPadreId = carpeta.carpetaPadre?.id,
+                orden = carpeta.orden,
+                materias = materiasPorCarpeta[carpeta.id]
+                    ?.sortedBy { it.orden }
+                    ?.map {
+                        MateriaArbolDTO(
+                            id = it.id!!,
+                            nombre = it.nombre,
+                            foroId = null, // o it.foro?.id cuando esté implementado en materia
+                            orden = it.orden
+                        )
+                    }
+                    ?: emptyList()
+            )
+        }
+
+        val carpetasRaiz = mutableListOf<CarpetaArbolDTO>()
+
+        carpetas.sortedBy { it.orden }.forEach { carpeta ->
+
+            val dto = carpetasMap[carpeta.id]!!
+
+            val padreId = carpeta.carpetaPadre?.id
+
+            if (padreId == null) {
+                carpetasRaiz.add(dto)
+            } else {
+                carpetasMap[padreId]
+                    ?.subcarpetas
+                    ?.add(dto)
+            }
+        }
+
+        return PortalEstructuraDTO(
+            portalId = portal.id!!,
+            carpetas = carpetasRaiz.sortedBy { it.orden }
+        )
+    }
+
 
     /**
      * Crea un Portal nuevo y retorna la entidad persistida.
