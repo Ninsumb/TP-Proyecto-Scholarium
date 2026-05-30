@@ -1,54 +1,125 @@
 // pages/Portal/Solicitud/Solicitud.tsx
-// Vista del formulario para solicitar acceso a un portal.
 //
-// Flujo:
-// 1. Carga la PlantillaSolicitud del portal (requisitos + estado de apertura).
-// 2. Si el portal no acepta solicitudes → muestra mensaje de cierre.
-// 3. Si hay requisitos → los muestra antes del formulario.
-// 4. El usuario completa nombre completo (opcional) y descripción (obligatorio).
-// 5. Al enviar → POST a /portales/{id}/solicitudes → redirige a /solicitud-estado.
+// Flujo de carga:
+// 1. Si el usuario es ADMIN o MIEMBRO del portal → mostrar vista "ya sos miembro".
+// 2. Cargar en paralelo: PlantillaSolicitud + solicitud propia del usuario.
+//    - Si el portal está cerrado → vista "portal cerrado".
+//    - Si el usuario tiene una solicitud PENDIENTE → redirigir a /solicitud-estado.
+//    - Si el usuario está bloqueado → vista "bloqueado" (el backend lo rechazará igual,
+//      pero la UX no debe dejarlo llegar al formulario).
+// 3. Mostrar el formulario limpio.
 //
-// Importante: se informa al usuario que una vez enviada, la solicitud no puede
-// ser editada ni cancelada y la verán los admins.
+// Todos los errores del backend se muestran como toast, nunca inline raro.
 
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { GraduationCap, AlertCircle, BookOpen, Loader2, Lock } from "lucide-react";
-import { solicitudService } from "../../../services/SolicitudService.ts";
+import {
+  GraduationCap,
+  AlertCircle,
+  BookOpen,
+  Loader2,
+  Lock,
+  ShieldOff,
+  CheckCircle,
+} from "lucide-react";
+import { solicitudService } from "../../../services/SolicitudService";
 import type { PlantillaSolicitudResponse } from "../../../services/SolicitudService";
 import { MainContext } from "../../../types/MainContext";
+import { usePortalContext } from "../../../Hooks/usePortalContext";
+
+type PreCheckState =
+  | "loading"
+  | "already_member"
+  | "portal_closed"
+  | "blocked"
+  | "ready";
 
 export function JoinPortal() {
   const { portalId } = useParams();
   const navigate = useNavigate();
   const { showToast } = useContext(MainContext);
 
+  // usePortalContext nos da el rol del usuario en este portal (ADMIN / MIEMBRO / GUEST)
+  const { isMember, isAdmin, portalId: id } = usePortalContext();
+
+  const [preCheck, setPreCheck] = useState<PreCheckState>("loading");
   const [plantilla, setPlantilla] = useState<PlantillaSolicitudResponse | null>(null);
-  const [loadingPlantilla, setLoadingPlantilla] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [nombreCompleto, setNombreCompleto] = useState("");
   const [descripcion, setDescripcion] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const id = Number(portalId);
+useEffect(() => {
+  if (!id) return;
 
-  // Cargar los requisitos del portal
-  useEffect(() => {
-    if (!id) return;
-    const cargarPlantilla = async () => {
-      try {
-        const data = await solicitudService.getPlantilla(id);
-        setPlantilla(data);
-      } catch (err) {
-        console.error("Error al cargar plantilla:", err);
-        // Si falla, dejamos plantilla como null y permitimos el envío igual
-        setPlantilla({ requisitos: null, abierta: true });
-      } finally {
-        setLoadingPlantilla(false);
+  // Si todavía está cargando el portal context
+  if (!portalId) return;
+
+  // Ya es miembro/admin → no tiene sentido mostrar solicitud
+  if (isMember || isAdmin) {
+    showToast("Ya sos miembro de este portal", "info");
+    setPreCheck("already_member");
+    return;
+  }
+
+  const runPreCheck = async () => {
+    try {
+      const [plantillaData, miSolicitud, bloqueado] = await Promise.all([
+        solicitudService.getPlantilla(id),
+        solicitudService.getMiSolicitud(id).catch(() => null),
+        solicitudService.estoyBloqueado(id),
+      ]);
+
+      setPlantilla(plantillaData);
+
+      if (bloqueado) {
+        setPreCheck("blocked");
+        return;
       }
-    };
-    cargarPlantilla();
-  }, [id]);
+
+      // Portal cerrado
+      if (!plantillaData.abierta) {
+        setPreCheck("portal_closed");
+        return;
+      }
+
+      // Solicitud pendiente → ir al estado automáticamente
+      if (miSolicitud?.estado === "PENDIENTE") {
+        showToast("Ya tenés una solicitud pendiente", "info");
+
+        navigate(`/portal/${id}/solicitud-estado`, {
+          replace: true,
+        });
+
+        return;
+      }
+
+      setPreCheck("ready");
+    } catch (err: any) {
+      const raw =
+        err.response?.data?.message ??
+        err.response?.data ??
+        "";
+
+      const mensaje =
+        typeof raw === "string" ? raw.toLowerCase() : "";
+
+      if (mensaje.includes("bloqueado")) {
+        setPreCheck("blocked");
+        return;
+      }
+
+      showToast(
+        "No se pudo validar tu estado en este portal",
+        "error"
+      );
+
+      setPreCheck("ready");
+    }
+  };
+
+  runPreCheck();
+}, [id, isMember, isAdmin, portalId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,18 +138,63 @@ export function JoinPortal() {
       showToast("Solicitud enviada correctamente", "success");
       navigate(`/portal/${id}/solicitud-estado`);
     } catch (err: any) {
-      const mensaje =
-        err.response?.data?.message ||
-        err.response?.data ||
-        "Error al enviar la solicitud";
-      showToast(typeof mensaje === "string" ? mensaje : "Error al enviar la solicitud", "error");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+        const raw =
+          err.response?.data?.message ??
+          err.response?.data ??
+          "";
+
+        const mensaje =
+          typeof raw === "string" && raw.trim()
+            ? raw
+            : "Error al enviar la solicitud";
+
+        // Ya es miembro
+        if (mensaje.toLowerCase().includes("ya sos miembro")) {
+          showToast("Ya sos miembro de este portal", "info");
+
+          navigate(`/portal/${id}`, {
+            replace: true,
+          });
+
+          return;
+        }
+
+        // Ya tiene pendiente
+        if (mensaje.toLowerCase().includes("pendiente")) {
+          showToast(
+            "Ya tenés una solicitud pendiente para este portal",
+            "info"
+          );
+
+          navigate(`/portal/${id}/solicitud-estado`, {
+            replace: true,
+          });
+
+          return;
+        }
+
+        // Bloqueado
+        if (
+          mensaje.toLowerCase().includes("bloqueado") ||
+          mensaje.toLowerCase().includes("no podés enviar")
+        ) {
+          showToast(
+            "No podés enviar solicitudes a este portal",
+            "error"
+          );
+
+          setPreCheck("blocked");
+          return;
+        }
+
+        showToast(mensaje, "error");
+      } finally {
+            setIsSubmitting(false);
+          }
+        };
 
   // ── Loading ──────────────────────────────────────────────────────────────
-  if (loadingPlantilla) {
+  if (preCheck === "loading") {
     return (
       <div className="flex items-center justify-center py-32">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -86,21 +202,79 @@ export function JoinPortal() {
     );
   }
 
-  // ── Portal cerrado ───────────────────────────────────────────────────────
-  if (plantilla && !plantilla.abierta) {
+  // ── Ya es miembro / admin ────────────────────────────────────────────────
+  if (preCheck === "already_member") {
     return (
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center">
           <div
-            className="w-16 h-16 bg-muted flex items-center justify-center mx-auto mb-6"
+            className="w-14 h-14 bg-primary/10 flex items-center justify-center mx-auto mb-5"
             style={{ borderRadius: "var(--radius)" }}
           >
-            <Lock className="w-8 h-8 text-muted-foreground" />
+            <CheckCircle className="w-7 h-7 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-3">Portal cerrado</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold text-foreground mb-3">
+            Ya sos parte de este portal
+          </h1>
+          <p className="text-muted-foreground text-sm mb-6">
+            Tenés acceso completo a todos los contenidos.
+          </p>
+          <button
+            onClick={() => navigate(`/portal/${id}`)}
+            className="px-6 py-2.5 font-medium shadow-sm transition-colors"
+            style={{
+              background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)",
+              color: "var(--primary-foreground)",
+              borderRadius: "var(--radius)",
+            }}
+          >
+            Ir al portal
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Portal cerrado ───────────────────────────────────────────────────────
+  if (preCheck === "portal_closed") {
+    return (
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center">
+          <div
+            className="w-14 h-14 bg-muted flex items-center justify-center mx-auto mb-5"
+            style={{ borderRadius: "var(--radius)" }}
+          >
+            <Lock className="w-7 h-7 text-muted-foreground" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-3">
+            Portal cerrado temporalmente
+          </h1>
+          <p className="text-muted-foreground text-sm">
             Los administradores de este portal no están aceptando solicitudes en este momento.
             Intentalo más adelante.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Bloqueado ────────────────────────────────────────────────────────────
+  if (preCheck === "blocked") {
+    return (
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center">
+          <div
+            className="w-14 h-14 bg-destructive/10 flex items-center justify-center mx-auto mb-5"
+            style={{ borderRadius: "var(--radius)" }}
+          >
+            <ShieldOff className="w-7 h-7 text-destructive" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-3">
+            No podés enviar solicitudes a este portal
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Un administrador restringió tu acceso a este portal.
+            Si creés que es un error, ponete en contacto con los administradores.
           </p>
         </div>
       </div>
@@ -118,13 +292,15 @@ export function JoinPortal() {
         >
           <GraduationCap className="w-8 h-8 text-primary" />
         </div>
-        <h1 className="text-2xl font-bold text-foreground mb-2">Solicitar acceso al portal</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-2">
+          Solicitar acceso al portal
+        </h1>
         <p className="text-muted-foreground text-sm">
           Completá el formulario y un administrador revisará tu solicitud.
         </p>
       </div>
 
-      {/* Requisitos del portal (si existen) */}
+      {/* Requisitos del portal */}
       {plantilla?.requisitos && (
         <div
           className="flex gap-3 p-4 mb-6 bg-primary/5 border border-primary/20"
@@ -162,11 +338,11 @@ export function JoinPortal() {
               style={{ borderRadius: "var(--radius)" }}
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Algunos portales necesitan saber quién sos más allá de tu nombre de usuario.
+              Algunos portales lo piden para verificar que sos alumno regular.
             </p>
           </div>
 
-          {/* Descripción / mensaje */}
+          {/* Descripción */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
               Mensaje <span className="text-destructive">*</span>
@@ -187,7 +363,7 @@ export function JoinPortal() {
             />
             <div className="flex justify-between mt-1">
               <p className="text-xs text-muted-foreground">
-                {plantilla?.requisitos ? "Seguí las instrucciones de los requisitos." : "Máx. 1000 caracteres."}
+                Máx. 1000 caracteres.
               </p>
               <p
                 className={`text-xs ${
@@ -206,8 +382,9 @@ export function JoinPortal() {
           >
             <AlertCircle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-muted-foreground">
-              Una vez enviada, tu solicitud quedará en estado <strong>Pendiente</strong> y no podrás
-              editarla ni cancelarla. Los administradores del portal la verán y te notificarán.
+              Una vez enviada, tu solicitud quedará en estado{" "}
+              <strong>Pendiente</strong> y no podrás editarla ni cancelarla. Los
+              administradores del portal la verán y te avisarán.
             </p>
           </div>
 
@@ -217,7 +394,8 @@ export function JoinPortal() {
             disabled={isSubmitting || !descripcion.trim()}
             className="w-full px-6 py-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm font-medium"
             style={{
-              background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)",
+              background:
+                "linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)",
               color: "var(--primary-foreground)",
               borderRadius: "var(--radius)",
             }}

@@ -12,7 +12,8 @@
 //
 // Sin localStorage. Todo viene del backend.
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
+import { MainContext } from "../../../types/MainContext";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Clock,
@@ -30,6 +31,8 @@ import type { SolicitudResponse } from "../../../services/SolicitudService";
 export function RequestStatus() {
   const { portalId } = useParams();
   const navigate = useNavigate();
+
+  const { showToast } = useContext(MainContext);
 
   const [solicitud, setSolicitud] = useState<SolicitudResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,6 +55,7 @@ export function RequestStatus() {
         if (err.response?.status === 404 || err.response?.status === 204) {
           navigate(`/portal/${id}/solicitud`, { replace: true });
         } else {
+          showToast("Error al cargar el estado de tu solicitud", "error");
           setError("Error al cargar el estado de tu solicitud");
         }
       } finally {
@@ -232,7 +236,10 @@ export function RequestStatus() {
 
           {/* Botón para reenviar */}
           <button
-            onClick={() => navigate(`/portal/${id}/solicitud`)}
+            onClick={() => {
+              showToast("Podés enviar una nueva solicitud", "info");
+              navigate(`/portal/${id}/solicitud`);
+            }}
             className="w-full px-6 py-2.5 font-medium transition-colors shadow-sm"
             style={{
               background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)",

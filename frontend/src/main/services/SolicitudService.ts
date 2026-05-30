@@ -102,6 +102,31 @@ class SolicitudService {
       request
     );
   }
+
+
+  //TODO: ESTO ES UN HORROR - Debería volar a la mierda, y q esta info llegue de otra manera capaz
+  /**
+ * Verifica si el usuario autenticado está bloqueado en el portal.
+ * Retorna true si está bloqueado.
+ */
+async estoyBloqueado(portalId: number): Promise<boolean> {
+  try {
+    await apiClient.get(`/portales/${portalId}/solicitudes/puedo-solicitar`);
+    return false;
+  } catch (err: any) {
+    const raw = err.response?.data?.message ?? err.response?.data ?? "";
+    const mensaje = typeof raw === "string" ? raw.toLowerCase() : "";
+
+    if (
+      err.response?.status === 403 &&
+      (mensaje.includes("bloqueado") || mensaje.includes("restringido"))
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+}
 }
 
 export const solicitudService = new SolicitudService();
