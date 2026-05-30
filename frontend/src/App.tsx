@@ -13,11 +13,13 @@ import { Subjects } from './main/Pages/Portal/Materias/MateriasEstructura'
 import { SubjectDetail } from './main/Pages/Portal/Materias/Materia'
 import { ForumBoardsList } from './main/Pages/Portal/Foro/Foro'
 import { ForumBoardView } from './main/Pages/Portal/Foro/Tablero'
-import { AdminDashboard } from './main/Pages/Portal/AdminDashboard'
 import { JoinPortal } from './main/Pages/Portal/Solicitud/Solicitud'
 import { RequestStatus } from './main/Pages/Portal/Solicitud/SolicitudEstado'
 import { ProtectedRoute } from './main/Components/common/ProtectedRoute'
 import { AccountSettings } from './main/Pages/Perfil/CuentaConfig'
+import { RequestsAndMaterial } from './main/Pages/Portal/Admin/SolicitudesYMaterial'
+import { AdminPanel } from './main/Pages/Portal/Admin/PanelDeAdministracion'
+import { PortalConfig } from './main/Pages/Portal/Admin/ConfiguracionPortal'
 
 
 function App() {
@@ -45,12 +47,15 @@ function App() {
 
 
           <Route path="/portal/:portalId" element={<PortalLayout/>}> 
-            <Route index  element={<HomeWithBlocks />} /> 
+            <Route index element={<HomeWithBlocks />} /> 
             <Route path="/portal/:portalId/materias" element={<Subjects />} /> 
             <Route path="/portal/:portalId/materias/:id" element={<SubjectDetail />} /> 
             <Route path="/portal/:portalId/foro" element={<ForumBoardsList />} /> 
             <Route path="/portal/:portalId/foro/:boardId" element={<ForumBoardView />} /> 
-            <Route path="/portal/:portalId/admin" element={<AdminDashboard />} /> 
+            {/* <Route path="/portal/:portalId/admin" element={<AdminDashboard />} />  */}
+            <Route path="/portal/:portalId/admin/solicitudes" element={<RequestsAndMaterial />} /> 
+            <Route path="/portal/:portalId/admin/panel" element={<AdminPanel />} /> 
+            <Route path="/portal/:portalId/admin/configuracion" element={<PortalConfig />} /> 
             <Route path="/portal/:portalId/solicitud" element={<JoinPortal />} /> 
             <Route path="/portal/:portalId/solicitud-estado" element={<RequestStatus />} /> 
           </Route>
@@ -62,8 +67,3 @@ function App() {
 }
 
 export default App
-
-
-
-
-

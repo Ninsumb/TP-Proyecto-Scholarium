@@ -1,5 +1,18 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, MessageSquare, UserPlus, Shield, Home, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import {
+  BookOpen,
+  MessageSquare,
+  UserPlus,
+  Home,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  FileText,
+  Users,
+  Settings,
+} from "lucide-react";
 import { useState } from "react";
 import { usePortalContext } from "../Hooks/usePortalContext";
 
@@ -7,6 +20,7 @@ export function PortalLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isAdminExpanded, setIsAdminExpanded] = useState(true);
 
   const { portal, loading, error, isMember, isAdmin, isGuest, portalId } = usePortalContext();
 
@@ -175,23 +189,83 @@ export function PortalLayout() {
                 </Link>
               )}
 
-              {/* Administración - solo para admins */}
+              {/* Sección Admin - solo para admins */}
               {isAdmin && (
-                <Link
-                  to={`/portal/${portalId}/admin`}
-                  className={`flex items-center ${isSidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-sm transition-all relative ${
-                    isActive(`/portal/${portalId}/admin`)
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-surface-container-low"
-                  }`}
-                  title={isSidebarCollapsed ? 'Administración' : ''}
-                >
-                  {isActive(`/portal/${portalId}/admin`) && !isSidebarCollapsed && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-sm" />
+                <>
+                  {/* Divisor */}
+                  <div className="my-4">
+                    <div className="h-px bg-border mb-3"></div>
+                  </div>
+
+                  {/* Header Admin - expandible (solo cuando sidebar está expandido) */}
+                  {!isSidebarCollapsed && (
+                    <button
+                      onClick={() => setIsAdminExpanded(!isAdminExpanded)}
+                      className="w-full flex items-center justify-between px-4 py-2 text-on-surface-variant hover:text-foreground hover:bg-surface-container-low rounded-sm transition-colors"
+                    >
+                      <span className="text-xs uppercase tracking-wide font-medium">Admin</span>
+                      {isAdminExpanded ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
+                    </button>
                   )}
-                  <Shield className={`w-5 h-5 ${isSidebarCollapsed && isActive(`/portal/${portalId}/admin`) ? 'text-primary' : ''}`} />
-                  {!isSidebarCollapsed && <span>Administración</span>}
-                </Link>
+
+                  {/* Links admin: visibles si el grupo está expandido, o si el sidebar está colapsado
+                      (en sidebar colapsado siempre se muestran los íconos, no hay label que colapsar) */}
+                  {(isAdminExpanded || isSidebarCollapsed) && (
+                    <>
+                      <Link
+                        to={`/portal/${portalId}/admin/solicitudes`}
+                        className={`flex items-center ${isSidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-sm transition-all relative ${
+                          location.pathname.includes(`/portal/${portalId}/admin/solicitudes`)
+                            ? "text-foreground"
+                            : "text-muted-foreground hover:text-foreground hover:bg-surface-container-low"
+                        }`}
+                        title={isSidebarCollapsed ? 'Solicitudes y Material' : ''}
+                      >
+                        {location.pathname.includes(`/portal/${portalId}/admin/solicitudes`) && !isSidebarCollapsed && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-sm" />
+                        )}
+                        <FileText className={`w-5 h-5 ${isSidebarCollapsed && location.pathname.includes(`/portal/${portalId}/admin/solicitudes`) ? 'text-primary' : ''}`} />
+                        {!isSidebarCollapsed && <span>Solicitudes y Material</span>}
+                      </Link>
+
+                      <Link
+                        to={`/portal/${portalId}/admin/panel`}
+                        className={`flex items-center ${isSidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-sm transition-all relative ${
+                          location.pathname.includes(`/portal/${portalId}/admin/panel`)
+                            ? "text-foreground"
+                            : "text-muted-foreground hover:text-foreground hover:bg-surface-container-low"
+                        }`}
+                        title={isSidebarCollapsed ? 'Panel de Administración' : ''}
+                      >
+                        {location.pathname.includes(`/portal/${portalId}/admin/panel`) && !isSidebarCollapsed && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-sm" />
+                        )}
+                        <Users className={`w-5 h-5 ${isSidebarCollapsed && location.pathname.includes(`/portal/${portalId}/admin/panel`) ? 'text-primary' : ''}`} />
+                        {!isSidebarCollapsed && <span>Panel de Administración</span>}
+                      </Link>
+
+                      <Link
+                        to={`/portal/${portalId}/admin/configuracion`}
+                        className={`flex items-center ${isSidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-sm transition-all relative ${
+                          location.pathname.includes(`/portal/${portalId}/admin/configuracion`)
+                            ? "text-foreground"
+                            : "text-muted-foreground hover:text-foreground hover:bg-surface-container-low"
+                        }`}
+                        title={isSidebarCollapsed ? 'Configuración' : ''}
+                      >
+                        {location.pathname.includes(`/portal/${portalId}/admin/configuracion`) && !isSidebarCollapsed && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-sm" />
+                        )}
+                        <Settings className={`w-5 h-5 ${isSidebarCollapsed && location.pathname.includes(`/portal/${portalId}/admin/configuracion`) ? 'text-primary' : ''}`} />
+                        {!isSidebarCollapsed && <span>Configuración</span>}
+                      </Link>
+                    </>
+                  )}
+                </>
               )}
             </nav>
 
