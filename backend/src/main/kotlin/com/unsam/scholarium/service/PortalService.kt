@@ -7,7 +7,6 @@ import com.unsam.scholarium.dto.MateriaArbolDTO
 import com.unsam.scholarium.dto.CrearPortalRequest
 import com.unsam.scholarium.dto.PortalEstructuraDTO
 import com.unsam.scholarium.dto.CarpetaResponse
-import com.unsam.scholarium.dto.CrearPortalRequest
 import com.unsam.scholarium.dto.PortalBusquedaResponse
 import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.exception.BusinessException
