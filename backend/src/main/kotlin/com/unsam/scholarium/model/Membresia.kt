@@ -30,7 +30,7 @@ class Membresia(
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    val rol: RolMembresia = RolMembresia.MIEMBRO,
+    var rol: RolMembresia = RolMembresia.MIEMBRO,
 
     @Column(name = "fecha_registro", nullable = false)
     val fechaRegistro: LocalDateTime = LocalDateTime.now(),

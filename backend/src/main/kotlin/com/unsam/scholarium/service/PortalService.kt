@@ -7,6 +7,7 @@ import com.unsam.scholarium.dto.MateriaArbolDTO
 import com.unsam.scholarium.dto.CrearPortalRequest
 import com.unsam.scholarium.dto.PortalEstructuraDTO
 import com.unsam.scholarium.dto.CarpetaResponse
+import com.unsam.scholarium.dto.MembresiaResponse
 import com.unsam.scholarium.dto.PortalBusquedaResponse
 import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.exception.BusinessException
@@ -291,5 +292,37 @@ class PortalService(
             ?: throw ElementDoesNotExistException("El usuario no es miembro de este portal")
 
         membresiaRepository.delete(membresiaObjetivo)
+    }
+
+    @Transactional(rollbackOn = [Exception::class])
+    fun degradarAdmin(portalId: Long, usuarioObjetivoId: Long, emailAdmin: String): MembresiaResponse {
+        val portal = validarPortal(portalId)
+        val admin = validarUsuario(emailAdmin)
+
+        val membresiaAdmin = membresiaRepository.findByUsuarioIdAndPortalId(admin.id!!, portalId)
+        if (membresiaAdmin?.rol != RolMembresia.ADMIN)
+            throw NotAdminException("Solo los administradores pueden degradar miembros")
+
+        val usuarioObjetivo = usuarioRepository.findById(usuarioObjetivoId).getOrNull()
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        if (admin.id == usuarioObjetivo.id)
+            throw BusinessException("No podés degradarte a vos mismo")
+
+        val membresiaObjetivo = membresiaRepository.findByUsuarioIdAndPortalId(usuarioObjetivoId, portalId)
+            ?: throw ElementDoesNotExistException("El usuario no es miembro de este portal")
+
+        if (membresiaObjetivo.rol != RolMembresia.ADMIN)
+            throw BusinessException("El usuario objetivo no es ADMIN")
+
+        membresiaObjetivo.rol = RolMembresia.MIEMBRO
+        membresiaRepository.save(membresiaObjetivo)
+
+        return MembresiaResponse(
+            membresiaId = membresiaObjetivo.id!!,
+            usuarioId = usuarioObjetivo.id!!,
+            portalId = portalId,
+            rol = membresiaObjetivo.rol
+        )
     }
 }

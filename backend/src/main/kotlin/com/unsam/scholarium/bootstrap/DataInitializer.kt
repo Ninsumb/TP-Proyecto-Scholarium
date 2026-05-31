@@ -54,6 +54,15 @@ class DataInitializer {
             }
 
             // ── Usuarios ──────────────────────────────────────────────────
+            val nuevoAdmin = usuarioRepo.save(
+                Usuario(
+                    nombre = "Admin",
+                    email = "admin@test.com",
+                    password = passwordEncoder.encode("1234")
+                )
+            )
+            usuarioRepo.save(nuevoAdmin)
+
             val admin = usuarioRepo.save(
                 Usuario(nombre = "Valentino", email = "test@test.com", password = passwordEncoder.encode("1234"))
             )
@@ -151,6 +160,7 @@ class DataInitializer {
 
             // ── Membresías ────────────────────────────────────────────────
             membresiaRepo.save(Membresia(usuario = admin, portal = portal, rol = RolMembresia.ADMIN))
+            membresiaRepo.save(Membresia(usuario = nuevoAdmin, portal = portal, rol = RolMembresia.ADMIN))
             membresiaRepo.save(Membresia(usuario = noAdmin, portal = portal, rol = RolMembresia.MIEMBRO))
 
             // ── PlantillaSolicitud ─────────────────────────────────────────

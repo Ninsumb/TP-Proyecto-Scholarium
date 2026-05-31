@@ -5,6 +5,7 @@ import com.unsam.scholarium.dto.CarpetaResponse
 import com.unsam.scholarium.dto.CrearPortalRequest
 import com.unsam.scholarium.dto.CrearPortalResponse
 import com.unsam.scholarium.dto.MaterialPendienteDTO
+import com.unsam.scholarium.dto.MembresiaResponse
 import com.unsam.scholarium.dto.PortalBusquedaResponse
 import com.unsam.scholarium.dto.PortalEstructuraDTO
 import com.unsam.scholarium.dto.PortalResponse
@@ -141,5 +142,15 @@ class PortalController(
         val email = authentication.name
         portalService.removerMiembro(portalId, usuarioId, email)
         return ResponseEntity.noContent().build()
+    }
+
+    @PutMapping("/{portalId}/miembros/{usuarioId}/degradar")
+    fun degradarAdmin(
+        @PathVariable portalId: Long,
+        @PathVariable usuarioId: Long,
+        authentication: Authentication
+    ): ResponseEntity<MembresiaResponse> {
+        val email = authentication.name
+        return ResponseEntity.ok(portalService.degradarAdmin(portalId, usuarioId, email))
     }
 }
