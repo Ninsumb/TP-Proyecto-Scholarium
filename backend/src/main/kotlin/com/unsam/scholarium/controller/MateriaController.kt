@@ -97,4 +97,14 @@ class MateriaController(
         return ResponseEntity.ok(materiales)
     }
 
+    @GetMapping("/{materiaId}")
+    fun obtenerMateria(
+        @PathVariable materiaId: UUID,
+        authentication: Authentication
+    ): ResponseEntity<MateriaResponse> {
+        val email = authentication.name
+        val materia = materiaService.obtenerMateria(materiaId, email)
+        return ResponseEntity.ok(materia)
+    }
+
 }

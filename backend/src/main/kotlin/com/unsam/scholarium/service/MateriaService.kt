@@ -4,6 +4,7 @@ import com.unsam.scholarium.dto.CrearMateriaRequest
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.NotAdminException
+import com.unsam.scholarium.exception.UnauthorizedException
 import com.unsam.scholarium.model.Etiqueta
 import com.unsam.scholarium.model.Tablero
 import com.unsam.scholarium.model.Materia
@@ -11,10 +12,11 @@ import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.model.Usuario
 import com.unsam.scholarium.repository.*
-import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 import kotlin.jvm.optionals.getOrNull
+import com.unsam.scholarium.dto.MateriaResponse
 
 @Service
 class MateriaService(
@@ -34,7 +36,7 @@ class MateriaService(
         }
     }
 
-    @Transactional(rollbackOn = [Exception::class])
+    @Transactional
     fun crearMateria(carpetaId: UUID, email: String, request: CrearMateriaRequest): Materia {
         val usuario = usuarioRepository.findByEmail(email)
             ?: throw ElementDoesNotExistException("Usuario no encontrado")
@@ -95,7 +97,7 @@ class MateriaService(
         }
     }
 
-    @Transactional(rollbackOn = [Exception::class])
+    @Transactional(readOnly = true)
     fun actualizarNombreMateria(
         materiaId: UUID,
         nuevoNombre: String,
@@ -126,7 +128,7 @@ class MateriaService(
     }
 
     //Mueve la materia a una carpeta
-    @Transactional(rollbackOn = [Exception::class])
+    @Transactional(readOnly = true)
     fun moverMateria(
         materiaId: UUID,
         nuevaCarpetaId: UUID,
@@ -161,4 +163,30 @@ class MateriaService(
 
         return materiaRepository.save(materia)
     }
+
+   @Transactional(readOnly = true)
+    fun obtenerMateria(materiaId: UUID, email: String): MateriaResponse {
+        val materia = materiaRepository.findById(materiaId).getOrNull()
+            ?: throw ElementDoesNotExistException("Materia no encontrada")
+
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+/*
+        val portal = materia.carpeta.portal
+
+        val esMiembro = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.MIEMBRO)
+        val esAdmin = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+
+        if (!esMiembro && !esAdmin) {
+            throw UnauthorizedException("No sos miembro de este portal")
+        } */
+
+        return MateriaResponse(
+            id = materia.id!!,
+            nombre = materia.nombre,
+            carpetaId = materia.carpeta.id!!,
+            orden = materia.orden,
+            updatedAt = materia.updatedAt!!.toInstant()
+        )
+}
 }
