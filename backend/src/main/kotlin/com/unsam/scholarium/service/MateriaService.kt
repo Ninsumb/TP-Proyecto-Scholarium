@@ -171,15 +171,15 @@ class MateriaService(
 
         val usuario = usuarioRepository.findByEmail(email)
             ?: throw ElementDoesNotExistException("Usuario no encontrado")
-/*
+
         val portal = materia.carpeta.portal
 
-        val esMiembro = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.MIEMBRO)
-        val esAdmin = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+        val esMiembro = membresiaRepository.existsByUsuarioIdAndPortalIdAndRol(usuario.id!!, portal.id!!, RolMembresia.MIEMBRO)
+        val esAdmin = membresiaRepository.existsByUsuarioIdAndPortalIdAndRol(usuario.id!!, portal.id!!, RolMembresia.ADMIN)
 
         if (!esMiembro && !esAdmin) {
             throw UnauthorizedException("No sos miembro de este portal")
-        } */
+        } 
 
         return MateriaResponse(
             id = materia.id!!,
