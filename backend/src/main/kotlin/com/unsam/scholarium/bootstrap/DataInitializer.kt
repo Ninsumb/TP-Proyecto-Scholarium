@@ -222,19 +222,140 @@ class DataInitializer {
             val materiaSO = materiaRepo.save(Materia(nombre = "Sistemas Operativos", carpeta = carpeta))
 
             // ── Material ──────────────────────────────────────────────────
-            materialRepo.save(
-                Material(
-                    nombre = "Primer parcial 2025",
-                    descripcion = "parcial del primer cuatrimestre de 2025",
-                    tipo = TipoMaterial.PARCIAL,
-                    url = "https://test.com",
-                    publicId = "test/test.pdf",
-                    tamanio = 8,
-                    tipoArchivo = "pdf",
-                    materia = materiaMatem,
-                    usuario = noAdmin,
-                )
+                
+        // Mate 1 — conjunto de materiales PUBLICADOs
+
+        // Parciales
+        materialRepo.save(
+            Material(
+                nombre = "Primer parcial 2023",
+                descripcion = "Parcial del primer cuatrimestre 2023. Temas: límites, continuidad y derivadas.",
+                tipo = TipoMaterial.PARCIAL,
+                url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
+                publicId = "scholarium/mate1/parcial-1c-2023.pdf",
+                tamanio = 120,
+                tipoArchivo = "pdf",
+                materia = materiaMatem,
+                usuario = admin,
+                estado = EstadoMaterial.PUBLICADO,
             )
+        )
+        materialRepo.save(
+            Material(
+                nombre = "Segundo parcial 2023",
+                descripcion = "Parcial del segundo cuatrimestre 2023. Temas: integrales definidas e indefinidas, técnicas de integración.",
+                tipo = TipoMaterial.PARCIAL,
+                url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
+                publicId = "scholarium/mate1/parcial-2c-2023.pdf",
+                tamanio = 98,
+                tipoArchivo = "pdf",
+                materia = materiaMatem,
+                usuario = admin,
+                estado = EstadoMaterial.PUBLICADO,
+            )
+        )
+        materialRepo.save(
+            Material(
+                nombre = "Primer parcial 2024",
+                descripcion = "Parcial del primer cuatrimestre 2024. Incluye sucesiones y series.",
+                tipo = TipoMaterial.PARCIAL,
+                url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
+                publicId = "scholarium/mate1/parcial-1c-2024.pdf",
+                tamanio = 110,
+                tipoArchivo = "pdf",
+                materia = materiaMatem,
+                usuario = noAdmin,
+                estado = EstadoMaterial.PUBLICADO,
+            )
+        )
+        materialRepo.save(
+            Material(
+                nombre = "Primer parcial 2025",
+                descripcion = "Parcial del primer cuatrimestre 2025. Temas: límites y derivadas.",
+                tipo = TipoMaterial.PARCIAL,
+                url = "https://test.com",
+                publicId = "test/test.pdf",
+                tamanio = 8,
+                tipoArchivo = "pdf",
+                materia = materiaMatem,
+                usuario = noAdmin,
+                estado = EstadoMaterial.PUBLICADO,
+            )
+        )
+
+// Apuntes
+materialRepo.save(
+    Material(
+        nombre = "Apunte — Límites y continuidad",
+        descripcion = "Resumen teórico con definición épsilon-delta, propiedades de límites y criterios de continuidad.",
+        tipo = TipoMaterial.APUNTE,
+        url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
+        publicId = "scholarium/mate1/apunte-limites.pdf",
+        tamanio = 245,
+        tipoArchivo = "pdf",
+        materia = materiaMatem,
+        usuario = noAdmin,
+        estado = EstadoMaterial.PUBLICADO,
+    )
+)
+materialRepo.save(
+    Material(
+        nombre = "Apunte — Derivadas e integrales",
+        descripcion = "Reglas de derivación, teorema del valor medio, integrales por sustitución y por partes.",
+        tipo = TipoMaterial.APUNTE,
+        url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
+        publicId = "scholarium/mate1/apunte-derivadas-integrales.pdf",
+        tamanio = 310,
+        tipoArchivo = "pdf",
+        materia = materiaMatem,
+        usuario = admin,
+        estado = EstadoMaterial.PUBLICADO,
+    )
+)
+materialRepo.save(
+    Material(
+        nombre = "Apunte — Series y sucesiones",
+        descripcion = "Criterios de convergencia: razón, raíz y comparación. Series de Taylor y Maclaurin.",
+        tipo = TipoMaterial.APUNTE,
+        url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
+        publicId = "scholarium/mate1/apunte-series.pdf",
+        tamanio = 189,
+        tipoArchivo = "pdf",
+        materia = materiaMatem,
+        usuario = noAdmin,
+        estado = EstadoMaterial.PUBLICADO,
+    )
+)
+
+// Prácticas
+materialRepo.save(
+    Material(
+        nombre = "Guía de práctica — Límites",
+        descripcion = "Ejercicios resueltos y propuestos sobre cálculo de límites. Ideal para preparar el primer parcial.",
+        tipo = TipoMaterial.GUIA_EJERCICIOS,
+        url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
+        publicId = "scholarium/mate1/GUIA_EJERCICIOS-limites.pdf",
+        tamanio = 175,
+        tipoArchivo = "pdf",
+        materia = materiaMatem,
+        usuario = admin,
+        estado = EstadoMaterial.PUBLICADO,
+    )
+)
+materialRepo.save(
+    Material(
+        nombre = "Guía de práctica — Integrales",
+        descripcion = "Ejercicios de integración por sustitución, por partes y fracciones parciales con soluciones.",
+        tipo = TipoMaterial.GUIA_EJERCICIOS,
+        url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
+        publicId = "scholarium/mate1/GUIA_EJERCICIOS-integrales.pdf",
+        tamanio = 202,
+        tipoArchivo = "pdf",
+        materia = materiaMatem,
+        usuario = noAdmin,
+        estado = EstadoMaterial.PUBLICADO,
+    )
+)
 
             // ── Etiquetas ─────────────────────────────────────────────────
             val etiquetaGeneral = etiquetaRepo.save(Etiqueta(nombre = "GENERAL", portal = portal))

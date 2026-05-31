@@ -17,11 +17,12 @@ import com.unsam.scholarium.repository.MembresiaRepository
 import com.unsam.scholarium.repository.PortalRepository
 import com.unsam.scholarium.repository.UsuarioRepository
 import jakarta.persistence.EntityNotFoundException
-import jakarta.transaction.Transactional
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.util.UUID
 import kotlin.jvm.optionals.getOrNull
+ 
 
 @Service
 class MaterialService(
@@ -75,7 +76,7 @@ class MaterialService(
         return materialRepository.save(material)
     }
 
-    @Transactional(rollbackOn = [Exception::class])
+    @Transactional(readOnly = true)
     fun subirMaterial(
         materiaId: UUID,
         archivo: MultipartFile,
@@ -152,6 +153,7 @@ class MaterialService(
         return materialRepository.save(material)
     }
 
+    @Transactional(readOnly = true)
     fun listarMaterialPublicado(materiaId: UUID, email: String): List<MaterialPublicadoResponse> {
 
         val materia = materiaRepository.findById(materiaId).getOrNull()
@@ -177,6 +179,7 @@ class MaterialService(
             .map { MaterialPublicadoResponse.fromEntity(it) }
     }
 
+    @Transactional(readOnly = true)
     fun buscarMaterialPublicado(materiaId: UUID, nombre: String, email: String): List<MaterialPublicadoResponse> {
     val materia = materiaRepository.findById(materiaId).getOrNull()
         ?: throw ElementDoesNotExistException("Materia no encontrada")
@@ -197,6 +200,7 @@ class MaterialService(
         .map { MaterialPublicadoResponse.fromEntity(it) }
 }
 
+@Transactional(readOnly = true)
 fun descargarMaterial(materialId: UUID, email: String): String {
     val material = materialRepository.findById(materialId)
         .orElseThrow { ElementDoesNotExistException("Material no encontrado") }
