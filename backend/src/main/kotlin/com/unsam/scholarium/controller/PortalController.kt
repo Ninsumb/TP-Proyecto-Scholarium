@@ -144,6 +144,21 @@ class PortalController(
         return ResponseEntity.noContent().build()
     }
 
+    @PutMapping("/{portalId}/miembros/{usuarioId}/promover")
+    fun promoverAdmin(
+        @PathVariable portalId: Long,
+        @PathVariable usuarioId: Long,
+        authentication: Authentication
+    ): ResponseEntity<MembresiaResponse> {
+        val email = authentication.name
+        return ResponseEntity.ok(
+            portalService.promoverAdmin(
+                portalId,
+                usuarioId,
+                email)
+        )
+    }
+
     @PutMapping("/{portalId}/miembros/{usuarioId}/degradar")
     fun degradarAdmin(
         @PathVariable portalId: Long,
@@ -151,6 +166,11 @@ class PortalController(
         authentication: Authentication
     ): ResponseEntity<MembresiaResponse> {
         val email = authentication.name
-        return ResponseEntity.ok(portalService.degradarAdmin(portalId, usuarioId, email))
+        return ResponseEntity.ok(
+            portalService.degradarAdmin(
+                portalId,
+                usuarioId,
+                email)
+        )
     }
 }

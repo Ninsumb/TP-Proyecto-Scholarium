@@ -294,6 +294,34 @@ class PortalService(
         membresiaRepository.delete(membresiaObjetivo)
     }
 
+    fun promoverAdmin(portalId: Long, usuarioObjetivoId: Long, emailAdmin: String): MembresiaResponse  {
+        val portal = validarPortal(portalId)
+        val admin = validarUsuario(emailAdmin)
+
+        val membresiaAdmin = membresiaRepository.findByUsuarioIdAndPortalId(admin.id!!, portalId)
+        if (membresiaAdmin?.rol != RolMembresia.ADMIN)
+            throw NotAdminException("Solo los administradores pueden promover miembros")
+
+        val usuarioObjetivo = usuarioRepository.findById(usuarioObjetivoId).getOrNull()
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        val membresiaObjetivo = membresiaRepository.findByUsuarioIdAndPortalId(usuarioObjetivoId, portalId)
+            ?: throw ElementDoesNotExistException("El usuario no es miembro de este portal")
+
+        if (membresiaObjetivo.rol == RolMembresia.ADMIN)
+            throw BusinessException("El usuario objetivo ya es ADMIN")
+
+        membresiaObjetivo.rol = RolMembresia.ADMIN
+        membresiaRepository.save(membresiaObjetivo)
+
+        return MembresiaResponse(
+            membresiaId = membresiaObjetivo.id!!,
+            usuarioId = usuarioObjetivo.id!!,
+            portalId = portalId,
+            rol = membresiaObjetivo.rol
+        )
+    }
+
     @Transactional(rollbackOn = [Exception::class])
     fun degradarAdmin(portalId: Long, usuarioObjetivoId: Long, emailAdmin: String): MembresiaResponse {
         val portal = validarPortal(portalId)
