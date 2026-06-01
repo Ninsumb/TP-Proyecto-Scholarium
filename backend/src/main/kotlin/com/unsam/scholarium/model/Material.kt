@@ -68,5 +68,8 @@ class Material(
     var updatedAt: Date? = null,
 
     @Column(nullable = false)
-    var publicId: String?
+    var publicId: String?,
+
+    @Column(nullable = false)
+    var activo: Boolean = true
 )

@@ -13,16 +13,18 @@ import java.util.UUID
 interface MaterialRepository : JpaRepository<Material, UUID> {
     fun findByIdIn(ids: List<UUID>): List<Material>
 
-    @Query("SELECT COUNT(m) FROM Material m WHERE m.materia.carpeta.portal.id = :portalId")
+    @Query("SELECT COUNT(m) " +
+            "FROM Material m " +
+            "WHERE (m.materia.carpeta.portal.id = :portalId AND m.activo = true)")
     fun countByPortalId(portalId: Long): Int
     fun tipo(tipo: TipoMaterial): MutableList<Material>
 
-    fun findByMateriaIdAndEstadoOrderByCreatedAtDesc(
+    fun findByMateriaIdAndActivoIsTrueAndEstadoOrderByCreatedAtDesc(
         materiaId: UUID,
         estado: EstadoMaterial
     ): List<Material>
 
-    fun findByMateriaIdAndEstadoAndNombreContainingIgnoreCaseOrderByCreatedAtDesc(
+    fun findByMateriaIdAndActivoIsTrueAndEstadoAndNombreContainingIgnoreCaseOrderByCreatedAtDesc(
         materiaId: UUID,
         estado: EstadoMaterial,
         nombre: String

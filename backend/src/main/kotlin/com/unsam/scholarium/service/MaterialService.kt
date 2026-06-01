@@ -175,7 +175,7 @@ class MaterialService(
         }
 
         return materialRepository
-            .findByMateriaIdAndEstadoOrderByCreatedAtDesc(materiaId, EstadoMaterial.PUBLICADO)
+            .findByMateriaIdAndActivoIsTrueAndEstadoOrderByCreatedAtDesc(materiaId, EstadoMaterial.PUBLICADO)
             .map { MaterialPublicadoResponse.fromEntity(it) }
     }
 
@@ -196,11 +196,11 @@ class MaterialService(
     }
 
     return materialRepository
-        .findByMateriaIdAndEstadoAndNombreContainingIgnoreCaseOrderByCreatedAtDesc(materiaId, EstadoMaterial.PUBLICADO, nombre)
+        .findByMateriaIdAndActivoIsTrueAndEstadoAndNombreContainingIgnoreCaseOrderByCreatedAtDesc(materiaId, EstadoMaterial.PUBLICADO, nombre)
         .map { MaterialPublicadoResponse.fromEntity(it) }
 }
 
-@Transactional(readOnly = true)
+    @Transactional(readOnly = true)
 fun descargarMaterial(materialId: UUID, email: String): String {
     val material = materialRepository.findById(materialId)
         .orElseThrow { ElementDoesNotExistException("Material no encontrado") }
@@ -223,4 +223,25 @@ fun descargarMaterial(materialId: UUID, email: String): String {
     
     return material.url
 }
+
+    fun deleteMaterial(materialId: UUID, email: String) {
+        val material = materialRepository.findById(materialId)
+            .orElseThrow { ElementDoesNotExistException("Material no encontrado") }
+
+        val portal = material.materia.carpeta.portal
+
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        val esAdmin = membresiaRepository
+            .existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+
+        if (!esAdmin) {
+            throw NotAdminException("No sos ADMIN del portal del material.")
+        }
+
+        material.activo = false
+
+        materialRepository.save(material)
+    }
 }
