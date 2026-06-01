@@ -176,7 +176,7 @@ class PortalService(
         val portalGuardado = portalRepository.save(portal)
 
         // Etiqueta general por defecto
-        etiquetaRepository.save(Etiqueta(nombre = "GENERAL", portal = portalGuardado))
+        etiquetaRepository.save(Etiqueta(nombre = "General", portal = portalGuardado))
 
         // PlantillaSolicitud: abierta por defecto con mensaje de bienvenida
         plantillaSolicitudRepository.save(

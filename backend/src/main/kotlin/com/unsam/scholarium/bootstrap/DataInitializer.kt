@@ -216,6 +216,10 @@ class DataInitializer {
 
             // ── Carpeta y materias ────────────────────────────────────────
             val carpeta = carpetaRepo.save(Carpeta(nombre = "carpeta test", portal = portal))
+            val carpetita = carpetaRepo.save(Carpeta(nombre = "Carpeta 2", portal = portal))
+            val carpeteta = carpetaRepo.save(Carpeta(nombre = "Carpeta 3", portal = portal))
+            val carpintero = carpetaRepo.save(Carpeta(nombre = "Carpeta 2a", portal = portal, carpetaPadre = carpetita))
+            val carpetaJodida = carpetaRepo.save(Carpeta(nombre = "Carpeta test chiquita", portal = portal, carpetaPadre = carpeta))
 
             val materiaAlgo = materiaRepo.save(Materia(nombre = "Algoritmos y Estructuras de Datos", carpeta = carpeta))
             val materiaMatem = materiaRepo.save(Materia(nombre = "Mate 1", carpeta = carpeta))
@@ -358,7 +362,7 @@ materialRepo.save(
 )
 
             // ── Etiquetas ─────────────────────────────────────────────────
-            val etiquetaGeneral = etiquetaRepo.save(Etiqueta(nombre = "GENERAL", portal = portal))
+            val etiquetaGeneral = etiquetaRepo.save(Etiqueta(nombre = "General", portal = portal))
             val etiquetaAlgo = etiquetaRepo.save(Etiqueta(nombre = "Algoritmos", portal = portal))
             val etiquetaMatem = etiquetaRepo.save(Etiqueta(nombre = "Mate 1", portal = portal))
             val etiquetaSO = etiquetaRepo.save(Etiqueta(nombre = "Sistemas Op.", portal = portal))
