@@ -76,7 +76,7 @@ class MaterialService(
         return materialRepository.save(material)
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     fun subirMaterial(
         materiaId: UUID,
         archivo: MultipartFile,
