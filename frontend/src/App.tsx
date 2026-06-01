@@ -4,7 +4,6 @@ import Register from './main/Pages/Auth/Register'
 import './App.css'
 import { Home } from './main/Pages/Home/MisPortales'
 import { LayoutMain } from './main/Layouts/LayoutMain'
-import { Profile } from './main/Pages/Perfil/Perfil'
 import { ExplorePortals } from './main/Pages/Home/ExplorarPortales'
 import { CreatePortal } from './main/Pages/Home/CrearPortal'
 import { PortalLayout } from './main/Layouts/PortalLayout'
@@ -20,6 +19,7 @@ import { AccountSettings } from './main/Pages/Perfil/CuentaConfig'
 import { RequestsAndMaterial } from './main/Pages/Portal/Admin/SolicitudesYMaterial'
 import { AdminPanel } from './main/Pages/Portal/Admin/PanelDeAdministracion'
 import { PortalConfig } from './main/Pages/Portal/Admin/ConfiguracionPortal'
+import { Notifications } from './main/Pages/Perfil/Notificaciones'
 
 
 function App() {
@@ -40,8 +40,8 @@ function App() {
         }>
           
           <Route path="/home" element={<Home />} /> 
-          <Route path="/perfil" element={<Profile />} /> 
           <Route path="/configuracion" element={<AccountSettings />} /> 
+          <Route path="/notificaciones" element={<Notifications />} /> 
           <Route path="/explorar-portales" element={<ExplorePortals />} /> 
           <Route path="/crear-portal" element={<CreatePortal />} /> 
 
