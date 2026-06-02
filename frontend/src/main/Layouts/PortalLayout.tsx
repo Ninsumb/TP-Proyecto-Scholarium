@@ -14,7 +14,7 @@ import {
   Settings,
 } from "lucide-react";
 import { useState } from "react";
-import { usePortalContext } from "../Hooks/usePortalContext";
+import { usePortalContext } from "../hooks/usePortalContext";
 
 export function PortalLayout() {
   const location = useLocation();

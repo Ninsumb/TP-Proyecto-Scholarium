@@ -95,6 +95,11 @@ class DataInitializer {
             )
             usuarioRepo.save(bloqueado)
 
+            // Usuario ADMIN de
+            val variasMembresias = usuarioRepo.save(
+                Usuario(nombre = "Jose VariasMembresiasez", email = "jose@test.com", password = passwordEncoder.encode("1234"))
+            )
+
             // ── Portales ──────────────────────────────────────────────────
             // Todos se guardan en variables para crearles PlantillaSolicitud.
             val portal = portalRepo.save(
@@ -162,6 +167,8 @@ class DataInitializer {
             membresiaRepo.save(Membresia(usuario = admin, portal = portal, rol = RolMembresia.ADMIN))
             membresiaRepo.save(Membresia(usuario = nuevoAdmin, portal = portal, rol = RolMembresia.ADMIN))
             membresiaRepo.save(Membresia(usuario = noAdmin, portal = portal, rol = RolMembresia.MIEMBRO))
+            membresiaRepo.save(Membresia(usuario = variasMembresias, portal = portal, rol = RolMembresia.MIEMBRO))
+            membresiaRepo.save(Membresia(usuario = variasMembresias, portal = portalRedes, rol = RolMembresia.ADMIN))
 
             // ── PlantillaSolicitud ─────────────────────────────────────────
             // Los portales se crean directamente en el repo (sin pasar por createPortal),
@@ -400,6 +407,7 @@ materialRepo.save(
             println("   - juan@test.com / 1234  → tiene solicitud PENDIENTE")
             println("   - maria@test.com / 1234 → tiene solicitud RECHAZADA (puede reenviar)")
             println("   - carlos@test.com / 1234 → BLOQUEADO (no puede enviar solicitudes)")
+            println("   - jose@test.com / 1234 → MIEMBRO de portal y ADMIN de portalRedes")
         } else {
             println("ℹ️ La base de datos ya tiene datos, omitiendo inicialización...")
         }
