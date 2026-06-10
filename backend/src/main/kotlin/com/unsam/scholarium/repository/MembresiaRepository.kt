@@ -26,4 +26,10 @@ interface MembresiaRepository : JpaRepository<Membresia, Long> {
 
     fun findByUsuarioOrderByFechaRegistroDesc(usuario: Usuario): List<Membresia>
     fun countByPortal(portal: Portal): Long
+
+    /** Cuenta cuántos usuarios tienen el rol dado en el portal (ej. cuántos admins). */
+    fun countByPortalAndRol(portal: Portal, rol: RolMembresia): Long
+
+    /** Lista las membresías del portal con un rol específico (ej. todos los admins). */
+    fun findByPortalAndRol(portal: Portal, rol: RolMembresia): List<Membresia>
 }
