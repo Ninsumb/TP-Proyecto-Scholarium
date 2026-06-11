@@ -103,4 +103,14 @@ class UsuarioService(
 
         return url
     }
+
+    @Transactional
+    fun eliminarCuenta(email: String) {
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        // TODO: Considerar si se debe eliminar o marcar como eliminado
+        // Por ahora eliminamos físicamente
+        usuarioRepository.delete(usuario)
+    }
 }

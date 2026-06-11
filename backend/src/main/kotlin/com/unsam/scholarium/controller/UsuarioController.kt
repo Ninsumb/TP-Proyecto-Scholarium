@@ -7,6 +7,7 @@ import com.unsam.scholarium.service.UsuarioService
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -57,5 +58,12 @@ class UsuarioController (
         val email = authentication.name
         val url = usuarioService.actualizarFotoPerfil(email, foto)
         return ResponseEntity.ok(mapOf("fotoPerfil" to url))
+    }
+
+    @DeleteMapping("/me")
+    fun eliminarCuenta(authentication: Authentication): ResponseEntity<Void> {
+        val email = authentication.name
+        usuarioService.eliminarCuenta(email)
+        return ResponseEntity.noContent().build()
     }
 }
