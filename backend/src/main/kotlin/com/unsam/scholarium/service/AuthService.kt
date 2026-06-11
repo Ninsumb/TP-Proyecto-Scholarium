@@ -1,5 +1,7 @@
 package com.unsam.scholarium.service
 
+import com.unsam.scholarium.dto.ChangeEmailRequest
+import com.unsam.scholarium.dto.ChangePasswordRequest
 import com.unsam.scholarium.dto.GoogleLoginRequest
 import com.unsam.scholarium.dto.LoginRequest
 import com.unsam.scholarium.dto.LoginResponse
@@ -129,4 +131,57 @@ class AuthService(
 
         return LoginResponse(token = newToken, refreshToken = newRefreshToken)
     }
+
+    fun changePassword(email: String, request: ChangePasswordRequest) {
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw UnauthorizedException("Usuario no encontrado")
+
+        // Verificar que sea un usuario de email/password (NO de Google)
+        if (usuario.password == null) {
+            throw UnauthorizedException("Esta cuenta fue creada con Google. No se puede cambiar contraseña.")
+        }
+
+        // Verificar contraseña actual
+        val passwordCorrecta = passwordEncoder.matches(request.currentPassword, usuario.password)
+        if (!passwordCorrecta) {
+            throw UnauthorizedException("Contraseña actual incorrecta")
+        }
+
+        // Validar nueva contraseña
+        if (request.newPassword.length < 8) {
+            throw IllegalArgumentException("La nueva contraseña debe tener al menos 8 caracteres")
+        }
+
+        // Actualizar contraseña
+        usuario.password = passwordEncoder.encode(request.newPassword)
+        usuarioRepository.save(usuario)
+    }
+
+    //TODO: Ver qué hacemos con el email
+/*    fun changeEmail(email: String, request: ChangeEmailRequest): String {
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw UnauthorizedException("Usuario no encontrado")
+
+        // Verificar que sea un usuario de email/password (NO de Google)
+        if (usuario.password == null) {
+            throw UnauthorizedException("Esta cuenta fue creada con Google. No se puede cambiar email.")
+        }
+
+        // Verificar contraseña
+        val passwordCorrecta = passwordEncoder.matches(request.password, usuario.password)
+        if (!passwordCorrecta) {
+            throw UnauthorizedException("Contraseña incorrecta")
+        }
+
+        // Verificar que el nuevo email no esté en uso
+        if (usuarioRepository.existsByEmail(request.newEmail)) {
+            throw IllegalArgumentException("Este correo ya se encuentra registrado")
+        }
+
+        // Actualizar email
+        usuario.email = request.newEmail
+        usuarioRepository.save(usuario)
+
+        return request.newEmail
+    }*/
 }

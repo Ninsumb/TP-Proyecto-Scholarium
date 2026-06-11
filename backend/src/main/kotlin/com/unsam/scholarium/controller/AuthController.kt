@@ -1,16 +1,20 @@
 package com.unsam.scholarium.controller
 
+import com.unsam.scholarium.dto.ChangeEmailRequest
+import com.unsam.scholarium.dto.ChangePasswordRequest
 import com.unsam.scholarium.dto.GoogleLoginRequest
 import com.unsam.scholarium.dto.LoginRequest
 import com.unsam.scholarium.dto.LoginResponse
 import com.unsam.scholarium.dto.RegisterRequest
 import com.unsam.scholarium.dto.RegisterResponse
 import com.unsam.scholarium.service.AuthService
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.ResponseStatus
 
 @RestController
@@ -47,4 +51,24 @@ class AuthController(
     fun refresh(@RequestBody request: RefreshRequest): LoginResponse {
         return authService.refresh(request.refreshToken)
     }
+
+    @PostMapping("/change-password")
+    fun changePassword(
+        @RequestBody request: ChangePasswordRequest,
+        authentication: Authentication
+    ): ResponseEntity<Void> {
+        val email = authentication.name
+        authService.changePassword(email, request)
+        return ResponseEntity.noContent().build()
+    }
+
+/*    @PostMapping("/change-email")
+    fun changeEmail(
+        @RequestBody request: ChangeEmailRequest,
+        authentication: Authentication
+    ): ResponseEntity<Map<String, String>> {
+        val email = authentication.name
+        val newEmail = authService.changeEmail(email, request)
+        return ResponseEntity.ok(mapOf("newEmail" to newEmail))
+    }*/
 }
