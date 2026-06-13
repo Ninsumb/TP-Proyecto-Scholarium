@@ -6,6 +6,7 @@ import com.unsam.scholarium.dto.SolicitudRequest
 import com.unsam.scholarium.dto.SolicitudResponse
 import com.unsam.scholarium.service.SolicitudService
 import com.unsam.scholarium.dto.ActualizarPlantillaRequest
+import com.unsam.scholarium.dto.PuedeSolicitarResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
@@ -135,4 +136,15 @@ class SolicitudController(
         val resultado = solicitudService.actualizarPlantilla(portalId, authentication.name, request)
         return ResponseEntity.ok(resultado)
     }
+
+    /**
+     * Verifica si el usuario autenticado puede enviar una solicitud a este portal.
+     * Siempre devuelve 200 — la respuesta indica el estado, no un error.
+     */
+    @GetMapping("/puedo-solicitar")
+    fun puedeSolicitar(
+        @PathVariable portalId: Long,
+        authentication: Authentication,
+    ): PuedeSolicitarResponse =
+        solicitudService.puedeSolicitar(portalId, authentication.name)
 }

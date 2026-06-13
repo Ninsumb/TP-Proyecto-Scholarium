@@ -20,6 +20,7 @@ import com.unsam.scholarium.repository.PortalRepository
 import com.unsam.scholarium.repository.SolicitudRepository
 import com.unsam.scholarium.repository.UsuarioRepository
 import com.unsam.scholarium.dto.ActualizarPlantillaRequest
+import com.unsam.scholarium.dto.PuedeSolicitarResponse
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import kotlin.jvm.optionals.getOrNull
@@ -282,6 +283,35 @@ class SolicitudService(
             requisitos = plantilla.requisitos?.takeIf { it.isNotBlank() } ?: PlantillaSolicitud.REQUISITOS_DEFAULT,
             abierta    = plantilla.abierta,
         )
+    }
+
+    /**
+     * Verifica si el usuario autenticado puede enviar una solicitud al portal.
+     * No lanza excepciones — siempre retorna una respuesta estructurada.
+     *
+     * Motivos posibles:
+     * - "YA_MIEMBRO"  → el usuario ya tiene membresía activa en este portal
+     * - "BLOQUEADO"   → el usuario tiene un bloqueo activo en este portal
+     * - "PENDIENTE"   → el usuario ya tiene una solicitud pendiente
+     * - null          → puede solicitar sin restricciones
+     */
+    fun puedeSolicitar(idPortal: Long, email: String): PuedeSolicitarResponse {
+        val portal = portalRepository.findById(idPortal).getOrNull()
+            ?: return PuedeSolicitarResponse(puede = false, motivo = "PORTAL_NO_ENCONTRADO")
+
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: return PuedeSolicitarResponse(puede = false, motivo = "USUARIO_NO_ENCONTRADO")
+
+        if (membresiaRepository.existsByUsuarioIdAndPortalId(usuario.id!!, idPortal))
+            return PuedeSolicitarResponse(puede = false, motivo = "YA_MIEMBRO")
+
+        if (portalBloqueoRepository.existsByPortalAndUsuario(portal, usuario))
+            return PuedeSolicitarResponse(puede = false, motivo = "BLOQUEADO")
+
+        if (solicitudRepository.existsByUsuarioAndPortalAndEstado(usuario, portal, Estado.PENDIENTE))
+            return PuedeSolicitarResponse(puede = false, motivo = "PENDIENTE")
+
+        return PuedeSolicitarResponse(puede = true, motivo = null)
     }
 
     // ── Mapper privado ─────────────────────────────────────────────────────
