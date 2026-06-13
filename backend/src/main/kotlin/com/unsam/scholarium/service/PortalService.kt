@@ -31,6 +31,8 @@ import com.unsam.scholarium.repository.MembresiaRepository
 import com.unsam.scholarium.repository.PlantillaSolicitudRepository
 import com.unsam.scholarium.repository.PortalRepository
 import com.unsam.scholarium.repository.UsuarioRepository
+import com.unsam.scholarium.dto.MiembroResponse
+import com.unsam.scholarium.dto.ActualizarPortalRequest
 import jakarta.transaction.Transactional
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
@@ -352,5 +354,62 @@ class PortalService(
             portalId = portalId,
             rol = membresiaObjetivo.rol
         )
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+// AGREGAR ESTOS MÉTODOS AL PortalService EXISTENTE
+// (no es un archivo standalone: copiar los métodos dentro de la clase PortalService)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Import adicional necesario en PortalService:
+
+
+    /**
+     * Devuelve todos los miembros activos del portal.
+     * Solo accesible por admins del portal.
+     */
+    fun getMiembros(portalId: Long, email: String): List<MiembroResponse> {
+        val portal = validarPortal(portalId)
+        val usuario = validarUsuario(email)
+
+        val membresiaAdmin = membresiaRepository.findByUsuarioIdAndPortalId(usuario.id!!, portalId)
+            ?: throw NotAdminException("No sos miembro del portal")
+
+        if (membresiaAdmin.rol != RolMembresia.ADMIN)
+            throw NotAdminException("Solo los administradores pueden ver la lista de miembros")
+
+        return membresiaRepository.findAllByPortalId(portalId).map { membresia ->
+            MiembroResponse(
+                usuarioId    = membresia.usuario.id!!,
+                membresiaId  = membresia.id!!,
+                nombre       = membresia.usuario.nombre,
+                email        = membresia.usuario.email,
+                rol          = membresia.rol,
+                fechaRegistro = membresia.fechaRegistro,
+            )
+        }
+    }
+
+    /**
+     * Actualiza los campos de identidad/visual del portal que NO requieren votación:
+     * unidadAcademica, descripcion, iconoPortal, colorPortal, logoUrl.
+     *
+     * Universidad y carrera se cambian vía VotacionAdmin (CAMBIO_INFO_PORTAL).
+     * Solo admins del portal pueden invocar este método.
+     */
+    @Transactional(rollbackOn = [Exception::class])
+    fun actualizarPortal(portalId: Long, email: String, request: ActualizarPortalRequest): Portal {
+        val portal = validarPortal(portalId)
+        val usuario = validarUsuario(email)
+        validarMembresiaUsuario(usuario, portalId, RolMembresia.ADMIN)
+
+        request.unidadAcademica?.let { portal.unidadAcademica = it.trim().takeIf { v -> v.isNotBlank() } }
+        request.descripcion?.let   { portal.descripcion       = it.trim().takeIf { v -> v.isNotBlank() } }
+        request.iconoPortal?.let   { portal.iconoPortal       = it.trim().takeIf { v -> v.isNotBlank() } }
+        request.colorPortal?.let   { portal.colorPortal       = it.trim().takeIf { v -> v.isNotBlank() } }
+        request.logoUrl?.let       { portal.logoUrl           = it.trim().takeIf { v -> v.isNotBlank() } }
+        request.tipoAcceso?.let    { portal.tipoAcceso        = it    }
+
+        return portalRepository.save(portal)
     }
 }

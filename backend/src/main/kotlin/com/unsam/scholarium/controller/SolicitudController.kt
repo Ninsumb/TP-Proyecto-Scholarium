@@ -5,10 +5,12 @@ import com.unsam.scholarium.dto.RechazarSolicitudRequest
 import com.unsam.scholarium.dto.SolicitudRequest
 import com.unsam.scholarium.dto.SolicitudResponse
 import com.unsam.scholarium.service.SolicitudService
+import com.unsam.scholarium.dto.ActualizarPlantillaRequest
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -110,5 +112,27 @@ class SolicitudController(
     ): ResponseEntity<Void> {
         solicitudService.rechazarSolicitud(solicitudId, authentication.name, request)
         return ResponseEntity.ok().build()
+    }
+
+
+// EN SolicitudController — agregar los siguientes imports y métodos:
+//
+// Import adicionales:
+//
+//
+
+    /**
+     * Actualiza la PlantillaSolicitud del portal (requisitos y/o estado abierta).
+     * Solo admins.
+     * PATCH /api/portales/{portalId}/solicitudes/plantilla
+     */
+    @PatchMapping("/plantilla")
+    fun actualizarPlantilla(
+        @PathVariable portalId: Long,
+        @RequestBody request: ActualizarPlantillaRequest,
+        authentication: Authentication,
+    ): ResponseEntity<PlantillaSolicitudResponse> {
+        val resultado = solicitudService.actualizarPlantilla(portalId, authentication.name, request)
+        return ResponseEntity.ok(resultado)
     }
 }

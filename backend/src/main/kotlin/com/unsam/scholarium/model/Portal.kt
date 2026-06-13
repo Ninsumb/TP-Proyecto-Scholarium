@@ -5,6 +5,11 @@ import jakarta.persistence.*
 import java.text.Normalizer
 import java.time.LocalDateTime
 
+enum class TipoAcceso {
+    ABIERTO,
+    CERRADO
+}
+
 @Entity
 @Table(name = "portales")
 class Portal(
@@ -41,6 +46,14 @@ class Portal(
 
     @Column(length = 7)
     var colorPortal: String? = null,
+
+    /**
+     * ABIERTO  → usuarios no-miembros pueden ver materias, foro y posts (solo lectura).
+     * CERRADO  → comportamiento actual: solo ven la home y la solicitud de adhesión.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_acceso", nullable = false)
+    var tipoAcceso: TipoAcceso = TipoAcceso.CERRADO,
 
     @OneToMany(mappedBy = "portal")
     val carpetas: List<Carpeta> = mutableListOf(),

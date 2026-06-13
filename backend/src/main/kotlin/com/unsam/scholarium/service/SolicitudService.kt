@@ -19,6 +19,7 @@ import com.unsam.scholarium.repository.PortalBloqueoRepository
 import com.unsam.scholarium.repository.PortalRepository
 import com.unsam.scholarium.repository.SolicitudRepository
 import com.unsam.scholarium.repository.UsuarioRepository
+import com.unsam.scholarium.dto.ActualizarPlantillaRequest
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import kotlin.jvm.optionals.getOrNull
@@ -244,6 +245,45 @@ class SolicitudService(
         )
     }
 
+    // ─────────────────────────────────────────────────────────────────────────────
+// AGREGAR ESTE MÉTODO AL SolicitudService EXISTENTE
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Actualiza la PlantillaSolicitud del portal.
+     * Solo admins pueden cambiar los requisitos o abrir/cerrar el portal a solicitudes.
+     *
+     * Patch parcial: los campos null en el request no se tocan.
+     */
+    @Transactional
+    fun actualizarPlantilla(idPortal: Long, email: String, request: ActualizarPlantillaRequest): PlantillaSolicitudResponse {
+        portalRepository.findById(idPortal).getOrNull()
+            ?: throw ElementDoesNotExistException("Portal no encontrado")
+
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        val membresia = membresiaRepository.findByUsuarioIdAndPortalId(usuario.id!!, idPortal)
+            ?: throw NotAdminException("No sos miembro del portal")
+
+        if (membresia.rol != RolMembresia.ADMIN)
+            throw NotAdminException("Solo los administradores pueden actualizar la plantilla")
+
+        val plantilla = plantillaSolicitudRepository.findByPortalId(idPortal)
+            ?: throw ElementDoesNotExistException("Plantilla no encontrada para este portal")
+
+        request.requisitos?.let { plantilla.requisitos = it.trim() }
+        request.abierta?.let    { plantilla.abierta    = it }
+
+        plantillaSolicitudRepository.save(plantilla)
+
+        return PlantillaSolicitudResponse(
+            requisitos = plantilla.requisitos?.takeIf { it.isNotBlank() } ?: PlantillaSolicitud.REQUISITOS_DEFAULT,
+            abierta    = plantilla.abierta,
+        )
+    }
+
     // ── Mapper privado ─────────────────────────────────────────────────────
 
     private fun Solicitud.toResponse() = SolicitudResponse(
@@ -259,4 +299,5 @@ class SolicitudService(
         fechaSolicitud = fechaSolicitud.toString(),
         motivoRechazo = motivoRechazo,
     )
+
 }

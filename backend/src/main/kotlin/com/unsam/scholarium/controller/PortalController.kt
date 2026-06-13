@@ -11,6 +11,8 @@ import com.unsam.scholarium.dto.PortalEstructuraDTO
 import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.dto.SolicitudRequest
 import com.unsam.scholarium.dto.SolicitudResponse
+import com.unsam.scholarium.dto.MiembroResponse
+import com.unsam.scholarium.dto.ActualizarPortalRequest
 import com.unsam.scholarium.mapper.PortalMapper
 import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.service.MaterialService
@@ -172,5 +174,44 @@ class PortalController(
                 usuarioId,
                 email)
         )
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+// EN PortalController — agregar los siguientes imports y métodos:
+//
+// Import adicionales:
+
+// ══════════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Lista todos los miembros activos del portal.
+     * Solo admins.
+     * GET /api/portales/{portalId}/miembros
+     */
+    @GetMapping("/{portalId}/miembros")
+    fun getMiembros(
+        @PathVariable portalId: Long,
+        authentication: Authentication,
+    ): ResponseEntity<List<MiembroResponse>> {
+        val email = authentication.name
+        return ResponseEntity.ok(portalService.getMiembros(portalId, email))
+    }
+
+    /**
+     * Actualiza los campos no-votables del portal (descripcion, unidadAcademica, iconoPortal,
+     * colorPortal, logoUrl).
+     * Solo admins.
+     * PATCH /api/portales/{portalId}
+     */
+    @PatchMapping("/{portalId}")
+    fun actualizarPortal(
+        @PathVariable portalId: Long,
+        @RequestBody request: ActualizarPortalRequest,
+        authentication: Authentication,
+    ): ResponseEntity<PortalResponse> {
+        val email = authentication.name
+        val portalActualizado = portalService.actualizarPortal(portalId, email, request)
+        val detalleData = portalService.getDetalleById(portalId, email)
+        return ResponseEntity.ok(PortalMapper.toDetalleDTO(detalleData))
     }
 }
