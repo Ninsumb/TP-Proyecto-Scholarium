@@ -237,8 +237,9 @@ export function RequestStatus() {
           {/* Botón para reenviar */}
           <button
             onClick={() => {
-              showToast("Podés enviar una nueva solicitud", "info");
-              navigate(`/portal/${id}/solicitud`);
+              navigate(`/portal/${id}/solicitud`, {
+                state: { fromRejected: true },
+              });
             }}
             className="w-full px-6 py-2.5 font-medium transition-colors shadow-sm"
             style={{

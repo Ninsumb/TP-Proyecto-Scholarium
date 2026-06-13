@@ -88,7 +88,23 @@ export function JoinPortal() {
           }
         }
 
-        // 3. Puede solicitar (incluyendo el caso RECHAZADA — puede reenviar)
+        // Al final del bloque de puedeSolicitar, reemplazar el "setPreCheck('ready')" por:
+
+        // Si viene desde "Enviar nueva solicitud" en solicitud-estado,
+        // no chequear la solicitud rechazada previa — mostrar el form directo.
+        if (fromRejected) {
+          setPreCheck("ready");
+          return;
+        }
+
+        // Verificar si tiene una solicitud rechazada previa.
+        // En ese caso, redirigir a solicitud-estado para que la vea primero.
+        const miSolicitud = await solicitudService.getMiSolicitud(id);
+        if (miSolicitud?.estado === "RECHAZADA") {
+          navigate(`/portal/${id}/solicitud-estado`, { replace: true });
+          return;
+        }
+
         setPreCheck("ready");
       } catch {
         showToast("No se pudo validar tu estado en este portal", "error");
