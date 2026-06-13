@@ -1,18 +1,6 @@
 // pages/Portal/Solicitud/Solicitud.tsx
-//
-// Flujo de carga:
-// 1. Si el usuario es ADMIN o MIEMBRO del portal → mostrar vista "ya sos miembro".
-// 2. Cargar en paralelo: PlantillaSolicitud + solicitud propia del usuario.
-//    - Si el portal está cerrado → vista "portal cerrado".
-//    - Si el usuario tiene una solicitud PENDIENTE → redirigir a /solicitud-estado.
-//    - Si el usuario está bloqueado → vista "bloqueado" (el backend lo rechazará igual,
-//      pero la UX no debe dejarlo llegar al formulario).
-// 3. Mostrar el formulario limpio.
-//
-// Todos los errores del backend se muestran como toast, nunca inline raro.
-
 import { useState, useEffect, useContext } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   GraduationCap,
   AlertCircle,
@@ -35,12 +23,10 @@ type PreCheckState =
   | "ready";
 
 export function JoinPortal() {
-  const { portalId } = useParams();
   const navigate = useNavigate();
   const { showToast } = useContext(MainContext);
 
-  // usePortalContext nos da el rol del usuario en este portal (ADMIN / MIEMBRO / GUEST)
-  const { isMember, isAdmin, portalId: id } = usePortalContext();
+  const { isMember, isAdmin, portalId: id, loading: portalLoading } = usePortalContext();
 
   const [preCheck, setPreCheck] = useState<PreCheckState>("loading");
   const [plantilla, setPlantilla] = useState<PlantillaSolicitudResponse | null>(null);
@@ -49,77 +35,71 @@ export function JoinPortal() {
   const [descripcion, setDescripcion] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-useEffect(() => {
-  if (!id) return;
+  const location = useLocation();
+  const fromRejected = location.state?.fromRejected === true;
 
-  // Si todavía está cargando el portal context
-  if (!portalId) return;
+  useEffect(() => {
+    // Esperar a que el portal context termine de cargar.
+    // Sin esto, isMember e isAdmin son false en el primer render (portal aún null)
+    // y el preCheck corre innecesariamente, mostrando el form antes de que se
+    // detecte que el usuario ya es miembro.
+    if (portalLoading) return;
+    if (!id) return;
 
-  // Ya es miembro/admin → no tiene sentido mostrar solicitud
-  if (isMember || isAdmin) {
-    showToast("Ya sos miembro de este portal", "info");
-    setPreCheck("already_member");
-    return;
-  }
-
-  const runPreCheck = async () => {
-    try {
-      const [plantillaData, miSolicitud, bloqueado] = await Promise.all([
-        solicitudService.getPlantilla(id),
-        solicitudService.getMiSolicitud(id).catch(() => null),
-        solicitudService.estoyBloqueado(id),
-      ]);
-
-      setPlantilla(plantillaData);
-
-      if (bloqueado) {
-        setPreCheck("blocked");
-        return;
-      }
-
-      // Portal cerrado
-      if (!plantillaData.abierta) {
-        setPreCheck("portal_closed");
-        return;
-      }
-
-      // Solicitud pendiente → ir al estado automáticamente
-      if (miSolicitud?.estado === "PENDIENTE") {
-        showToast("Ya tenés una solicitud pendiente", "info");
-
-        navigate(`/portal/${id}/solicitud-estado`, {
-          replace: true,
-        });
-
-        return;
-      }
-
-      setPreCheck("ready");
-    } catch (err: any) {
-      const raw =
-        err.response?.data?.message ??
-        err.response?.data ??
-        "";
-
-      const mensaje =
-        typeof raw === "string" ? raw.toLowerCase() : "";
-
-      if (mensaje.includes("bloqueado")) {
-        setPreCheck("blocked");
-        return;
-      }
-
-      showToast(
-        "No se pudo validar tu estado en este portal",
-        "error"
-      );
-
-      setPreCheck("ready");
+    // Miembro/Admin detectado desde el portal context — no necesitamos ir al backend.
+    if (isMember || isAdmin) {
+      setPreCheck("already_member");
+      return;
     }
-  };
 
-  runPreCheck();
-}, [id, isMember, isAdmin, portalId]);
+    const runPreCheck = async () => {
+      try {
+        // Las dos llamadas son independientes, van en paralelo.
+        const [plantillaData, puedeSolicitar] = await Promise.all([
+          solicitudService.getPlantilla(id),
+          solicitudService.puedeSolicitar(id),
+        ]);
+
+        setPlantilla(plantillaData);
+
+        // 1. Portal cerrado a nuevas solicitudes (viene de plantilla, no de puedeSolicitar)
+        if (!plantillaData.abierta) {
+          setPreCheck("portal_closed");
+          return;
+        }
+
+        // 2. Motivos que bloquean el acceso al form
+        if (!puedeSolicitar.puede) {
+          switch (puedeSolicitar.motivo) {
+            case "BLOQUEADO":
+              setPreCheck("blocked");
+              return;
+
+            case "YA_MIEMBRO":
+              // Esto no debería ocurrir si el portal context funciona bien,
+              // pero lo manejamos como fallback defensivo.
+              setPreCheck("already_member");
+              return;
+
+            case "PENDIENTE":
+              // Ya tiene solicitud pendiente → redirigir a solicitud-estado
+              navigate(`/portal/${id}/solicitud-estado`, { replace: true });
+              return;
+          }
+        }
+
+        // 3. Puede solicitar (incluyendo el caso RECHAZADA — puede reenviar)
+        setPreCheck("ready");
+      } catch {
+        showToast("No se pudo validar tu estado en este portal", "error");
+        // Fallback: mostrar el form de todas formas.
+        // El backend rechazará el submit si corresponde.
+        setPreCheck("ready");
+      }
+    };
+
+    runPreCheck();
+  }, [id, isMember, isAdmin, portalLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,60 +118,40 @@ useEffect(() => {
       showToast("Solicitud enviada correctamente", "success");
       navigate(`/portal/${id}/solicitud-estado`);
     } catch (err: any) {
-        const raw =
-          err.response?.data?.message ??
-          err.response?.data ??
-          "";
+      const raw =
+        err.response?.data?.message ??
+        err.response?.data ??
+        "";
 
-        const mensaje =
-          typeof raw === "string" && raw.trim()
-            ? raw
-            : "Error al enviar la solicitud";
+      const mensaje =
+        typeof raw === "string" && raw.trim()
+          ? raw
+          : "Error al enviar la solicitud";
 
-        // Ya es miembro
-        if (mensaje.toLowerCase().includes("ya sos miembro")) {
-          showToast("Ya sos miembro de este portal", "info");
+      const msgLower = mensaje.toLowerCase();
 
-          navigate(`/portal/${id}`, {
-            replace: true,
-          });
+      if (msgLower.includes("ya sos miembro")) {
+        showToast("Ya sos parte de este portal", "info");
+        navigate(`/portal/${id}`, { replace: true });
+        return;
+      }
 
-          return;
-        }
+      if (msgLower.includes("pendiente")) {
+        showToast("Ya tenés una solicitud pendiente para este portal", "info");
+        navigate(`/portal/${id}/solicitud-estado`, { replace: true });
+        return;
+      }
 
-        // Ya tiene pendiente
-        if (mensaje.toLowerCase().includes("pendiente")) {
-          showToast(
-            "Ya tenés una solicitud pendiente para este portal",
-            "info"
-          );
+      if (msgLower.includes("bloqueado") || msgLower.includes("no podés enviar")) {
+        setPreCheck("blocked");
+        return;
+      }
 
-          navigate(`/portal/${id}/solicitud-estado`, {
-            replace: true,
-          });
-
-          return;
-        }
-
-        // Bloqueado
-        if (
-          mensaje.toLowerCase().includes("bloqueado") ||
-          mensaje.toLowerCase().includes("no podés enviar")
-        ) {
-          showToast(
-            "No podés enviar solicitudes a este portal",
-            "error"
-          );
-
-          setPreCheck("blocked");
-          return;
-        }
-
-        showToast(mensaje, "error");
-      } finally {
-            setIsSubmitting(false);
-          }
-        };
+      showToast(mensaje, "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // ── Loading ──────────────────────────────────────────────────────────────
   if (preCheck === "loading") {
@@ -247,7 +207,7 @@ useEffect(() => {
             <Lock className="w-7 h-7 text-muted-foreground" />
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-3">
-            Portal cerrado temporalmente
+            Solicitudes cerradas temporalmente
           </h1>
           <p className="text-muted-foreground text-sm">
             Los administradores de este portal no están aceptando solicitudes en este momento.
@@ -284,7 +244,6 @@ useEffect(() => {
   // ── Formulario ───────────────────────────────────────────────────────────
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      {/* Header */}
       <div className="text-center mb-10">
         <div
           className="w-14 h-14 bg-primary/10 flex items-center justify-center mx-auto mb-4"
@@ -300,7 +259,6 @@ useEffect(() => {
         </p>
       </div>
 
-      {/* Requisitos del portal */}
       {plantilla?.requisitos && (
         <div
           className="flex gap-3 p-4 mb-6 bg-primary/5 border border-primary/20"
@@ -316,13 +274,11 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Formulario */}
       <div
         className="bg-surface-container-lowest p-8 shadow-sm"
         style={{ borderRadius: "var(--radius)" }}
       >
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Nombre completo */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
               Nombre completo{" "}
@@ -342,7 +298,6 @@ useEffect(() => {
             </p>
           </div>
 
-          {/* Descripción */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
               Mensaje <span className="text-destructive">*</span>
@@ -362,20 +317,13 @@ useEffect(() => {
               style={{ borderRadius: "var(--radius)" }}
             />
             <div className="flex justify-between mt-1">
-              <p className="text-xs text-muted-foreground">
-                Máx. 1000 caracteres.
-              </p>
-              <p
-                className={`text-xs ${
-                  descripcion.length > 900 ? "text-destructive" : "text-muted-foreground"
-                }`}
-              >
+              <p className="text-xs text-muted-foreground">Máx. 1000 caracteres.</p>
+              <p className={`text-xs ${descripcion.length > 900 ? "text-destructive" : "text-muted-foreground"}`}>
                 {descripcion.length}/1000
               </p>
             </div>
           </div>
 
-          {/* Aviso de no cancelación */}
           <div
             className="flex gap-3 p-4 bg-yellow-500/5 border border-yellow-500/20"
             style={{ borderRadius: "var(--radius)" }}
@@ -388,14 +336,12 @@ useEffect(() => {
             </p>
           </div>
 
-          {/* Botón */}
           <button
             type="submit"
             disabled={isSubmitting || !descripcion.trim()}
             className="w-full px-6 py-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm font-medium"
             style={{
-              background:
-                "linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)",
+              background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)",
               color: "var(--primary-foreground)",
               borderRadius: "var(--radius)",
             }}

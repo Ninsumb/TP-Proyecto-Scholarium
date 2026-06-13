@@ -9,6 +9,11 @@ export interface SolicitudRequest {
   descripcion: string;
 }
 
+export interface PuedeSolicitarResponse {
+  puede: boolean;
+  motivo: 'BLOQUEADO' | 'YA_MIEMBRO' | 'PENDIENTE' | null;
+}
+
 export interface SolicitudResponse {
   id: number;
   usuario: {
@@ -104,29 +109,14 @@ class SolicitudService {
   }
 
 
-  //TODO: ESTO ES UN HORROR - Debería volar a la mierda, y q esta info llegue de otra manera capaz
-  /**
- * Verifica si el usuario autenticado está bloqueado en el portal.
- * Retorna true si está bloqueado.
- */
-async estoyBloqueado(portalId: number): Promise<boolean> {
-  try {
-    await apiClient.get(`/portales/${portalId}/solicitudes/puedo-solicitar`);
-    return false;
-  } catch (err: any) {
-    const raw = err.response?.data?.message ?? err.response?.data ?? "";
-    const mensaje = typeof raw === "string" ? raw.toLowerCase() : "";
-
-    if (
-      err.response?.status === 403 &&
-      (mensaje.includes("bloqueado") || mensaje.includes("restringido"))
-    ) {
-      return true;
-    }
-
-    return false;
-  }
+ 
+async puedeSolicitar(portalId: number): Promise<PuedeSolicitarResponse> {
+  const response = await apiClient.get<PuedeSolicitarResponse>(
+    `/portales/${portalId}/solicitudes/puedo-solicitar`
+  );
+  return response.data;
 }
+
 }
 
 export const solicitudService = new SolicitudService();
