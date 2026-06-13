@@ -1,5 +1,31 @@
-import { useState } from "react";
-import { Settings, Lock, Upload, Palette, AlertTriangle, Archive } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Settings, Lock, Upload, Palette, AlertTriangle, Archive, Loader2 } from "lucide-react";
+import { adminService } from "../../../services/AdminService";
+import { usePortalContext } from "../../../hooks/usePortalContext";
+import type {
+  PlantillaSolicitudResponse,
+  CrearVotacionRequest,
+} from "../../../types/Admin/Admin";
+
+// ─── Opciones de icono y color (sin cambios respecto al original) ─────────────
+
+const iconOptions = [
+  { id: "book",       label: "Libro",        icon: "📚" },
+  { id: "graduate",   label: "Graduación",   icon: "🎓" },
+  { id: "science",    label: "Ciencia",      icon: "🔬" },
+  { id: "computer",   label: "Computadora",  icon: "💻" },
+  { id: "flask",      label: "Química",      icon: "🧪" },
+  { id: "atom",       label: "Física",       icon: "⚛️" },
+  { id: "calculator", label: "Matemáticas",  icon: "🧮" },
+  { id: "brain",      label: "Psicología",   icon: "🧠" },
+];
+
+const backgroundColors = [
+  "#2c4456", "#1e3a5f", "#4a5568", "#2d3748",
+  "#38a169", "#3182ce", "#805ad5", "#dd6b20",
+];
+
+// ─── Modales (igual que el original) ─────────────────────────────────────────
 
 interface VoteModalProps {
   isOpen: boolean;
@@ -7,6 +33,7 @@ interface VoteModalProps {
   onConfirm: (reason: string) => void;
   title: string;
   description: string;
+  loading?: boolean;
 }
 
 interface ConfirmModalProps {
@@ -15,33 +42,11 @@ interface ConfirmModalProps {
   onConfirm: () => void;
   title: string;
   message: string;
+  loading?: boolean;
 }
 
-const iconOptions = [
-  { id: "book", label: "Libro", icon: "📚" },
-  { id: "graduate", label: "Graduación", icon: "🎓" },
-  { id: "science", label: "Ciencia", icon: "🔬" },
-  { id: "computer", label: "Computadora", icon: "💻" },
-  { id: "flask", label: "Química", icon: "🧪" },
-  { id: "atom", label: "Física", icon: "⚛️" },
-  { id: "calculator", label: "Matemáticas", icon: "🧮" },
-  { id: "brain", label: "Psicología", icon: "🧠" },
-];
-
-const backgroundColors = [
-  "#2c4456",
-  "#1e3a5f",
-  "#4a5568",
-  "#2d3748",
-  "#38a169",
-  "#3182ce",
-  "#805ad5",
-  "#dd6b20",
-];
-
-function ConfirmModal({ isOpen, onClose, onConfirm, title, message }: ConfirmModalProps) {
+function ConfirmModal({ isOpen, onClose, onConfirm, title, message, loading }: ConfirmModalProps) {
   if (!isOpen) return null;
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-card max-w-lg w-full shadow-2xl" style={{ borderRadius: "var(--radius)" }}>
@@ -53,19 +58,19 @@ function ConfirmModal({ isOpen, onClose, onConfirm, title, message }: ConfirmMod
           <div className="flex gap-3 justify-end">
             <button
               onClick={onClose}
-              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors"
+              disabled={loading}
+              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
               style={{ borderRadius: "var(--radius)" }}
             >
               Cancelar
             </button>
             <button
-              onClick={() => {
-                onConfirm();
-                onClose();
-              }}
-              className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors"
+              onClick={() => { onConfirm(); }}
+              disabled={loading}
+              className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 disabled:opacity-50"
               style={{ borderRadius: "var(--radius)" }}
             >
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               Confirmar
             </button>
           </div>
@@ -75,7 +80,7 @@ function ConfirmModal({ isOpen, onClose, onConfirm, title, message }: ConfirmMod
   );
 }
 
-function VoteModal({ isOpen, onClose, onConfirm, title, description }: VoteModalProps) {
+function VoteModal({ isOpen, onClose, onConfirm, title, description, loading }: VoteModalProps) {
   const [reason, setReason] = useState("");
 
   if (!isOpen) return null;
@@ -83,9 +88,13 @@ function VoteModal({ isOpen, onClose, onConfirm, title, description }: VoteModal
   const handleConfirm = () => {
     if (reason.trim()) {
       onConfirm(reason);
-      setReason("");
-      onClose();
     }
+  };
+
+  // Limpiar reason al cerrar
+  const handleClose = () => {
+    setReason("");
+    onClose();
   };
 
   return (
@@ -95,10 +104,7 @@ function VoteModal({ isOpen, onClose, onConfirm, title, description }: VoteModal
           <h2 className="text-card-foreground">{title}</h2>
         </div>
         <div className="p-6 space-y-4">
-          <div
-            className="p-4 bg-primary/5 border border-primary/20"
-            style={{ borderRadius: "var(--radius)" }}
-          >
+          <div className="p-4 bg-primary/5 border border-primary/20" style={{ borderRadius: "var(--radius)" }}>
             <p className="text-sm text-foreground">{description}</p>
           </div>
           <div>
@@ -109,25 +115,28 @@ function VoteModal({ isOpen, onClose, onConfirm, title, description }: VoteModal
               rows={4}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+              disabled={loading}
+              className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none disabled:opacity-50"
               style={{ borderRadius: "var(--radius)" }}
               placeholder="Explica por qué propones este cambio. Todos los administradores verán este mensaje."
             />
           </div>
           <div className="flex gap-3 justify-end pt-2">
             <button
-              onClick={onClose}
-              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors"
+              onClick={handleClose}
+              disabled={loading}
+              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
               style={{ borderRadius: "var(--radius)" }}
             >
               Cancelar
             </button>
             <button
               onClick={handleConfirm}
-              disabled={!reason.trim()}
-              className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!reason.trim() || loading}
+              className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               style={{ borderRadius: "var(--radius)" }}
             >
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               Abrir Votación
             </button>
           </div>
@@ -137,40 +146,53 @@ function VoteModal({ isOpen, onClose, onConfirm, title, description }: VoteModal
   );
 }
 
+// ─── Componente principal ─────────────────────────────────────────────────────
+
 export function PortalConfig() {
+  const { portal } = usePortalContext();
+  const portalId = portal?.id as number;
+
+  // Estado de identidad — inicializado desde el contexto del portal
   const [identityData, setIdentityData] = useState({
-    universityName: "Universidad Nacional",
-    careerName: "Ingeniería Informática",
-    academicUnit: "Facultad de Ingeniería",
-    description:
-      "Portal colaborativo para estudiantes de Ingeniería Informática. Compartimos material de estudio, discutimos temas académicos y nos ayudamos mutuamente.",
+    universityName: portal?.universidad ?? "",
+    careerName:     portal?.carrera ?? "",
+    academicUnit:   portal?.unidadAcademica ?? "",
+    description:    portal?.descripcion ?? "",
   });
 
+  // Estado visual — inicializado desde el contexto del portal
   const [visualData, setVisualData] = useState({
-    type: "icon" as "icon" | "image",
-    selectedIcon: "computer",
-    backgroundColor: "#2c4456",
-    customImage: null as string | null,
+    type:            (portal?.logoUrl ? "image" : "icon") as "icon" | "image",
+    selectedIcon:    portal?.iconoPortal ?? "computer",
+    backgroundColor: portal?.colorPortal ?? "#2c4456",
+    customImage:     portal?.logoUrl ?? null as string | null,
   });
 
+  // Estado de acceso — se carga desde el back (PlantillaSolicitud)
   const [accessData, setAccessData] = useState({
-    isPortalOpen: true,
-    areRequestsOpen: true,
-    joinRequirements:
-      "Por favor incluye tu número de legajo y confirma que eres estudiante activo de la carrera.",
+    isPortalOpen:     true,   // TODO: este campo vendrá del portal cuando el back lo implemente
+    areRequestsOpen:  true,
+    joinRequirements: "",
   });
 
+  // Loading states granulares
+  const [loadingPlantilla,     setLoadingPlantilla]     = useState(true);
+  const [loadingDescription,   setLoadingDescription]   = useState(false);
+  const [loadingVisual,        setLoadingVisual]         = useState(false);
+  const [loadingRequirements,  setLoadingRequirements]  = useState(false);
+  const [loadingToggleRequest, setLoadingToggleRequest] = useState(false);
+  const [loadingVote,          setLoadingVote]           = useState(false);
+
+  const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Modales
   const [voteModal, setVoteModal] = useState<{
     isOpen: boolean;
     type: "university" | "career" | "portalAccess" | "archive";
     title: string;
     description: string;
-  }>({
-    isOpen: false,
-    type: "university",
-    title: "",
-    description: "",
-  });
+  }>({ isOpen: false, type: "university", title: "", description: "" });
 
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -179,11 +201,40 @@ export function PortalConfig() {
     onConfirm: () => void;
   }>({ isOpen: false, title: "", message: "", onConfirm: () => {} });
 
+  // ── Carga inicial: plantilla de solicitud ─────────────────────────────────
+
+  useEffect(() => {
+    if (!portalId) return;
+    adminService
+      .getPlantilla(portalId)
+      .then((plantilla: PlantillaSolicitudResponse) => {
+        setAccessData((prev) => ({
+          ...prev,
+          areRequestsOpen:  plantilla.abierta,
+          joinRequirements: plantilla.requisitos ?? "",
+        }));
+      })
+      .catch(() => setError("No se pudo cargar la configuración de solicitudes."))
+      .finally(() => setLoadingPlantilla(false));
+  }, [portalId]);
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  const showSuccess = (msg: string) => {
+    setSuccessMsg(msg);
+    setTimeout(() => setSuccessMsg(null), 3000);
+  };
+
+  const closeVoteModal = () => setVoteModal((prev) => ({ ...prev, isOpen: false }));
+  const closeConfirmModal = () => setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+
+  // ── Acciones de identidad ─────────────────────────────────────────────────
+
   const handleProposeUniversityChange = () => {
     setVoteModal({
       isOpen: true,
-      type: "university",
-      title: "Proponer Cambio de Universidad",
+      type:   "university",
+      title:  "Proponer Cambio de Universidad",
       description: `Estás proponiendo cambiar el nombre de la universidad a "${identityData.universityName}". Esta acción requiere votación de todos los administradores.`,
     });
   };
@@ -191,84 +242,57 @@ export function PortalConfig() {
   const handleProposeCareerChange = () => {
     setVoteModal({
       isOpen: true,
-      type: "career",
-      title: "Proponer Cambio de Carrera",
+      type:   "career",
+      title:  "Proponer Cambio de Carrera",
       description: `Estás proponiendo cambiar el nombre de la carrera a "${identityData.careerName}". Esta acción requiere votación de todos los administradores.`,
     });
   };
 
-  const handleProposePortalAccessChange = () => {
-    setVoteModal({
-      isOpen: true,
-      type: "portalAccess",
-      title: "Proponer Cambio de Acceso al Portal",
-      description: `Estás proponiendo cambiar el portal a modo ${
-        accessData.isPortalOpen ? "Cerrado" : "Abierto"
-      }. Esta acción requiere votación de todos los administradores.`,
-    });
-  };
-
-  const handleProposeArchive = () => {
-    setVoteModal({
-      isOpen: true,
-      type: "archive",
-      title: "Proponer Archivar Portal",
-      description:
-        "Estás proponiendo archivar este portal. El portal será ocultado pero no eliminado permanentemente. Esta acción requiere votación de todos los administradores.",
-    });
-  };
-
-  const handleConfirmVote = (reason: string) => {
-    console.log("Vote proposed:", voteModal.type, reason);
-    alert("Votación abierta correctamente");
-  };
-
   const handleSaveDescription = () => {
     setConfirmModal({
-      isOpen: true,
-      title: "Guardar Descripción",
-      message:
-        "¿Estás seguro de que deseas actualizar la descripción del portal? Este cambio será visible para todos los usuarios.",
-      onConfirm: () => {
-        alert("Descripción actualizada correctamente");
+      isOpen:  true,
+      title:   "Guardar Descripción",
+      message: "¿Estás seguro de que deseas actualizar la descripción del portal? Este cambio será visible para todos los usuarios.",
+      onConfirm: async () => {
+        setLoadingDescription(true);
+        closeConfirmModal();
+        try {
+          await adminService.actualizarPortal(portalId, {
+            descripcion:    identityData.description  || null,
+            unidadAcademica: identityData.academicUnit || null,
+          });
+          showSuccess("Descripción actualizada correctamente.");
+        } catch {
+          setError("No se pudo actualizar la descripción.");
+        } finally {
+          setLoadingDescription(false);
+        }
       },
     });
   };
+
+  // ── Acciones de identidad visual ─────────────────────────────────────────
 
   const handleSaveVisualIdentity = () => {
     setConfirmModal({
-      isOpen: true,
-      title: "Guardar Identidad Visual",
-      message:
-        "¿Estás seguro de que deseas actualizar la identidad visual del portal? Este cambio afectará cómo se ve la tarjeta del portal en la página de exploración.",
-      onConfirm: () => {
-        alert("Identidad visual actualizada correctamente");
-      },
-    });
-  };
-
-  const handleToggleRequests = () => {
-    const newState = !accessData.areRequestsOpen;
-    setConfirmModal({
-      isOpen: true,
-      title: newState ? "Abrir Solicitudes" : "Cerrar Solicitudes",
-      message: newState
-        ? "¿Estás seguro de que deseas abrir las solicitudes de membresía? Los usuarios podrán enviar solicitudes para unirse al portal."
-        : "¿Estás seguro de que deseas cerrar las solicitudes de membresía? Los usuarios no podrán enviar nuevas solicitudes hasta que las vuelvas a abrir.",
-      onConfirm: () => {
-        setAccessData({ ...accessData, areRequestsOpen: newState });
-      },
-    });
-  };
-
-  const handleSaveRequirements = () => {
-    setConfirmModal({
-      isOpen: true,
-      title: "Guardar Requisitos",
-      message:
-        "¿Estás seguro de que deseas actualizar los requisitos para unirse? Este mensaje será visible para todos los usuarios que intenten enviar una solicitud.",
-      onConfirm: () => {
-        alert("Requisitos actualizados correctamente");
+      isOpen:  true,
+      title:   "Guardar Identidad Visual",
+      message: "¿Estás seguro de que deseas actualizar la identidad visual del portal? Este cambio afectará cómo se ve la tarjeta del portal en la página de exploración.",
+      onConfirm: async () => {
+        setLoadingVisual(true);
+        closeConfirmModal();
+        try {
+          await adminService.actualizarPortal(portalId, {
+            iconoPortal: visualData.type === "icon"  ? visualData.selectedIcon    : null,
+            colorPortal: visualData.type === "icon"  ? visualData.backgroundColor : null,
+            logoUrl:     visualData.type === "image" ? (visualData.customImage ?? null) : null,
+          });
+          showSuccess("Identidad visual actualizada correctamente.");
+        } catch {
+          setError("No se pudo actualizar la identidad visual.");
+        } finally {
+          setLoadingVisual(false);
+        }
       },
     });
   };
@@ -284,6 +308,123 @@ export function PortalConfig() {
     }
   };
 
+  // ── Acciones de acceso ────────────────────────────────────────────────────
+
+  const handleProposePortalAccessChange = () => {
+    setVoteModal({
+      isOpen: true,
+      type:   "portalAccess",
+      title:  "Proponer Cambio de Acceso al Portal",
+      description: `Estás proponiendo cambiar el portal a modo ${accessData.isPortalOpen ? "Cerrado" : "Abierto"}. Esta acción requiere votación de todos los administradores.`,
+    });
+  };
+
+  const handleToggleRequests = () => {
+    const newState = !accessData.areRequestsOpen;
+    setConfirmModal({
+      isOpen:  true,
+      title:   newState ? "Abrir Solicitudes" : "Cerrar Solicitudes",
+      message: newState
+        ? "¿Estás seguro de que deseas abrir las solicitudes de membresía? Los usuarios podrán enviar solicitudes para unirse al portal."
+        : "¿Estás seguro de que deseas cerrar las solicitudes de membresía? Los usuarios no podrán enviar nuevas solicitudes hasta que las vuelvas a abrir.",
+      onConfirm: async () => {
+        setLoadingToggleRequest(true);
+        closeConfirmModal();
+        try {
+          const updated = await adminService.actualizarPlantilla(portalId, { abierta: newState });
+          setAccessData((prev) => ({ ...prev, areRequestsOpen: updated.abierta }));
+          showSuccess(newState ? "Solicitudes abiertas." : "Solicitudes cerradas.");
+        } catch {
+          setError("No se pudo actualizar el estado de las solicitudes.");
+        } finally {
+          setLoadingToggleRequest(false);
+        }
+      },
+    });
+  };
+
+  const handleSaveRequirements = () => {
+    setConfirmModal({
+      isOpen:  true,
+      title:   "Guardar Requisitos",
+      message: "¿Estás seguro de que deseas actualizar los requisitos para unirse? Este mensaje será visible para todos los usuarios que intenten enviar una solicitud.",
+      onConfirm: async () => {
+        setLoadingRequirements(true);
+        closeConfirmModal();
+        try {
+          await adminService.actualizarPlantilla(portalId, {
+            requisitos: accessData.joinRequirements || null,
+          });
+          showSuccess("Requisitos actualizados correctamente.");
+        } catch {
+          setError("No se pudo actualizar los requisitos.");
+        } finally {
+          setLoadingRequirements(false);
+        }
+      },
+    });
+  };
+
+  // ── Zona peligrosa ────────────────────────────────────────────────────────
+
+  const handleProposeArchive = () => {
+    setVoteModal({
+      isOpen: true,
+      type:   "archive",
+      title:  "Proponer Archivar Portal",
+      description:
+        "Estás proponiendo archivar este portal. El portal será ocultado pero no eliminado permanentemente. Esta acción requiere votación de todos los administradores.",
+    });
+  };
+
+  // ── Confirmar votación ────────────────────────────────────────────────────
+
+  const handleConfirmVote = async (reason: string) => {
+    setLoadingVote(true);
+
+    // Mapeo del tipo de voteModal al TipoVotacion del back
+    const tipoMap: Record<typeof voteModal.type, CrearVotacionRequest["tipo"]> = {
+      university:   "CAMBIO_INFO_PORTAL",
+      career:       "CAMBIO_INFO_PORTAL",
+      portalAccess: "CAMBIO_TIPO_ACCESO",
+      archive:      "ARCHIVAR_PORTAL",
+    };
+
+    // Para universidad/carrera mandamos el nuevo valor en metadatos
+    let metadatos: string | null = null;
+    if (voteModal.type === "university") {
+      metadatos = JSON.stringify({ campo: "universidad", valor: identityData.universityName });
+    } else if (voteModal.type === "career") {
+      metadatos = JSON.stringify({ campo: "carrera", valor: identityData.careerName });
+    }
+
+    try {
+      await adminService.crearVotacion(portalId, {
+        tipo:      tipoMap[voteModal.type],
+        motivo:    reason,
+        metadatos: metadatos,
+      });
+      closeVoteModal();
+      showSuccess("Votación abierta correctamente. Los administradores serán notificados.");
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const msg = axiosErr?.response?.data?.message ?? "No se pudo abrir la votación.";
+      setError(msg);
+    } finally {
+      setLoadingVote(false);
+    }
+  };
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  if (loadingPlantilla) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="mb-8">
@@ -293,8 +434,28 @@ export function PortalConfig() {
         </p>
       </div>
 
+      {/* Feedback global */}
+      {error && (
+        <div
+          className="mb-4 p-4 bg-destructive/10 border border-destructive/30 text-destructive text-sm"
+          style={{ borderRadius: "var(--radius)" }}
+        >
+          {error}
+          <button className="ml-2 underline" onClick={() => setError(null)}>Cerrar</button>
+        </div>
+      )}
+      {successMsg && (
+        <div
+          className="mb-4 p-4 bg-green-600/10 border border-green-600/30 text-green-700 text-sm"
+          style={{ borderRadius: "var(--radius)" }}
+        >
+          {successMsg}
+        </div>
+      )}
+
       <div className="space-y-6">
-        {/* Sección: Identidad del Portal */}
+
+        {/* ── Identidad del Portal ── */}
         <section
           className="bg-surface-container-lowest p-6 shadow-sm"
           style={{ borderRadius: "var(--radius)" }}
@@ -314,9 +475,7 @@ export function PortalConfig() {
                 <input
                   type="text"
                   value={identityData.universityName}
-                  onChange={(e) =>
-                    setIdentityData({ ...identityData, universityName: e.target.value })
-                  }
+                  onChange={(e) => setIdentityData({ ...identityData, universityName: e.target.value })}
                   className="flex-1 px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                   style={{ borderRadius: "var(--radius)" }}
                 />
@@ -341,9 +500,7 @@ export function PortalConfig() {
                 <input
                   type="text"
                   value={identityData.careerName}
-                  onChange={(e) =>
-                    setIdentityData({ ...identityData, careerName: e.target.value })
-                  }
+                  onChange={(e) => setIdentityData({ ...identityData, careerName: e.target.value })}
                   className="flex-1 px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                   style={{ borderRadius: "var(--radius)" }}
                 />
@@ -369,9 +526,7 @@ export function PortalConfig() {
               <input
                 type="text"
                 value={identityData.academicUnit}
-                onChange={(e) =>
-                  setIdentityData({ ...identityData, academicUnit: e.target.value })
-                }
+                onChange={(e) => setIdentityData({ ...identityData, academicUnit: e.target.value })}
                 className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                 style={{ borderRadius: "var(--radius)" }}
                 placeholder="Ej: Facultad de Ingeniería"
@@ -386,9 +541,7 @@ export function PortalConfig() {
               <textarea
                 rows={3}
                 value={identityData.description}
-                onChange={(e) =>
-                  setIdentityData({ ...identityData, description: e.target.value })
-                }
+                onChange={(e) => setIdentityData({ ...identityData, description: e.target.value })}
                 className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                 style={{ borderRadius: "var(--radius)" }}
                 placeholder="Descripción que aparece en las tarjetas de búsqueda"
@@ -400,15 +553,17 @@ export function PortalConfig() {
 
             <button
               onClick={handleSaveDescription}
-              className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm"
+              disabled={loadingDescription}
+              className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
               style={{ borderRadius: "var(--radius)" }}
             >
+              {loadingDescription && <Loader2 className="w-4 h-4 animate-spin" />}
               Guardar Cambios
             </button>
           </div>
         </section>
 
-        {/* Sección: Identidad Visual */}
+        {/* ── Identidad Visual ── */}
         <section
           className="bg-surface-container-lowest p-6 shadow-sm"
           style={{ borderRadius: "var(--radius)" }}
@@ -423,9 +578,7 @@ export function PortalConfig() {
           <div className="space-y-5">
             {/* Selector de tipo */}
             <div>
-              <label className="block mb-3 text-sm font-medium text-foreground">
-                Tipo de Imagen
-              </label>
+              <label className="block mb-3 text-sm font-medium text-foreground">Tipo de Imagen</label>
               <div className="flex gap-3">
                 <button
                   onClick={() => setVisualData({ ...visualData, type: "icon" })}
@@ -456,9 +609,7 @@ export function PortalConfig() {
             {visualData.type === "icon" && (
               <>
                 <div>
-                  <label className="block mb-3 text-sm font-medium text-foreground">
-                    Selecciona un Icono
-                  </label>
+                  <label className="block mb-3 text-sm font-medium text-foreground">Selecciona un Icono</label>
                   <div className="grid grid-cols-4 gap-2">
                     {iconOptions.map((option) => (
                       <button
@@ -479,9 +630,7 @@ export function PortalConfig() {
                 </div>
 
                 <div>
-                  <label className="block mb-3 text-sm font-medium text-foreground">
-                    Color de Fondo
-                  </label>
+                  <label className="block mb-3 text-sm font-medium text-foreground">Color de Fondo</label>
                   <div className="grid grid-cols-8 gap-2">
                     {backgroundColors.map((color) => (
                       <button
@@ -492,10 +641,7 @@ export function PortalConfig() {
                             ? "border-primary scale-110"
                             : "border-border"
                         }`}
-                        style={{
-                          borderRadius: "var(--radius)",
-                          backgroundColor: color,
-                        }}
+                        style={{ borderRadius: "var(--radius)", backgroundColor: color }}
                       />
                     ))}
                   </div>
@@ -506,9 +652,7 @@ export function PortalConfig() {
             {/* Imagen personalizada */}
             {visualData.type === "image" && (
               <div>
-                <label className="block mb-3 text-sm font-medium text-foreground">
-                  Subir Imagen
-                </label>
+                <label className="block mb-3 text-sm font-medium text-foreground">Subir Imagen</label>
                 <div
                   className="border-2 border-dashed border-border p-8 text-center transition-colors hover:border-primary hover:bg-primary/5 cursor-pointer"
                   style={{ borderRadius: "var(--radius)" }}
@@ -528,9 +672,7 @@ export function PortalConfig() {
                     <>
                       <Upload className="w-8 h-8 text-on-surface-variant mx-auto mb-2" />
                       <p className="text-sm text-foreground mb-1">Click para subir una imagen</p>
-                      <p className="text-xs text-on-surface-variant">
-                        PNG, JPG o SVG (recomendado: 400x400px)
-                      </p>
+                      <p className="text-xs text-on-surface-variant">PNG, JPG o SVG (recomendado: 400x400px)</p>
                     </>
                   )}
                 </div>
@@ -549,20 +691,14 @@ export function PortalConfig() {
 
             {/* Preview */}
             <div>
-              <label className="block mb-3 text-sm font-medium text-foreground">
-                Vista Previa
-              </label>
-              <div
-                className="p-6 bg-surface-container"
-                style={{ borderRadius: "var(--radius)" }}
-              >
+              <label className="block mb-3 text-sm font-medium text-foreground">Vista Previa</label>
+              <div className="p-6 bg-surface-container" style={{ borderRadius: "var(--radius)" }}>
                 <div className="max-w-xs">
                   <div
                     className="w-full h-40 flex items-center justify-center mb-3 overflow-hidden"
                     style={{
                       borderRadius: "var(--radius)",
-                      backgroundColor:
-                        visualData.type === "icon" ? visualData.backgroundColor : undefined,
+                      backgroundColor: visualData.type === "icon" ? visualData.backgroundColor : undefined,
                     }}
                   >
                     {visualData.type === "icon" ? (
@@ -570,11 +706,7 @@ export function PortalConfig() {
                         {iconOptions.find((opt) => opt.id === visualData.selectedIcon)?.icon}
                       </span>
                     ) : visualData.customImage ? (
-                      <img
-                        src={visualData.customImage}
-                        alt="Portal"
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={visualData.customImage} alt="Portal" className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-on-surface-variant">Sin imagen</span>
                     )}
@@ -587,15 +719,17 @@ export function PortalConfig() {
 
             <button
               onClick={handleSaveVisualIdentity}
-              className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm"
+              disabled={loadingVisual}
+              className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
               style={{ borderRadius: "var(--radius)" }}
             >
+              {loadingVisual && <Loader2 className="w-4 h-4 animate-spin" />}
               Guardar Identidad Visual
             </button>
           </div>
         </section>
 
-        {/* Sección: Control de Acceso */}
+        {/* ── Control de Acceso ── */}
         <section
           className="bg-surface-container-lowest p-6 shadow-sm"
           style={{ borderRadius: "var(--radius)" }}
@@ -639,7 +773,7 @@ export function PortalConfig() {
               </p>
             </div>
 
-            <div className="h-px bg-border"></div>
+            <div className="h-px bg-border" />
 
             {/* Solicitudes Abiertas/Cerradas */}
             <div>
@@ -656,19 +790,21 @@ export function PortalConfig() {
                 </div>
                 <button
                   onClick={handleToggleRequests}
-                  className={`px-4 py-2 transition-colors ${
+                  disabled={loadingToggleRequest}
+                  className={`px-4 py-2 transition-colors flex items-center gap-2 disabled:opacity-50 ${
                     accessData.areRequestsOpen
                       ? "bg-green-600 text-white hover:bg-green-700"
                       : "bg-surface-container text-foreground hover:bg-accent"
                   }`}
                   style={{ borderRadius: "var(--radius)" }}
                 >
+                  {loadingToggleRequest && <Loader2 className="w-4 h-4 animate-spin" />}
                   {accessData.areRequestsOpen ? "Abiertas" : "Cerradas"}
                 </button>
               </div>
             </div>
 
-            <div className="h-px bg-border"></div>
+            <div className="h-px bg-border" />
 
             {/* Requisitos */}
             <div>
@@ -678,9 +814,7 @@ export function PortalConfig() {
               <textarea
                 rows={4}
                 value={accessData.joinRequirements}
-                onChange={(e) =>
-                  setAccessData({ ...accessData, joinRequirements: e.target.value })
-                }
+                onChange={(e) => setAccessData({ ...accessData, joinRequirements: e.target.value })}
                 className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                 style={{ borderRadius: "var(--radius)" }}
                 placeholder="Indica qué deben incluir los usuarios en su solicitud (ej: número de legajo, año de cursada, etc.)"
@@ -692,15 +826,17 @@ export function PortalConfig() {
 
             <button
               onClick={handleSaveRequirements}
-              className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm"
+              disabled={loadingRequirements}
+              className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
               style={{ borderRadius: "var(--radius)" }}
             >
+              {loadingRequirements && <Loader2 className="w-4 h-4 animate-spin" />}
               Guardar Requisitos
             </button>
           </div>
         </section>
 
-        {/* Sección: Zona Peligrosa */}
+        {/* ── Zona Peligrosa ── */}
         <section
           className="bg-surface-container-lowest p-6 border-2 border-destructive/20 shadow-sm"
           style={{ borderRadius: "var(--radius)" }}
@@ -733,21 +869,23 @@ export function PortalConfig() {
         </section>
       </div>
 
-      {/* Modals */}
+      {/* ── Modales ── */}
       <VoteModal
         isOpen={voteModal.isOpen}
-        onClose={() => setVoteModal({ ...voteModal, isOpen: false })}
+        onClose={closeVoteModal}
         onConfirm={handleConfirmVote}
         title={voteModal.title}
         description={voteModal.description}
+        loading={loadingVote}
       />
 
       <ConfirmModal
         isOpen={confirmModal.isOpen}
-        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        onClose={closeConfirmModal}
         onConfirm={confirmModal.onConfirm}
         title={confirmModal.title}
         message={confirmModal.message}
+        loading={loadingDescription || loadingVisual || loadingToggleRequest || loadingRequirements}
       />
     </div>
   );

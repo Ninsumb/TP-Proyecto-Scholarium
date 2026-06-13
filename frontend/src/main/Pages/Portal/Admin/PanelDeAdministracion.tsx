@@ -1,121 +1,75 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
-  Users,
-  History,
-  Vote,
-  MoreVertical,
-  ChevronUp,
-  ChevronDown,
-  Check,
-  X,
-  Clock,
+  Users, History, Vote, MoreVertical,
+  ChevronUp, ChevronDown, Check, X, Clock, Loader2,
 } from "lucide-react";
+import { adminService } from "../../../services/AdminService";
+import { usePortalContext } from "../../../hooks/usePortalContext";
+import type {
+  MiembroResponse,
+  VotacionResponse,
+  RolMembresia,
+} from "../../../types/Admin/Admin";
 
-// Mock data
-const mockMembers = [
-  {
-    id: 1,
-    fullName: "Juan García",
-    profilePic: "JG",
-    role: "Administrador" as const,
-    joinDate: "2026-01-15",
-  },
-  {
-    id: 2,
-    fullName: "María López",
-    profilePic: "ML",
-    role: "Miembro" as const,
-    joinDate: "2026-02-20",
-  },
-  {
-    id: 3,
-    fullName: "Carlos Méndez",
-    profilePic: "CM",
-    role: "Miembro" as const,
-    joinDate: "2026-03-10",
-  },
-];
+// ─── ActionMenu (sin cambios — lo gestiona otra compañera) ───────────────────
 
-const mockActions = [
-  {
-    id: 1,
-    adminName: "Juan García",
-    action: "Aprobó solicitud de membresía",
-    target: "María López",
-    date: "2026-05-29T14:30:00",
-    details: null,
-  },
-  {
-    id: 2,
-    adminName: "Juan García",
-    action: "Rechazó material",
-    target: "Guía de Ejercicios - Unidad 2",
-    date: "2026-05-28T10:15:00",
-    details: "El material contiene errores en los ejercicios 3 y 5",
-  },
-  {
-    id: 3,
-    adminName: "María López",
-    action: "Aprobó material",
-    target: "Resumen Final - Algoritmos",
-    date: "2026-05-27T16:45:00",
-    details: null,
-  },
-];
+interface ActionMenuProps {
+  member: MiembroResponse;
+  onAction: (action: string, needsVote: boolean) => void;
+}
 
-const mockVotes = [
-  {
-    id: 1,
-    proposerName: "Juan García",
-    action: "Expulsar a Pedro Ramírez del portal",
-    reason:
-      "Comportamiento inapropiado y falta de respeto hacia otros miembros en el foro",
-    votesFor: 2,
-    votesAgainst: 0,
-    totalAdmins: 4,
-    expiresAt: "2026-06-02T23:59:59",
-    status: "open" as const,
-    userVote: null as "approve" | "reject" | null,
-  },
-  {
-    id: 2,
-    proposerName: "María López",
-    action: "Degradar a Luis Fernández a Miembro",
-    reason:
-      "Falta de participación y ausencia prolongada en las responsabilidades de administración",
-    votesFor: 1,
-    votesAgainst: 1,
-    totalAdmins: 4,
-    expiresAt: "2026-06-01T18:00:00",
-    status: "open" as const,
-    userVote: "approve" as "approve" | "reject" | null,
-  },
-];
+function ActionMenu({ member, onAction }: ActionMenuProps) {
+  const [isOpen, setIsOpen] = useState(false);
 
-const mockClosedVotes = [
-  {
-    id: 3,
-    proposerName: "Juan García",
-    action: "Cambiar nombre de universidad a 'Universidad Nacional del Sur'",
-    reason: "Actualización del nombre oficial de la institución",
-    votesFor: 3,
-    votesAgainst: 0,
-    totalAdmins: 3,
-    closedAt: "2026-05-25T12:00:00",
-    result: "approved" as const,
-  },
-  {
-    id: 4,
-    proposerName: "Carlos Méndez",
-    action: "Archivar portal",
-    reason: "Baja actividad en el portal durante los últimos 6 meses",
-    votesFor: 1,
-    votesAgainst: 2,
-    totalAdmins: 3,
-    closedAt: "2026-05-20T09:30:00",
-    result: "rejected" as const,
-  },
-];
+  const actions =
+    member.rol === "ADMIN"
+      ? [
+          { label: "Degradar a Miembro",       value: "demote",  needsVote: true },
+          { label: "Expulsar",                  value: "kick",    needsVote: true },
+          { label: "Bloquear",                  value: "ban",     needsVote: true },
+        ]
+      : [
+          { label: "Ascender a Administrador",  value: "promote", needsVote: false },
+          { label: "Expulsar",                  value: "kick",    needsVote: true },
+          { label: "Bloquear",                  value: "ban",     needsVote: true },
+        ];
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-1.5 hover:bg-accent transition-colors"
+        style={{ borderRadius: "var(--radius)" }}
+      >
+        <MoreVertical className="w-4 h-4 text-on-surface-variant" />
+      </button>
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+          <div
+            className="absolute right-0 top-full mt-1 bg-surface-container-low shadow-lg border border-border z-20 min-w-[200px]"
+            style={{ borderRadius: "var(--radius)" }}
+          >
+            {actions.map((action) => (
+              <button
+                key={action.value}
+                onClick={() => {
+                  onAction(action.value, action.needsVote);
+                  setIsOpen(false);
+                }}
+                className="w-full text-left px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors first:rounded-t-sm last:rounded-b-sm"
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Modal de propuesta de votación ──────────────────────────────────────────
 
 interface VoteModalProps {
   isOpen: boolean;
@@ -123,7 +77,80 @@ interface VoteModalProps {
   onConfirm: (reason: string) => void;
   title: string;
   actionDescription: string;
+  loading?: boolean;
 }
+
+function VoteModal({ isOpen, onClose, onConfirm, title, actionDescription, loading }: VoteModalProps) {
+  const [reason, setReason] = useState("");
+
+  if (!isOpen) return null;
+
+  const handleConfirm = () => {
+    if (reason.trim()) {
+      onConfirm(reason);
+    }
+  };
+
+  const handleClose = () => {
+    setReason("");
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card max-w-lg w-full shadow-2xl" style={{ borderRadius: "var(--radius)" }}>
+        <div className="border-b border-border px-6 py-4">
+          <h2 className="text-card-foreground">{title}</h2>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="p-4 bg-primary/5 border border-primary/20" style={{ borderRadius: "var(--radius)" }}>
+            <p className="text-sm text-foreground">
+              <span className="font-medium">Acción propuesta:</span> {actionDescription}
+            </p>
+          </div>
+          <p className="text-sm text-on-surface-variant">
+            Esta acción requiere votación de todos los administradores.
+          </p>
+          <div>
+            <label className="block mb-2 text-sm font-medium text-foreground">
+              Motivo de la propuesta <span className="text-destructive">*</span>
+            </label>
+            <textarea
+              rows={4}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              disabled={loading}
+              className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none disabled:opacity-50"
+              style={{ borderRadius: "var(--radius)" }}
+              placeholder="Explica por qué propones esta acción. Todos los administradores verán este mensaje."
+            />
+          </div>
+          <div className="flex gap-3 justify-end pt-2">
+            <button
+              onClick={handleClose}
+              disabled={loading}
+              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
+              style={{ borderRadius: "var(--radius)" }}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={!reason.trim() || loading}
+              className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              style={{ borderRadius: "var(--radius)" }}
+            >
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              Abrir Votación
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Modal de confirmación de voto ────────────────────────────────────────────
 
 interface VoteConfirmModalProps {
   isOpen: boolean;
@@ -131,19 +158,11 @@ interface VoteConfirmModalProps {
   onConfirm: () => void;
   voteType: "approve" | "reject";
   actionDescription: string;
-}
-
-interface ActionMenuProps {
-  member: (typeof mockMembers)[0];
-  onAction: (action: string, needsVote: boolean) => void;
+  loading?: boolean;
 }
 
 function VoteConfirmModal({
-  isOpen,
-  onClose,
-  onConfirm,
-  voteType,
-  actionDescription,
+  isOpen, onClose, onConfirm, voteType, actionDescription, loading,
 }: VoteConfirmModalProps) {
   if (!isOpen) return null;
 
@@ -170,8 +189,7 @@ function VoteConfirmModal({
             {voteType === "approve" ? (
               <p className="text-sm text-foreground">
                 ⚠️ Si con tu voto se alcanza la mayoría necesaria,{" "}
-                <span className="font-medium">la acción se ejecutará de inmediato</span> y no podrá
-                revertirse.
+                <span className="font-medium">la acción se ejecutará de inmediato</span> y no podrá revertirse.
               </p>
             ) : (
               <p className="text-sm text-foreground">
@@ -181,29 +199,28 @@ function VoteConfirmModal({
             )}
           </div>
           <p className="text-sm text-on-surface-variant mb-6">
-            ¿Estás seguro de que deseas{" "}
-            {voteType === "approve" ? "aprobar" : "rechazar"} esta votación?
+            ¿Estás seguro de que deseas {voteType === "approve" ? "aprobar" : "rechazar"} esta votación?
           </p>
           <div className="flex gap-3 justify-end">
             <button
               onClick={onClose}
-              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors"
+              disabled={loading}
+              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
               style={{ borderRadius: "var(--radius)" }}
             >
               Cancelar
             </button>
             <button
-              onClick={() => {
-                onConfirm();
-                onClose();
-              }}
-              className={`px-5 py-2.5 transition-colors ${
+              onClick={() => { onConfirm(); }}
+              disabled={loading}
+              className={`px-5 py-2.5 transition-colors flex items-center gap-2 disabled:opacity-50 ${
                 voteType === "approve"
                   ? "bg-green-600 text-white hover:bg-green-700"
                   : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
               }`}
               style={{ borderRadius: "var(--radius)" }}
             >
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               Confirmar {voteType === "approve" ? "Aprobación" : "Rechazo"}
             </button>
           </div>
@@ -213,131 +230,52 @@ function VoteConfirmModal({
   );
 }
 
-function VoteModal({ isOpen, onClose, onConfirm, title, actionDescription }: VoteModalProps) {
-  const [reason, setReason] = useState("");
+// ─── Helper: etiqueta legible de TipoVotacion ────────────────────────────────
 
-  if (!isOpen) return null;
+const TIPO_LABEL: Record<string, string> = {
+  EXPULSION_MIEMBRO: "Expulsión de miembro",
+  BLOQUEO_MIEMBRO:   "Bloqueo de miembro",
+  DEGRADAR_ADMIN:    "Degradar administrador",
+  CAMBIO_TIPO_ACCESO: "Cambio de tipo de acceso",
+  CAMBIO_INFO_PORTAL: "Cambio de información del portal",
+  ELIMINAR_MATERIA:  "Eliminación de materia",
+  ELIMINAR_TABLERO:  "Eliminación de tablero",
+  ARCHIVAR_PORTAL:   "Archivar portal",
+};
 
-  const handleConfirm = () => {
-    if (reason.trim()) {
-      onConfirm(reason);
-      setReason("");
-      onClose();
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card max-w-lg w-full shadow-2xl" style={{ borderRadius: "var(--radius)" }}>
-        <div className="border-b border-border px-6 py-4">
-          <h2 className="text-card-foreground">{title}</h2>
-        </div>
-        <div className="p-6 space-y-4">
-          <div
-            className="p-4 bg-primary/5 border border-primary/20"
-            style={{ borderRadius: "var(--radius)" }}
-          >
-            <p className="text-sm text-foreground">
-              <span className="font-medium">Acción propuesta:</span> {actionDescription}
-            </p>
-          </div>
-          <p className="text-sm text-on-surface-variant">
-            Esta acción requiere votación de todos los administradores.
-          </p>
-          <div>
-            <label className="block mb-2 text-sm font-medium text-foreground">
-              Motivo de la propuesta <span className="text-destructive">*</span>
-            </label>
-            <textarea
-              rows={4}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-              style={{ borderRadius: "var(--radius)" }}
-              placeholder="Explica por qué propones esta acción. Todos los administradores verán este mensaje."
-            />
-          </div>
-          <div className="flex gap-3 justify-end pt-2">
-            <button
-              onClick={onClose}
-              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors"
-              style={{ borderRadius: "var(--radius)" }}
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleConfirm}
-              disabled={!reason.trim()}
-              className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ borderRadius: "var(--radius)" }}
-            >
-              Abrir Votación
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ActionMenu({ member, onAction }: ActionMenuProps) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const actions =
-    member.role === "Administrador"
-      ? [
-          { label: "Degradar a Miembro", value: "demote", needsVote: true },
-          { label: "Expulsar", value: "kick", needsVote: true },
-          { label: "Bloquear", value: "ban", needsVote: true },
-        ]
-      : [
-          { label: "Ascender a Administrador", value: "promote", needsVote: false },
-          { label: "Expulsar", value: "kick", needsVote: true },
-          { label: "Bloquear", value: "ban", needsVote: true },
-        ];
-
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="p-1.5 hover:bg-accent transition-colors"
-        style={{ borderRadius: "var(--radius)" }}
-      >
-        <MoreVertical className="w-4 h-4 text-on-surface-variant" />
-      </button>
-      {isOpen && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)}></div>
-          <div
-            className="absolute right-0 top-full mt-1 bg-surface-container-low shadow-lg border border-border z-20 min-w-[200px]"
-            style={{ borderRadius: "var(--radius)" }}
-          >
-            {actions.map((action) => (
-              <button
-                key={action.value}
-                onClick={() => {
-                  onAction(action.value, action.needsVote);
-                  setIsOpen(false);
-                }}
-                className="w-full text-left px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors first:rounded-t-sm last:rounded-b-sm"
-              >
-                {action.label}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
+// ─── Componente principal ─────────────────────────────────────────────────────
 
 export function AdminPanel() {
+  const { portal } = usePortalContext();
+  const portalId = portal?.id as number;
+
   const [activeTab, setActiveTab] = useState<"members" | "history" | "votes">("members");
-  const [members] = useState(mockMembers);
-  const [actions] = useState(mockActions);
-  const [votes, setVotes] = useState(mockVotes);
-  const [closedVotes] = useState(mockClosedVotes);
+
+  // ── Estado de miembros ────────────────────────────────────────────────────
+  const [members, setMembers]         = useState<MiembroResponse[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [membersError, setMembersError]     = useState<string | null>(null);
+
+  // ── Estado de votaciones ──────────────────────────────────────────────────
+  const [votes, setVotes]               = useState<VotacionResponse[]>([]);
+  const [closedVotes, setClosedVotes]   = useState<VotacionResponse[]>([]);
+  const [loadingVotes, setLoadingVotes] = useState(false);
+  const [votesError, setVotesError]     = useState<string | null>(null);
   const [showClosedVotes, setShowClosedVotes] = useState(false);
+  const [loadingClosedVotes, setLoadingClosedVotes] = useState(false);
+
+  // Loading individual al votar
+  const [votingId, setVotingId] = useState<number | null>(null);
+
+  const [error,      setError]      = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const showSuccess = (msg: string) => {
+    setSuccessMsg(msg);
+    setTimeout(() => setSuccessMsg(null), 3500);
+  };
+
+  // ── Modales ───────────────────────────────────────────────────────────────
 
   const [voteModal, setVoteModal] = useState<{
     isOpen: boolean;
@@ -352,72 +290,144 @@ export function AdminPanel() {
     actionDescription: string;
   }>({ isOpen: false, voteType: "approve", voteId: 0, actionDescription: "" });
 
-  const handleMemberAction = (action: string, needsVote: boolean) => {
-    const actionLabels: Record<string, string> = {
-      promote: "Ascender a Administrador",
-      demote: "Degradar a Miembro",
-      kick: "Expulsar del portal",
-      ban: "Bloquear del portal",
-    };
+  // ── Carga de miembros ─────────────────────────────────────────────────────
 
-    if (needsVote) {
-      setVoteModal({
-        isOpen: true,
-        title: `Proponer: ${actionLabels[action]}`,
-        actionDescription: actionLabels[action],
-      });
-    } else {
-      if (confirm(`¿Estás seguro de que deseas ${actionLabels[action].toLowerCase()}?`)) {
-        alert(`Acción ejecutada: ${actionLabels[action]}`);
-      }
+  const fetchMembers = useCallback(async () => {
+    if (!portalId) return;
+    setLoadingMembers(true);
+    setMembersError(null);
+    try {
+      const data = await adminService.getMiembros(portalId);
+      setMembers(data);
+    } catch {
+      setMembersError("No se pudieron cargar los miembros.");
+    } finally {
+      setLoadingMembers(false);
     }
+  }, [portalId]);
+
+  useEffect(() => {
+    if (activeTab === "members") fetchMembers();
+  }, [activeTab, fetchMembers]);
+
+  // ── Carga de votaciones abiertas ──────────────────────────────────────────
+
+  const fetchVotes = useCallback(async () => {
+    if (!portalId) return;
+    setLoadingVotes(true);
+    setVotesError(null);
+    try {
+      const data = await adminService.getVotaciones(portalId, "ABIERTA");
+      setVotes(data);
+    } catch {
+      setVotesError("No se pudieron cargar las votaciones.");
+    } finally {
+      setLoadingVotes(false);
+    }
+  }, [portalId]);
+
+  useEffect(() => {
+    if (activeTab === "votes") fetchVotes();
+  }, [activeTab, fetchVotes]);
+
+  // ── Carga de votaciones cerradas (lazy) ───────────────────────────────────
+
+  const fetchClosedVotes = useCallback(async () => {
+    if (!portalId || closedVotes.length > 0) return;
+    setLoadingClosedVotes(true);
+    try {
+      const page = await adminService.getHistorialVotaciones(portalId, 0, 20);
+      setClosedVotes(page.content);
+    } catch {
+      setError("No se pudo cargar el historial de votaciones.");
+    } finally {
+      setLoadingClosedVotes(false);
+    }
+  }, [portalId, closedVotes.length]);
+
+  const handleToggleClosedVotes = () => {
+    const next = !showClosedVotes;
+    setShowClosedVotes(next);
+    if (next) fetchClosedVotes();
   };
 
-  const handleConfirmVote = (reason: string) => {
-    console.log("Vote created:", reason);
-    alert("Votación abierta correctamente");
+  // ── Acciones de miembro (el handler lo deja preparado para la compañera) ──
+
+  const handleMemberAction = (_action: string, _needsVote: boolean) => {
+    // TODO: implementado por otra compañera en el siguiente issue
   };
+
+  // ── Votaciones ────────────────────────────────────────────────────────────
 
   const handleVote = (voteId: number, voteType: "approve" | "reject") => {
     const vote = votes.find((v) => v.id === voteId);
     if (!vote) return;
-
     setVoteConfirmModal({
       isOpen: true,
       voteType,
       voteId,
-      actionDescription: vote.action,
+      actionDescription: TIPO_LABEL[vote.tipo] ?? vote.tipo,
     });
   };
 
-  const handleConfirmVoteAction = () => {
+  const handleConfirmVoteAction = async () => {
     const { voteId, voteType } = voteConfirmModal;
-    setVotes(
-      votes.map((v) => {
-        if (v.id === voteId) {
-          return {
-            ...v,
-            userVote: voteType,
-            votesFor: voteType === "approve" ? v.votesFor + 1 : v.votesFor,
-            votesAgainst: voteType === "reject" ? v.votesAgainst + 1 : v.votesAgainst,
-          };
-        }
-        return v;
-      })
-    );
+    setVotingId(voteId);
+    setVoteConfirmModal((prev) => ({ ...prev, isOpen: false }));
+    try {
+      const updated = await adminService.votar(voteId, { aprueba: voteType === "approve" });
+
+      if (updated.estado !== "ABIERTA") {
+        // La votación se cerró (mayoría alcanzada): sacarla de la lista de abiertas
+        setVotes((prev) => prev.filter((v) => v.id !== voteId));
+        // Invalidar historial para que se recargue si el usuario lo abre
+        setClosedVotes([]);
+        showSuccess(
+          updated.estado === "APROBADA"
+            ? "¡Voto registrado. La votación alcanzó mayoría y se ejecutó la acción."
+            : "Voto registrado. La propuesta fue rechazada.",
+        );
+      } else {
+        // Sigue abierta: actualizar contadores
+        setVotes((prev) =>
+          prev.map((v) => (v.id === voteId ? updated : v)),
+        );
+        showSuccess("Tu voto fue registrado correctamente.");
+      }
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const msg = axiosErr?.response?.data?.message ?? "No se pudo registrar el voto.";
+      setError(msg);
+    } finally {
+      setVotingId(null);
+    }
   };
+
+  // ── Helpers de display ────────────────────────────────────────────────────
 
   const getTimeRemaining = (expiresAt: string) => {
-    const now = new Date();
+    const now     = new Date();
     const expires = new Date(expiresAt);
-    const diff = expires.getTime() - now.getTime();
+    const diff    = expires.getTime() - now.getTime();
+    if (diff <= 0) return "Expirada";
     const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(hours / 24);
-
-    if (days > 0) return `${days} día${days > 1 ? "s" : ""}`;
-    if (hours > 0) return `${hours} hora${hours > 1 ? "s" : ""}`;
+    const days  = Math.floor(hours / 24);
+    if (days > 0)   return `${days} día${days > 1 ? "s" : ""}`;
+    if (hours > 0)  return `${hours} hora${hours > 1 ? "s" : ""}`;
     return "Expira pronto";
   };
+
+  const rolLabel = (rol: RolMembresia) =>
+    rol === "ADMIN" ? "Administrador" : "Miembro";
+
+  const getInitials = (nombre: string) =>
+    nombre
+      .split(" ")
+      .slice(0, 2)
+      .map((n) => n[0]?.toUpperCase() ?? "")
+      .join("");
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -428,155 +438,150 @@ export function AdminPanel() {
         </p>
       </div>
 
+      {/* Feedback global */}
+      {error && (
+        <div
+          className="mb-4 p-4 bg-destructive/10 border border-destructive/30 text-destructive text-sm"
+          style={{ borderRadius: "var(--radius)" }}
+        >
+          {error}
+          <button className="ml-2 underline" onClick={() => setError(null)}>Cerrar</button>
+        </div>
+      )}
+      {successMsg && (
+        <div
+          className="mb-4 p-4 bg-green-600/10 border border-green-600/30 text-green-700 text-sm"
+          style={{ borderRadius: "var(--radius)" }}
+        >
+          {successMsg}
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="mb-6 border-b border-border">
         <div className="flex gap-1">
-          <button
-            onClick={() => setActiveTab("members")}
-            className={`px-6 py-3 relative transition-colors ${
-              activeTab === "members"
-                ? "text-primary font-medium"
-                : "text-on-surface-variant hover:text-foreground"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              <span>Miembros</span>
-            </div>
-            {activeTab === "members" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></div>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab("history")}
-            className={`px-6 py-3 relative transition-colors ${
-              activeTab === "history"
-                ? "text-primary font-medium"
-                : "text-on-surface-variant hover:text-foreground"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <History className="w-4 h-4" />
-              <span>Historial</span>
-            </div>
-            {activeTab === "history" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></div>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab("votes")}
-            className={`px-6 py-3 relative transition-colors ${
-              activeTab === "votes"
-                ? "text-primary font-medium"
-                : "text-on-surface-variant hover:text-foreground"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Vote className="w-4 h-4" />
-              <span>Votaciones</span>
-              {votes.length > 0 && (
-                <span
-                  className="px-2 py-0.5 bg-primary text-primary-foreground text-xs font-medium"
-                  style={{ borderRadius: "var(--radius)" }}
-                >
-                  {votes.length}
-                </span>
+          {[
+            { key: "members", icon: Users,   label: "Miembros",    badge: null },
+            { key: "history", icon: History, label: "Historial",   badge: null },
+            { key: "votes",   icon: Vote,    label: "Votaciones",  badge: votes.length > 0 ? votes.length : null },
+          ].map(({ key, icon: Icon, label, badge }) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key as typeof activeTab)}
+              className={`px-6 py-3 relative transition-colors ${
+                activeTab === key
+                  ? "text-primary font-medium"
+                  : "text-on-surface-variant hover:text-foreground"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Icon className="w-4 h-4" />
+                <span>{label}</span>
+                {badge !== null && (
+                  <span
+                    className="px-2 py-0.5 bg-primary text-primary-foreground text-xs font-medium"
+                    style={{ borderRadius: "var(--radius)" }}
+                  >
+                    {badge}
+                  </span>
+                )}
+              </div>
+              {activeTab === key && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
               )}
-            </div>
-            {activeTab === "votes" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></div>
-            )}
-          </button>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Tab Content: Miembros */}
+      {/* ── Tab: Miembros ── */}
       {activeTab === "members" && (
-        <div className="space-y-3">
-          {members.map((member) => (
-            <div
-              key={member.id}
-              className="bg-surface-container-lowest p-4 shadow-sm flex items-center justify-between"
-              style={{ borderRadius: "var(--radius)" }}
-            >
-              <div className="flex items-center gap-3 flex-1">
-                <div
-                  className="w-12 h-12 bg-primary/15 flex items-center justify-center text-primary"
-                  style={{ borderRadius: "var(--radius)" }}
-                >
-                  <span className="font-medium">{member.profilePic}</span>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-foreground font-medium">{member.fullName}</h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span
-                      className={`px-2 py-0.5 text-xs font-medium ${
-                        member.role === "Administrador"
-                          ? "bg-destructive/10 text-destructive border border-destructive/20"
-                          : "bg-surface-container text-on-surface-variant"
-                      }`}
-                      style={{ borderRadius: "var(--radius)" }}
-                    >
-                      {member.role}
-                    </span>
-                    <span className="text-xs text-on-surface-variant">
-                      Miembro desde {new Date(member.joinDate).toLocaleDateString("es-ES")}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <ActionMenu member={member} onAction={handleMemberAction} />
+        <div>
+          {loadingMembers ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-7 h-7 animate-spin text-primary" />
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Tab Content: Historial */}
-      {activeTab === "history" && (
-        <div className="space-y-3">
-          {actions.map((action) => (
-            <div
-              key={action.id}
-              className="bg-surface-container-lowest p-4 shadow-sm"
-              style={{ borderRadius: "var(--radius)" }}
-            >
-              <div className="flex items-start gap-3">
+          ) : membersError ? (
+            <div className="text-center py-12 text-destructive text-sm">{membersError}</div>
+          ) : (
+            <div className="space-y-3">
+              {members.map((member) => (
                 <div
-                  className="w-10 h-10 bg-primary/10 flex items-center justify-center flex-shrink-0"
+                  key={member.membresiaId}
+                  className="bg-surface-container-lowest p-4 shadow-sm flex items-center justify-between"
                   style={{ borderRadius: "var(--radius)" }}
                 >
-                  <History className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-foreground">
-                    <span className="font-medium">{action.adminName}</span>{" "}
-                    {action.action.toLowerCase()}:{" "}
-                    <span className="font-medium">{action.target}</span>
-                  </p>
-                  {action.details && (
+                  <div className="flex items-center gap-3 flex-1">
                     <div
-                      className="mt-2 p-2 bg-surface-container text-sm text-on-surface-variant"
+                      className="w-12 h-12 bg-primary/15 flex items-center justify-center text-primary"
                       style={{ borderRadius: "var(--radius)" }}
                     >
-                      {action.details}
+                      <span className="font-medium">{getInitials(member.nombre)}</span>
                     </div>
-                  )}
-                  <p className="text-xs text-on-surface-variant mt-2">
-                    {new Date(action.date).toLocaleString("es-ES")}
-                  </p>
+                    <div className="flex-1">
+                      <h3 className="text-foreground font-medium">{member.nombre}</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span
+                          className={`px-2 py-0.5 text-xs font-medium ${
+                            member.rol === "ADMIN"
+                              ? "bg-destructive/10 text-destructive border border-destructive/20"
+                              : "bg-surface-container text-on-surface-variant"
+                          }`}
+                          style={{ borderRadius: "var(--radius)" }}
+                        >
+                          {rolLabel(member.rol)}
+                        </span>
+                        <span className="text-xs text-on-surface-variant">
+                          Miembro desde{" "}
+                          {new Date(member.fechaRegistro).toLocaleDateString("es-ES")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <ActionMenu member={member} onAction={handleMemberAction} />
                 </div>
-              </div>
+              ))}
+              {members.length === 0 && (
+                <p className="text-center py-10 text-on-surface-variant text-sm">
+                  No hay miembros en este portal todavía.
+                </p>
+              )}
             </div>
-          ))}
+          )}
         </div>
       )}
 
-      {/* Tab Content: Votaciones */}
+      {/* ── Tab: Historial ── */}
+      {/* El historial de acciones admin requiere un endpoint dedicado que no existe todavía.
+          Por ahora se muestra un placeholder. Cuando el back lo implemente, se conecta aquí. */}
+      {activeTab === "history" && (
+        <div className="text-center py-16">
+          <div
+            className="w-16 h-16 bg-surface-container-low mx-auto mb-4 flex items-center justify-center"
+            style={{ borderRadius: "var(--radius)" }}
+          >
+            <History className="w-8 h-8 text-on-surface-variant" />
+          </div>
+          <h3 className="text-foreground mb-2">Historial de acciones</h3>
+          <p className="text-on-surface-variant text-sm max-w-md mx-auto">
+            El registro de acciones administrativas estará disponible próximamente.
+          </p>
+        </div>
+      )}
+
+      {/* ── Tab: Votaciones ── */}
       {activeTab === "votes" && (
         <div>
           <div className="mb-6">
             <h2 className="text-foreground font-medium mb-4">Votaciones Abiertas</h2>
-            {votes.length === 0 ? (
+
+            {loadingVotes ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-7 h-7 animate-spin text-primary" />
+              </div>
+            ) : votesError ? (
+              <div className="text-center py-12 text-destructive text-sm">{votesError}</div>
+            ) : votes.length === 0 ? (
               <div className="text-center py-12">
                 <div
                   className="w-16 h-16 bg-surface-container-low mx-auto mb-4 flex items-center justify-center"
@@ -591,107 +596,112 @@ export function AdminPanel() {
               </div>
             ) : (
               <div className="space-y-4">
-                {votes.map((vote) => (
-                  <div
-                    key={vote.id}
-                    className="bg-surface-container-lowest p-5 shadow-sm border-l-4 border-primary"
-                    style={{ borderRadius: "var(--radius)" }}
-                  >
-                    <div className="flex items-start justify-between gap-4 mb-3">
-                      <div className="flex-1">
-                        <h3 className="text-foreground font-medium mb-1">{vote.action}</h3>
-                        <p className="text-sm text-on-surface-variant mb-2">
-                          Propuesto por{" "}
-                          <span className="font-medium text-foreground">{vote.proposerName}</span>
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1 text-xs text-on-surface-variant whitespace-nowrap">
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>{getTimeRemaining(vote.expiresAt)}</span>
-                      </div>
-                    </div>
+                {votes.map((vote) => {
+                  const isVoting = votingId === vote.id;
+                  // El back no devuelve si el usuario actual ya votó.
+                  // Para saberlo necesitaríamos un endpoint adicional o que el back lo incluya en VotacionResponse.
+                  // Por ahora se detecta optimistamente: si el usuario ya votó, el back retorna 409.
 
+                  return (
                     <div
-                      className="p-3 bg-surface-container mb-4"
+                      key={vote.id}
+                      className="bg-surface-container-lowest p-5 shadow-sm border-l-4 border-primary"
                       style={{ borderRadius: "var(--radius)" }}
                     >
-                      <p className="text-sm text-foreground">
-                        <span className="font-medium">Motivo:</span> {vote.reason}
-                      </p>
-                    </div>
-
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between text-sm text-on-surface-variant mb-2">
-                        <span>Progreso de votación</span>
-                        <span className="font-medium">
-                          {vote.votesFor + vote.votesAgainst} de {vote.totalAdmins} votos
-                        </span>
+                      <div className="flex items-start justify-between gap-4 mb-3">
+                        <div className="flex-1">
+                          <h3 className="text-foreground font-medium mb-1">
+                            {TIPO_LABEL[vote.tipo] ?? vote.tipo}
+                          </h3>
+                          <p className="text-sm text-on-surface-variant mb-2">
+                            Propuesto por{" "}
+                            <span className="font-medium text-foreground">
+                              {vote.proponenteNombre}
+                            </span>
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-on-surface-variant whitespace-nowrap">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>{getTimeRemaining(vote.expiraEn)}</span>
+                        </div>
                       </div>
+
                       <div
-                        className="w-full h-2 bg-surface-container overflow-hidden"
+                        className="p-3 bg-surface-container mb-4"
                         style={{ borderRadius: "var(--radius)" }}
                       >
+                        <p className="text-sm text-foreground">
+                          <span className="font-medium">Motivo:</span> {vote.motivo}
+                        </p>
+                      </div>
+
+                      {/* Barra de progreso */}
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between text-sm text-on-surface-variant mb-2">
+                          <span>Progreso de votación</span>
+                          <span className="font-medium">
+                            {vote.votosAFavor + vote.votosEnContra} de {vote.totalAdmins} votos
+                          </span>
+                        </div>
                         <div
-                          className="h-full bg-primary transition-all"
-                          style={{
-                            width: `${
-                              ((vote.votesFor + vote.votesAgainst) / vote.totalAdmins) * 100
-                            }%`,
-                          }}
-                        ></div>
+                          className="w-full h-2 bg-surface-container overflow-hidden"
+                          style={{ borderRadius: "var(--radius)" }}
+                        >
+                          <div
+                            className="h-full bg-primary transition-all"
+                            style={{
+                              width: `${
+                                vote.totalAdmins > 0
+                                  ? ((vote.votosAFavor + vote.votosEnContra) / vote.totalAdmins) * 100
+                                  : 0
+                              }%`,
+                            }}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-on-surface-variant mt-2">
+                          <span className="flex items-center gap-1">
+                            <Check className="w-3.5 h-3.5 text-green-600" />
+                            {vote.votosAFavor} a favor
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <X className="w-3.5 h-3.5 text-destructive" />
+                            {vote.votosEnContra} en contra
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-on-surface-variant mt-2">
-                        <span className="flex items-center gap-1">
-                          <Check className="w-3.5 h-3.5 text-green-600" />
-                          {vote.votesFor} a favor
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <X className="w-3.5 h-3.5 text-destructive" />
-                          {vote.votesAgainst} en contra
-                        </span>
-                      </div>
-                    </div>
 
-                    {vote.userVote ? (
-                      <div
-                        className={`p-3 flex items-center gap-2 ${
-                          vote.userVote === "approve"
-                            ? "bg-green-600/10 text-green-600"
-                            : "bg-destructive/10 text-destructive"
-                        }`}
-                        style={{ borderRadius: "var(--radius)" }}
-                      >
-                        {vote.userVote === "approve" ? (
-                          <Check className="w-4 h-4" />
-                        ) : (
-                          <X className="w-4 h-4" />
-                        )}
-                        <span className="text-sm font-medium">
-                          Ya votaste {vote.userVote === "approve" ? "a favor" : "en contra"}
-                        </span>
-                      </div>
-                    ) : (
+                      {/* Botones de votación */}
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleVote(vote.id, "approve")}
-                          className="flex-1 px-4 py-2.5 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                          disabled={isVoting}
+                          className="flex-1 px-4 py-2.5 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                           style={{ borderRadius: "var(--radius)" }}
                         >
-                          <Check className="w-4 h-4" />
+                          {isVoting ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Check className="w-4 h-4" />
+                          )}
                           <span>Aprobar</span>
                         </button>
                         <button
                           onClick={() => handleVote(vote.id, "reject")}
-                          className="flex-1 px-4 py-2.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors flex items-center justify-center gap-2"
+                          disabled={isVoting}
+                          className="flex-1 px-4 py-2.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                           style={{ borderRadius: "var(--radius)" }}
                         >
-                          <X className="w-4 h-4" />
+                          {isVoting ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <X className="w-4 h-4" />
+                          )}
                           <span>Rechazar</span>
                         </button>
                       </div>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -699,7 +709,7 @@ export function AdminPanel() {
           {/* Votaciones Cerradas */}
           <div className="mt-8">
             <button
-              onClick={() => setShowClosedVotes(!showClosedVotes)}
+              onClick={handleToggleClosedVotes}
               className="flex items-center gap-2 text-foreground hover:text-primary transition-colors mb-4"
             >
               <span className="font-medium">Votaciones Cerradas</span>
@@ -709,93 +719,122 @@ export function AdminPanel() {
                 <ChevronDown className="w-4 h-4" />
               )}
             </button>
+
             {showClosedVotes && (
-              <div className="space-y-3">
-                {closedVotes.map((vote) => (
-                  <div
-                    key={vote.id}
-                    className={`bg-surface-container-lowest p-5 shadow-sm border-l-4 ${
-                      vote.result === "approved"
-                        ? "border-green-600"
-                        : vote.result === "rejected"
-                        ? "border-destructive"
-                        : "border-yellow-600"
-                    }`}
-                    style={{ borderRadius: "var(--radius)" }}
-                  >
-                    <div className="flex items-start justify-between gap-4 mb-3">
-                      <div className="flex-1">
-                        <h3 className="text-foreground font-medium mb-1">{vote.action}</h3>
-                        <p className="text-sm text-on-surface-variant">
-                          Propuesto por{" "}
-                          <span className="font-medium text-foreground">{vote.proposerName}</span>
-                        </p>
-                      </div>
-                      <span
-                        className={`px-3 py-1 text-xs font-medium ${
-                          vote.result === "approved"
-                            ? "bg-green-600/10 text-green-600 border border-green-600/20"
-                            : vote.result === "rejected"
-                            ? "bg-destructive/10 text-destructive border border-destructive/20"
-                            : "bg-yellow-600/10 text-yellow-600 border border-yellow-600/20"
-                        }`}
-                        style={{ borderRadius: "var(--radius)" }}
-                      >
-                        {vote.result === "approved"
-                          ? "Aprobada"
-                          : vote.result === "rejected"
-                          ? "Rechazada"
-                          : "Expirada"}
-                      </span>
-                    </div>
-
-                    <div
-                      className="p-3 bg-surface-container mb-3"
-                      style={{ borderRadius: "var(--radius)" }}
-                    >
-                      <p className="text-sm text-foreground">
-                        <span className="font-medium">Motivo:</span> {vote.reason}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs text-on-surface-variant">
-                      <span className="flex items-center gap-3">
-                        <span className="flex items-center gap-1">
-                          <Check className="w-3.5 h-3.5 text-green-600" />
-                          {vote.votesFor} a favor
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <X className="w-3.5 h-3.5 text-destructive" />
-                          {vote.votesAgainst} en contra
-                        </span>
-                      </span>
-                      <span>
-                        Cerrada el {new Date(vote.closedAt).toLocaleDateString("es-ES")}
-                      </span>
-                    </div>
+              <>
+                {loadingClosedVotes ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
                   </div>
-                ))}
-              </div>
+                ) : (
+                  <div className="space-y-3">
+                    {closedVotes.length === 0 && (
+                      <p className="text-sm text-on-surface-variant text-center py-6">
+                        No hay votaciones cerradas todavía.
+                      </p>
+                    )}
+                    {closedVotes.map((vote) => {
+                      const borderColor =
+                        vote.estado === "APROBADA"
+                          ? "border-green-600"
+                          : vote.estado === "RECHAZADA"
+                          ? "border-destructive"
+                          : "border-yellow-600";
+
+                      const badgeClass =
+                        vote.estado === "APROBADA"
+                          ? "bg-green-600/10 text-green-600 border-green-600/20"
+                          : vote.estado === "RECHAZADA"
+                          ? "bg-destructive/10 text-destructive border-destructive/20"
+                          : "bg-yellow-600/10 text-yellow-600 border-yellow-600/20";
+
+                      const badgeLabel =
+                        vote.estado === "APROBADA"
+                          ? "Aprobada"
+                          : vote.estado === "RECHAZADA"
+                          ? "Rechazada"
+                          : "Expirada";
+
+                      return (
+                        <div
+                          key={vote.id}
+                          className={`bg-surface-container-lowest p-5 shadow-sm border-l-4 ${borderColor}`}
+                          style={{ borderRadius: "var(--radius)" }}
+                        >
+                          <div className="flex items-start justify-between gap-4 mb-3">
+                            <div className="flex-1">
+                              <h3 className="text-foreground font-medium mb-1">
+                                {TIPO_LABEL[vote.tipo] ?? vote.tipo}
+                              </h3>
+                              <p className="text-sm text-on-surface-variant">
+                                Propuesto por{" "}
+                                <span className="font-medium text-foreground">
+                                  {vote.proponenteNombre}
+                                </span>
+                              </p>
+                            </div>
+                            <span
+                              className={`px-3 py-1 text-xs font-medium border ${badgeClass}`}
+                              style={{ borderRadius: "var(--radius)" }}
+                            >
+                              {badgeLabel}
+                            </span>
+                          </div>
+
+                          <div
+                            className="p-3 bg-surface-container mb-3"
+                            style={{ borderRadius: "var(--radius)" }}
+                          >
+                            <p className="text-sm text-foreground">
+                              <span className="font-medium">Motivo:</span> {vote.motivo}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center justify-between text-xs text-on-surface-variant">
+                            <span className="flex items-center gap-3">
+                              <span className="flex items-center gap-1">
+                                <Check className="w-3.5 h-3.5 text-green-600" />
+                                {vote.votosAFavor} a favor
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <X className="w-3.5 h-3.5 text-destructive" />
+                                {vote.votosEnContra} en contra
+                              </span>
+                            </span>
+                            {vote.resueltaEn && (
+                              <span>
+                                Cerrada el{" "}
+                                {new Date(vote.resueltaEn).toLocaleDateString("es-ES")}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
       )}
 
-      {/* Modals */}
+      {/* ── Modales ── */}
       <VoteModal
         isOpen={voteModal.isOpen}
-        onClose={() => setVoteModal({ ...voteModal, isOpen: false })}
-        onConfirm={handleConfirmVote}
+        onClose={() => setVoteModal((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={() => {}}  // placeholder — las acciones de miembro las implementa la compañera
         title={voteModal.title}
         actionDescription={voteModal.actionDescription}
       />
 
       <VoteConfirmModal
         isOpen={voteConfirmModal.isOpen}
-        onClose={() => setVoteConfirmModal({ ...voteConfirmModal, isOpen: false })}
+        onClose={() => setVoteConfirmModal((prev) => ({ ...prev, isOpen: false }))}
         onConfirm={handleConfirmVoteAction}
         voteType={voteConfirmModal.voteType}
         actionDescription={voteConfirmModal.actionDescription}
+        loading={votingId !== null}
       />
     </div>
   );
