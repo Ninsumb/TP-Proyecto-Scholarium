@@ -12,6 +12,8 @@ interface UsePortalContextReturn {
   isMember: boolean;
   isAdmin: boolean;
   isGuest: boolean;
+  isOpen: boolean;
+  canViewContent: boolean;
   portalId: number;
   refetch: () => Promise<void>;
 }
@@ -19,7 +21,7 @@ interface UsePortalContextReturn {
 export function usePortalContext(): UsePortalContextReturn {
   const { portalId } = useParams();
   const navigate = useNavigate();
-  
+
   const [portal, setPortal] = useState<PortalDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +40,7 @@ export function usePortalContext(): UsePortalContextReturn {
       setPortal(data);
     } catch (err: any) {
       console.error('Error al cargar portal:', err);
-      
+
       if (err.response?.status === 404) {
         setError('Portal no encontrado');
         setTimeout(() => navigate('/'), 3000);
@@ -56,11 +58,13 @@ export function usePortalContext(): UsePortalContextReturn {
     fetchPortalData();
   }, [portalId]);
 
-  
   const rol: RolUsuario = portal ? getRolFromPortal(portal) : 'GUEST';
   const isMember = rol === 'MIEMBRO' || rol === 'ADMIN';
   const isAdmin = rol === 'ADMIN';
   const isGuest = rol === 'GUEST';
+  const isOpen = portal?.tipoAcceso === 'ABIERTO';
+  // Puede ver materias y foro si es miembro/admin, o si el portal es abierto
+  const canViewContent = isMember || isOpen;
 
   return {
     portal,
@@ -70,6 +74,8 @@ export function usePortalContext(): UsePortalContextReturn {
     isMember,
     isAdmin,
     isGuest,
+    isOpen,
+    canViewContent,
     portalId: Number(portalId),
     refetch: fetchPortalData,
   };

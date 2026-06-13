@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Avatar } from "../../../Components/Avatar";
 import { Link, useParams } from "react-router";
+import { usePortalContext } from "../../../Hooks/usePortalContext";
 import {
   ChevronRight,
   Plus,
@@ -174,6 +175,7 @@ interface ReplyItemProps {
   autorPadreNombre: string | null;
   usuarioActualId: number | null;
   rolUsuario: "ADMIN" | "MIEMBRO" | null;
+  canInteract: boolean;
   onEliminada: (id: string) => void;
   onEditada: (updated: PostResponse) => void;
   onNuevaRespuesta: (nueva: PostResponse) => void;
@@ -185,6 +187,7 @@ function ReplyItem({
   autorPadreNombre,
   usuarioActualId,
   rolUsuario,
+  canInteract,
   onEliminada,
   onEditada,
   onNuevaRespuesta,
@@ -360,7 +363,7 @@ function ReplyItem({
               <p className="text-sm text-foreground leading-relaxed">{reply.contenido}</p>
 
               {/* Botón Responder */}
-              {!editando && (
+              {!editando && canInteract && (
                 <button
                   onClick={() => setShowReplyForm((v) => !v)}
                   className="mt-1.5 text-xs text-on-surface-variant hover:text-primary transition-colors"
@@ -370,7 +373,7 @@ function ReplyItem({
               )}
 
               {/* Formulario de respuesta a esta respuesta */}
-              {showReplyForm && (
+              {showReplyForm && canInteract && (
                 <form onSubmit={handleResponder} className="mt-3">
                   {errorRespuesta && (
                     <p className="text-xs text-destructive mb-2">{errorRespuesta}</p>
@@ -425,11 +428,12 @@ interface PostItemProps {
   isLast: boolean;
   usuarioActualId: number | null;
   rolUsuario: "ADMIN" | "MIEMBRO" | null;
+  canInteract: boolean;
   onEliminado: (id: string) => void;
   onEditado: (updated: PostResponse) => void;
 }
 
-function PostItem({ post, isLast, usuarioActualId, rolUsuario, onEliminado, onEditado }: PostItemProps) {
+function PostItem({ post, isLast, usuarioActualId, rolUsuario, canInteract, onEliminado, onEditado }: PostItemProps) {
   const [expandido, setExpandido] = useState(false);
   const [respuestas, setRespuestas] = useState<PostResponse[]>([]);
   const [cargandoRespuestas, setCargandoRespuestas] = useState(false);
@@ -629,16 +633,18 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, onEliminado, onEd
                     {cantidadMostrada === 1 ? "respuesta" : "respuestas"}
                   </span>
                 </button>
-                <button
-                  onClick={() => setShowReplyForm((v) => !v)}
-                  className="text-sm text-on-surface-variant hover:text-primary transition-colors"
-                >
-                  Responder
-                </button>
+                {canInteract && (
+                  <button
+                    onClick={() => setShowReplyForm((v) => !v)}
+                    className="text-sm text-on-surface-variant hover:text-primary transition-colors"
+                  >
+                    Responder
+                  </button>
+                )}
               </div>
             )}
 
-            {showReplyForm && !editando && (
+            {showReplyForm && !editando && canInteract && (
               <form onSubmit={handleResponder} className="mt-4 pt-4 border-t border-border">
                 {errorRespuesta && (
                   <div className="flex items-center gap-2 mb-3 text-sm text-destructive">
@@ -709,6 +715,7 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, onEliminado, onEd
                     autorPadreNombre={autorPadreNombre}
                     usuarioActualId={usuarioActualId}
                     rolUsuario={rolUsuario}
+                    canInteract={canInteract}
                     onEliminada={(id) =>
                       setRespuestas((prev) =>
                         prev.map((x) =>
@@ -846,6 +853,8 @@ export function ForumBoardView() {
 
   const usuarioActualId = authService.getUserId();
   const rolUsuario = useRolEnPortal(portalIdNum);
+  const { isMember, isAdmin } = usePortalContext();
+  const canInteract = isMember || isAdmin;
 
   const [tablero, setTablero] = useState<TableroResponse | null>(null);
   const [posts, setPosts] = useState<PostResponse[]>([]);
@@ -919,14 +928,16 @@ export function ForumBoardView() {
             <h1 className="text-foreground">Publicaciones</h1>
           )}
         </div>
-        <button
-          onClick={() => setShowNewPostModal(true)}
-          className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap flex-shrink-0"
-          style={{ borderRadius: "var(--radius)" }}
-        >
-          <Plus className="w-5 h-5" />
-          Nueva Publicación
-        </button>
+        {canInteract && (
+          <button
+            onClick={() => setShowNewPostModal(true)}
+            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap flex-shrink-0"
+            style={{ borderRadius: "var(--radius)" }}
+          >
+            <Plus className="w-5 h-5" />
+            Nueva Publicación
+          </button>
+        )}
       </div>
 
       {/* Estados */}
@@ -969,6 +980,7 @@ export function ForumBoardView() {
                 isLast={index === arr.length - 1}
                 usuarioActualId={usuarioActualId}
                 rolUsuario={rolUsuario}
+                canInteract={canInteract}
                 onEliminado={handlePostEliminado}
                 onEditado={handlePostEditado}
               />

@@ -1,17 +1,8 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  BookOpen,
-  MessageSquare,
-  UserPlus,
-  Home,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
-  ChevronUp,
-  Loader2,
-  FileText,
-  Users,
-  Settings,
+  BookOpen, MessageSquare, UserPlus, Home,
+  ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
+  Loader2, FileText, Users, Settings,
 } from "lucide-react";
 import { useState } from "react";
 import { usePortalContext } from "../Hooks/usePortalContext";
@@ -24,16 +15,11 @@ export function PortalLayout() {
 
   const { portal, loading, error, isMember, isAdmin, isGuest, portalId } = usePortalContext();
 
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
+  // Un GUEST puede ver contenido si el portal es ABIERTO
+  const isOpen = portal?.tipoAcceso === 'ABIERTO';
+  const canViewContent = isMember || isAdmin || isOpen;
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem("userName");
-    navigate("/login");
-  };
+  const isActive = (path: string) => location.pathname === path;
 
   if (loading) {
     return (
@@ -56,7 +42,7 @@ export function PortalLayout() {
           <button
             onClick={() => navigate('/')}
             className="px-6 py-3 rounded-sm transition-all"
-            style={{ 
+            style={{
               background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)',
               color: 'var(--primary-foreground)'
             }}
@@ -72,16 +58,14 @@ export function PortalLayout() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Layout con Sidebar */}
       <div className="flex">
-        {/* Sidebar Lateral */}
         <aside
           className={`bg-sidebar-border h-screen sticky top-0 overflow-y-auto transition-all duration-300 ${
             isSidebarCollapsed ? 'w-16' : 'w-64'
           }`}
         >
           <div className={`${isSidebarCollapsed ? 'p-2' : 'p-6'} transition-all duration-300`}>
-            {/* Botón de colapsar/expandir */}
+            {/* Colapsar/expandir */}
             <div className={`flex ${isSidebarCollapsed ? 'justify-center mb-4' : 'justify-end mb-6'}`}>
               <button
                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -89,23 +73,19 @@ export function PortalLayout() {
                 style={{ borderRadius: 'var(--radius)' }}
                 title={isSidebarCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
               >
-                {isSidebarCollapsed ? (
-                  <ChevronRight className="w-4 h-4 text-foreground" />
-                ) : (
-                  <ChevronLeft className="w-4 h-4 text-foreground" />
-                )}
+                {isSidebarCollapsed
+                  ? <ChevronRight className="w-4 h-4 text-foreground" />
+                  : <ChevronLeft className="w-4 h-4 text-foreground" />}
               </button>
             </div>
 
-            {/* Título del portal */}
+            {/* Título */}
             {!isSidebarCollapsed && !isActive(`/portal/${portalId}`) && (
               <div className="mb-8">
                 <h2 className="text-lg font-semibold text-foreground mb-1" style={{ fontFamily: 'Work Sans, sans-serif' }}>
                   {portalName}
                 </h2>
-                <p className="text-xs text-foreground uppercase tracking-wide">
-                  {portal.universidad}
-                </p>
+                <p className="text-xs text-foreground uppercase tracking-wide">{portal.universidad}</p>
               </div>
             )}
             {!isSidebarCollapsed && isActive(`/portal/${portalId}`) && (
@@ -114,9 +94,8 @@ export function PortalLayout() {
               </div>
             )}
 
-            {/* Navegación */}
             <nav className="space-y-1">
-              {/* Inicio - visible para todos */}
+              {/* Inicio — visible para todos */}
               <Link
                 to={`/portal/${portalId}`}
                 className={`flex items-center ${isSidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-sm transition-all relative ${
@@ -133,8 +112,8 @@ export function PortalLayout() {
                 {!isSidebarCollapsed && <span>Inicio</span>}
               </Link>
 
-              {/* Materias y Foro - solo para miembros y admins */}
-              {isMember && (
+              {/* Materias y Foro — visible si es miembro/admin O si el portal es ABIERTO */}
+              {canViewContent && (
                 <>
                   <Link
                     to={`/portal/${portalId}/materias`}
@@ -170,7 +149,7 @@ export function PortalLayout() {
                 </>
               )}
 
-              {/* Unirse - solo para invitados (GUEST) */}
+              {/* Unirse — solo para GUEST */}
               {isGuest && (
                 <Link
                   to={`/portal/${portalId}/solicitud`}
@@ -189,31 +168,23 @@ export function PortalLayout() {
                 </Link>
               )}
 
-              {/* Sección Admin - solo para admins */}
+              {/* Admin — solo admins, sin cambios */}
               {isAdmin && (
                 <>
-                  {/* Divisor */}
                   <div className="my-4">
-                    <div className="h-px bg-border mb-3"></div>
+                    <div className="h-px bg-border mb-3" />
                   </div>
 
-                  {/* Header Admin - expandible (solo cuando sidebar está expandido) */}
                   {!isSidebarCollapsed && (
                     <button
                       onClick={() => setIsAdminExpanded(!isAdminExpanded)}
                       className="w-full flex items-center justify-between px-4 py-2 text-on-surface-variant hover:text-foreground hover:bg-surface-container-low rounded-sm transition-colors"
                     >
                       <span className="text-xs uppercase tracking-wide font-medium">Admin</span>
-                      {isAdminExpanded ? (
-                        <ChevronUp className="w-4 h-4" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4" />
-                      )}
+                      {isAdminExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
                   )}
 
-                  {/* Links admin: visibles si el grupo está expandido, o si el sidebar está colapsado
-                      (en sidebar colapsado siempre se muestran los íconos, no hay label que colapsar) */}
                   {(isAdminExpanded || isSidebarCollapsed) && (
                     <>
                       <Link
@@ -269,44 +240,49 @@ export function PortalLayout() {
               )}
             </nav>
 
-            {/* Info del usuario en el portal */}
+            {/* Estado */}
             {!isSidebarCollapsed && (
               <div className="mt-8 pt-6" style={{ borderTop: '1px solid rgba(169, 180, 185, 0.15)' }}>
                 <div className="text-xs text-foreground uppercase tracking-wide mb-2">Estado</div>
-                {isMember ? (
+                {isAdmin ? (
+                  <>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-primary" />
+                      <span className="text-sm text-foreground">Miembro activo</span>
+                    </div>
+                    <div className="mt-2 px-2 py-1 bg-destructive/10 text-destructive rounded-sm text-xs inline-block border border-destructive/20">
+                      Administrador
+                    </div>
+                  </>
+                ) : isMember ? (
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-primary"></div>
+                    <div className="w-2 h-2 rounded-full bg-primary" />
                     <span className="text-sm text-foreground">Miembro activo</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-                    <span className="text-sm text-foreground">Invitado</span>
-                  </div>
-                )}
-                {isAdmin && (
-                  <div className="mt-2 px-2 py-1 bg-destructive/10 text-destructive rounded-sm text-xs inline-block border border-destructive/20">
-                    Administrador
+                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                    <span className="text-sm text-foreground">
+                      {isOpen ? 'Visitante (portal abierto)' : 'Invitado'}
+                    </span>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Estado visual cuando está colapsado */}
             {isSidebarCollapsed && (
               <div className="mt-4 flex justify-center">
-                <div 
-                  className={`w-2 h-2 rounded-full ${isMember ? 'bg-primary' : 'bg-yellow-500'}`} 
-                  title={isMember ? 'Miembro activo' : 'Invitado'}
-                ></div>
+                <div
+                  className={`w-2 h-2 rounded-full ${isMember || isAdmin ? 'bg-primary' : 'bg-yellow-500'}`}
+                  title={isMember || isAdmin ? 'Miembro activo' : isOpen ? 'Visitante (portal abierto)' : 'Invitado'}
+                />
               </div>
             )}
           </div>
         </aside>
 
-        {/* Contenido Principal */}
         <main className="flex-1">
-          <Outlet context={{ portal, isMember, isAdmin, isGuest }} />
+          <Outlet context={{ portal, isMember, isAdmin, isGuest, isOpen }} />
         </main>
       </div>
     </div>

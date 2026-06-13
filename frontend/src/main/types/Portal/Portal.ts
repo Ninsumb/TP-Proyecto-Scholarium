@@ -1,5 +1,7 @@
 // types/Portal/Portal.ts
 
+export type TipoAcceso = 'ABIERTO' | 'CERRADO';
+
 export interface PortalDetailResponse {
   id: number;
   universidad: string;
@@ -15,6 +17,7 @@ export interface PortalDetailResponse {
   rolUsuarioAutenticado: string | null;
   fechaRegistro: string;
   activo: boolean;
+  tipoAcceso: TipoAcceso;
 }
 
 export type RolUsuario = 'ADMIN' | 'MIEMBRO' | 'GUEST';

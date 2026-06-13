@@ -8,6 +8,7 @@ import type { MaterialResponse } from "../../../types/Material/Material";
 interface PortalContext {
   isMember: boolean;
   isAdmin: boolean;
+  isOpen: boolean;
 }
 
 const mockSubjects: Record<string, any> = {
@@ -32,7 +33,11 @@ export function SubjectDetail() {
   const context = useOutletContext<PortalContext>();
   const isAdmin = context?.isAdmin || false;
   const isMember = context?.isMember || false;
-  const puedeAcceder = isMember || isAdmin;
+  const isOpen = context?.isOpen || false;
+
+   const puedeAcceder = isMember || isAdmin || isOpen;
+
+    const puedeSubirMaterial = isMember || isAdmin;
 
   const subject = mockSubjects[id || ""] || mockSubjects.prog1;
 
@@ -88,7 +93,7 @@ export function SubjectDetail() {
   if (!puedeAcceder) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-12 text-center text-destructive font-medium">
-        Solo los miembros autorizados de este portal pueden ver o descargar el contenido de esta materia.
+        Este portal es privado. Solo los miembros pueden ver el contenido de sus materias.
       </div>
     );
   }
@@ -154,7 +159,7 @@ export function SubjectDetail() {
                 </button>
               </>
             )}
-            {!isEditing && (
+            {puedeSubirMaterial && !isEditing && (
               <button
                 onClick={() => setIsUploadModalOpen(true)}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors flex items-center gap-2"

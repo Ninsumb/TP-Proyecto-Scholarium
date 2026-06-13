@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { Settings, Lock, Upload, Palette, AlertTriangle, Archive, Loader2 } from "lucide-react";
 import { adminService } from "../../../services/AdminService";
-import { usePortalContext } from "../../../hooks/usePortalContext";
+import { usePortalContext } from "../../../Hooks/usePortalContext";
+import type { TipoAcceso } from '../../../types/Portal/Portal';
 import type {
   PlantillaSolicitudResponse,
   CrearVotacionRequest,
 } from "../../../types/Admin/Admin";
 
 // ─── Opciones de icono y color (sin cambios respecto al original) ─────────────
+
 
 const iconOptions = [
   { id: "book",       label: "Libro",        icon: "📚" },
@@ -170,9 +172,9 @@ export function PortalConfig() {
 
   // Estado de acceso — se carga desde el back (PlantillaSolicitud)
   const [accessData, setAccessData] = useState({
-    isPortalOpen:     true,   // TODO: este campo vendrá del portal cuando el back lo implemente
-    areRequestsOpen:  true,
-    joinRequirements: "",
+      isPortalOpen:     portal?.tipoAcceso === 'ABIERTO',
+      areRequestsOpen:  true,
+      joinRequirements: "",
   });
 
   // Loading states granulares

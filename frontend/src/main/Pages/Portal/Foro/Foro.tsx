@@ -1,7 +1,7 @@
 // ForumBoardsList.tsx
 import { useState, useEffect } from "react";
 import { MessageSquare, Search, Plus, ChevronRight, MessageCircle, Loader2 } from "lucide-react";
-import { Link, useParams } from "react-router";
+import { Link, useOutletContext, useParams } from "react-router";
 import { foroService } from "../../../services/Portal/ForoService";
 import type { TableroResponse, CrearTableroRequest } from "../../../types/Portal/Foro";
 
@@ -144,6 +144,13 @@ function CreateBoardModal({
 
 export function ForumBoardsList() {
   const { portalId } = useParams();
+  // Recibir isOpen del contexto
+  const context = useOutletContext<{ isAdmin: boolean; isMember: boolean; isOpen: boolean }>();
+  const isAdmin = context?.isAdmin || false;
+  // Solo los admins pueden crear tableros
+  const puedeCrearTablero = isAdmin;
+
+
   const portalIdNum = Number(portalId);
 
   const [tableros, setTableros] = useState<TableroResponse[]>([]);
@@ -194,14 +201,17 @@ export function ForumBoardsList() {
           <h1 className="mb-2 text-foreground">Foro de Discusión</h1>
           <p className="text-foreground">Comparte dudas, recursos y experiencias con la comunidad</p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 shadow-sm"
-          style={{ borderRadius: "var(--radius)" }}
-        >
-          <Plus className="w-5 h-5" />
-          Crear Tablero
-        </button>
+        {/* Solo admins pueden crear tableros */}
+        {puedeCrearTablero && (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 shadow-sm"
+            style={{ borderRadius: "var(--radius)" }}
+          >
+            <Plus className="w-5 h-5" />
+            Crear Tablero
+          </button>
+        )}
       </div>
 
       <div className="grid lg:grid-cols-[240px_1fr] gap-8">
