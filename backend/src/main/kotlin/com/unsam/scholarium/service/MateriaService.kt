@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 import kotlin.jvm.optionals.getOrNull
 import com.unsam.scholarium.dto.MateriaResponse
+import com.unsam.scholarium.model.TipoAcceso
 
 @Service
 class MateriaService(
@@ -164,7 +165,7 @@ class MateriaService(
         return materiaRepository.save(materia)
     }
 
-   @Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     fun obtenerMateria(materiaId: UUID, email: String): MateriaResponse {
         val materia = materiaRepository.findById(materiaId).getOrNull()
             ?: throw ElementDoesNotExistException("Materia no encontrada")
@@ -175,11 +176,14 @@ class MateriaService(
         val portal = materia.carpeta.portal
 
         val esMiembro = membresiaRepository.existsByUsuarioIdAndPortalIdAndRol(usuario.id!!, portal.id!!, RolMembresia.MIEMBRO)
-        val esAdmin = membresiaRepository.existsByUsuarioIdAndPortalIdAndRol(usuario.id!!, portal.id!!, RolMembresia.ADMIN)
+        val esAdmin   = membresiaRepository.existsByUsuarioIdAndPortalIdAndRol(usuario.id!!, portal.id!!, RolMembresia.ADMIN)
 
         if (!esMiembro && !esAdmin) {
-            throw UnauthorizedException("No sos miembro de este portal")
-        } 
+            // No es miembro — solo puede pasar si el portal es ABIERTO
+            if (portal.tipoAcceso != TipoAcceso.ABIERTO) {
+                throw UnauthorizedException("No sos miembro de este portal")
+            }
+        }
 
         return MateriaResponse(
             id = materia.id!!,
@@ -188,5 +192,5 @@ class MateriaService(
             orden = materia.orden,
             updatedAt = materia.updatedAt!!.toInstant()
         )
-}
+    }
 }

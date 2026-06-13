@@ -1,5 +1,7 @@
 package com.unsam.scholarium.dto
 
+import com.unsam.scholarium.model.TipoAcceso
+
 // PortalBusquedaDTO: usado para las cards en la vista de búsqueda (/portales/buscar)
 data class PortalBusquedaDTO(
     val id: Long?,
@@ -12,10 +14,11 @@ data class PortalBusquedaDTO(
     val logoUrl: String?,
     val iconoPortal: String?,
     val colorPortal: String?,
+    val tipoAcceso: TipoAcceso? = null
 )
 
 data class PortalBusquedaResponse(
     val portales: List<PortalBusquedaDTO>,
     val page: Int,
-    val total: Int
+    val total: Int,
 )

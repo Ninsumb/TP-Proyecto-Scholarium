@@ -25,7 +25,8 @@ object PortalMapper {
             cantidadMaterialPublicado = stats[2],
             rolUsuarioAutenticado = rol?.name,
             fechaRegistro = portal.fechaRegistro,
-            activo = portal.activo
+            activo = portal.activo,
+            tipoAcceso = portal.tipoAcceso,
         )
     }
 

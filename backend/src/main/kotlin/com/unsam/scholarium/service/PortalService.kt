@@ -33,6 +33,7 @@ import com.unsam.scholarium.repository.PortalRepository
 import com.unsam.scholarium.repository.UsuarioRepository
 import com.unsam.scholarium.dto.MiembroResponse
 import com.unsam.scholarium.dto.ActualizarPortalRequest
+import com.unsam.scholarium.model.TipoAcceso
 import jakarta.transaction.Transactional
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
@@ -75,19 +76,19 @@ class PortalService(
         val portal = portalRepository.findById(id)
             .orElseThrow { ElementDoesNotExistException("Portal no encontrado") }
 
-        val membresia = membresiaRepository
-            .findByUsuarioEmailAndPortalId(email, id)
-            ?: throw UnauthorizedException("No pertenece al portal")
+        val membresia = membresiaRepository.findByUsuarioEmailAndPortalId(email, id)
 
-        if (membresia.rol != RolMembresia.ADMIN &&
-            membresia.rol != RolMembresia.MIEMBRO)
-            throw UnauthorizedException("No tenés permisos para visualizar esta estructura")
+        val esMiembro = membresia?.rol in listOf(RolMembresia.MIEMBRO, RolMembresia.ADMIN)
 
-        val carpetas = carpetaRepository
-            .findAllByPortalIdWithPadre(id)
+        if (!esMiembro) {
+            // No es miembro — solo pasa si el portal es ABIERTO
+            if (portal.tipoAcceso != TipoAcceso.ABIERTO) {
+                throw UnauthorizedException("No pertenece al portal")
+            }
+        }
 
-        val materias = materiaRepository
-            .findAllByPortalIdWithCarpeta(id)
+        val carpetas = carpetaRepository.findAllByPortalIdWithPadre(id)
+        val materias = materiaRepository.findAllByPortalIdWithCarpeta(id)
 
         val materiasPorCarpeta = materias.groupBy { it.carpeta.id }
 

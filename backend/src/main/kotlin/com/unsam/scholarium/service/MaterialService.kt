@@ -10,6 +10,7 @@ import com.unsam.scholarium.exception.UnauthorizedException
 import com.unsam.scholarium.model.EstadoMaterial
 import com.unsam.scholarium.model.Material
 import com.unsam.scholarium.model.RolMembresia
+import com.unsam.scholarium.model.TipoAcceso
 import com.unsam.scholarium.model.TipoMaterial
 import com.unsam.scholarium.repository.MateriaRepository
 import com.unsam.scholarium.repository.MaterialRepository
@@ -155,7 +156,6 @@ class MaterialService(
 
     @Transactional(readOnly = true)
     fun listarMaterialPublicado(materiaId: UUID, email: String): List<MaterialPublicadoResponse> {
-
         val materia = materiaRepository.findById(materiaId).getOrNull()
             ?: throw ElementDoesNotExistException("Materia no encontrada")
 
@@ -163,15 +163,13 @@ class MaterialService(
             ?: throw ElementDoesNotExistException("Usuario no encontrado")
 
         val portal = materia.carpeta.portal
-
-        val esMiembro = membresiaRepository
-            .existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.MIEMBRO)
-
-        val esAdmin = membresiaRepository
-            .existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+        val esMiembro = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.MIEMBRO)
+        val esAdmin   = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
 
         if (!esMiembro && !esAdmin) {
-            throw UnauthorizedException("No sos miembro de este portal")
+            if (portal.tipoAcceso != TipoAcceso.ABIERTO) {
+                throw UnauthorizedException("No sos miembro de este portal")
+            }
         }
 
         return materialRepository
@@ -181,48 +179,53 @@ class MaterialService(
 
     @Transactional(readOnly = true)
     fun buscarMaterialPublicado(materiaId: UUID, nombre: String, email: String): List<MaterialPublicadoResponse> {
-    val materia = materiaRepository.findById(materiaId).getOrNull()
-        ?: throw ElementDoesNotExistException("Materia no encontrada")
-    
-    val usuario = usuarioRepository.findByEmail(email)
-        ?: throw ElementDoesNotExistException("Usuario no encontrado")
+        val materia = materiaRepository.findById(materiaId).getOrNull()
+            ?: throw ElementDoesNotExistException("Materia no encontrada")
 
-    val portal = materia.carpeta.portal
-    val esMiembro = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.MIEMBRO)
-    val esAdmin = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
 
-    if (!esMiembro && !esAdmin) {
-        throw UnauthorizedException("No sos miembro de este portal")
+        val portal = materia.carpeta.portal
+        val esMiembro = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.MIEMBRO)
+        val esAdmin   = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+
+        if (!esMiembro && !esAdmin) {
+            if (portal.tipoAcceso != TipoAcceso.ABIERTO) {
+                throw UnauthorizedException("No sos miembro de este portal")
+            }
+        }
+
+        return materialRepository
+            .findByMateriaIdAndActivoIsTrueAndEstadoAndNombreContainingIgnoreCaseOrderByCreatedAtDesc(
+                materiaId, EstadoMaterial.PUBLICADO, nombre
+            )
+            .map { MaterialPublicadoResponse.fromEntity(it) }
     }
-
-    return materialRepository
-        .findByMateriaIdAndActivoIsTrueAndEstadoAndNombreContainingIgnoreCaseOrderByCreatedAtDesc(materiaId, EstadoMaterial.PUBLICADO, nombre)
-        .map { MaterialPublicadoResponse.fromEntity(it) }
-}
 
     @Transactional(readOnly = true)
-fun descargarMaterial(materialId: UUID, email: String): String {
-    val material = materialRepository.findById(materialId)
-        .orElseThrow { ElementDoesNotExistException("Material no encontrado") }
+    fun descargarMaterial(materialId: UUID, email: String): String {
+        val material = materialRepository.findById(materialId)
+            .orElseThrow { ElementDoesNotExistException("Material no encontrado") }
 
-    val usuario = usuarioRepository.findByEmail(email)
-        ?: throw ElementDoesNotExistException("Usuario no encontrado")
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
 
-    val portal = material.materia.carpeta.portal
-    val esMiembro = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.MIEMBRO)
-    val esAdmin = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+        val portal = material.materia.carpeta.portal
+        val esMiembro = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.MIEMBRO)
+        val esAdmin   = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
 
-    if (!esMiembro && !esAdmin) {
-        throw UnauthorizedException("No tenés permisos para descargar este material")
+        if (!esMiembro && !esAdmin) {
+            if (portal.tipoAcceso != TipoAcceso.ABIERTO) {
+                throw UnauthorizedException("No tenés permisos para descargar este material")
+            }
+        }
+
+        if (material.estado != EstadoMaterial.PUBLICADO) {
+            throw BusinessException("El material no se encuentra publicado")
+        }
+
+        return material.url
     }
-
-    if (material.estado != EstadoMaterial.PUBLICADO) {
-        throw BusinessException("El material no se encuentra publicado")
-    }
-
-    
-    return material.url
-}
 
     fun deleteMaterial(materialId: UUID, email: String) {
         val material = materialRepository.findById(materialId)

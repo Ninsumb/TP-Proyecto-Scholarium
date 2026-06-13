@@ -1,5 +1,6 @@
 package com.unsam.scholarium.dto
 
+import com.unsam.scholarium.model.TipoAcceso
 import java.time.LocalDateTime
 
 // PortalResponse: usado para la vista de detalle del portal (/portales/{id})
@@ -17,5 +18,6 @@ data class PortalResponse(
     var cantidadMaterialPublicado: Int = 0,
     val rolUsuarioAutenticado: String?,
     var fechaRegistro: LocalDateTime,
-    var activo: Boolean
+    var activo: Boolean,
+    val tipoAcceso: TipoAcceso? = null,
 )

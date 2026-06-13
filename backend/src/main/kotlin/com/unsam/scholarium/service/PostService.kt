@@ -8,9 +8,11 @@ import com.unsam.scholarium.dto.PostResponse
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.NotAdminException
+import com.unsam.scholarium.exception.UnauthorizedException
 import com.unsam.scholarium.model.Post
 import com.unsam.scholarium.model.PostRevision
 import com.unsam.scholarium.model.RolMembresia
+import com.unsam.scholarium.model.TipoAcceso
 import com.unsam.scholarium.repository.ForoRepository
 import com.unsam.scholarium.repository.MembresiaRepository
 import com.unsam.scholarium.repository.PostRepository
@@ -21,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.util.UUID
 
-
 @Service
 class PostService(
     private val postRepository: PostRepository,
@@ -31,7 +32,7 @@ class PostService(
     private val postRevisionRepository: PostRevisionRepository
 ) {
 
-    // ── helpers privados ──────────────────────────────────────────────────────
+    // ── Helpers privados ──────────────────────────────────────────────────────
 
     private fun resolverUsuario(email: String) =
         usuarioRepository.findByEmail(email)
@@ -41,14 +42,44 @@ class PostService(
         foroRepository.findById(tableroId)
             .orElseThrow { ElementDoesNotExistException("El tablero no existe") }
 
-    private fun validarMembresía(usuarioId: Long, portalId: Long) {
+    /**
+     * Acceso de LECTURA: pasa si es miembro/admin, o si el portal es ABIERTO.
+     */
+    private fun validarAccesoLectura(usuarioId: Long, portalId: Long) {
+        val membresia = membresiaRepository.findByUsuarioIdAndPortalId(usuarioId, portalId)
+        if (membresia != null && membresia.rol in listOf(RolMembresia.MIEMBRO, RolMembresia.ADMIN)) return
+
+        // No es miembro — revisar tipoAcceso
+        val tablero = foroRepository.findByPortalId(portalId).firstOrNull()
+        val portal = tablero?.portal
+            ?: throw ElementDoesNotExistException("Portal no encontrado")
+
+        if (portal.tipoAcceso != TipoAcceso.ABIERTO) {
+            throw UnauthorizedException("No sos miembro de este portal")
+        }
+    }
+
+    /**
+     * Acceso de LECTURA desde un post (ya tenemos el portal por el tablero).
+     */
+    private fun validarAccesoLecturaDesdePortalId(usuarioId: Long, portalId: Long, portal: com.unsam.scholarium.model.Portal) {
+        val membresia = membresiaRepository.findByUsuarioIdAndPortalId(usuarioId, portalId)
+        if (membresia != null && membresia.rol in listOf(RolMembresia.MIEMBRO, RolMembresia.ADMIN)) return
+        if (portal.tipoAcceso != TipoAcceso.ABIERTO) {
+            throw UnauthorizedException("No sos miembro de este portal")
+        }
+    }
+
+    /**
+     * Acceso de ESCRITURA: siempre requiere membresía activa.
+     */
+    private fun validarAccesoEscritura(usuarioId: Long, portalId: Long) {
         val esMiembro = membresiaRepository.existsByUsuarioIdAndPortalIdAndRol(
             usuarioId, portalId, RolMembresia.MIEMBRO
         ) || membresiaRepository.existsByUsuarioIdAndPortalIdAndRol(
             usuarioId, portalId, RolMembresia.ADMIN
         )
-
-        if (!esMiembro) throw NotAdminException("No tenés permisos para operar en este portal")
+        if (!esMiembro) throw UnauthorizedException("No tenés permisos para operar en este portal")
     }
 
     private fun toResponse(post: Post): PostResponse {
@@ -86,14 +117,14 @@ class PostService(
         }
     }
 
-    // ── casos de uso ──────────────────────────────────────────────────────────
+    // ── Casos de uso ──────────────────────────────────────────────────────────
 
     @Transactional
     fun crearPost(tableroId: UUID, email: String, request: CrearPostRequest): PostResponse {
         val usuario = resolverUsuario(email)
         val tablero = resolverTablero(tableroId)
-
-        validarMembresía(usuario.id!!, tablero.portal.id!!)
+        // Crear posts siempre requiere ser miembro
+        validarAccesoEscritura(usuario.id!!, tablero.portal.id!!)
 
         val post = Post(
             titulo = request.titulo,
@@ -101,17 +132,14 @@ class PostService(
             tablero = tablero,
             autor = usuario
         )
-
-        val guardado = postRepository.save(post)
-        return toResponse(guardado)
+        return toResponse(postRepository.save(post))
     }
 
     @Transactional(readOnly = true)
     fun listarPostsDeTablero(tableroId: UUID, email: String): List<PostResponse> {
         val usuario = resolverUsuario(email)
         val tablero = resolverTablero(tableroId)
-
-        validarMembresía(usuario.id!!, tablero.portal.id!!)
+        validarAccesoLecturaDesdePortalId(usuario.id!!, tablero.portal.id!!, tablero.portal)
 
         return postRepository
             .findByTableroIdAndPostPadreIsNullAndEliminadoFalseOrderByCreatedAtDesc(tableroId)
@@ -121,15 +149,13 @@ class PostService(
     @Transactional
     fun responderPost(postPadreId: UUID, email: String, request: CrearRespuestaRequest): PostResponse {
         val usuario = resolverUsuario(email)
-
         val postPadre = postRepository.findById(postPadreId)
             .orElseThrow { ElementDoesNotExistException("El post no existe") }
 
-        if (postPadre.eliminado) {
-            throw BusinessException("No se puede responder a un post eliminado")
-        }
+        if (postPadre.eliminado) throw BusinessException("No se puede responder a un post eliminado")
 
-        validarMembresía(usuario.id!!, postPadre.tablero.portal.id!!)
+        // Responder siempre requiere membresía
+        validarAccesoEscritura(usuario.id!!, postPadre.tablero.portal.id!!)
 
         val respuesta = Post(
             titulo = null,
@@ -138,34 +164,23 @@ class PostService(
             autor = usuario,
             postPadre = postPadre
         )
-
-        val guardada = postRepository.save(respuesta)
-        return toResponse(guardada)
+        return toResponse(postRepository.save(respuesta))
     }
 
     @Transactional(readOnly = true)
     fun listarRespuestasDePost(postId: UUID, email: String): List<PostResponse> {
         val usuario = resolverUsuario(email)
-
         val post = postRepository.findById(postId)
             .orElseThrow { ElementDoesNotExistException("El post no existe") }
 
-        // Si el post padre está eliminado, técnicamente podés consultar
-        // sus respuestas igual. No lo bloqueás, pero tampoco lo exponés desde la UI.
-        // Si querés bloquearlo completamente, descomentás esto:
-        // if (post.eliminado) throw ElementDoesNotExistException("El post no existe")
+        validarAccesoLecturaDesdePortalId(usuario.id!!, post.tablero.portal.id!!, post.tablero.portal)
 
-        validarMembresía(usuario.id!!, post.tablero.portal.id!!)
-
-        return postRepository
-            .findAllRespuestasRecursivas(postId)
-            .map { toResponse(it) }
+        return postRepository.findAllRespuestasRecursivas(postId).map { toResponse(it) }
     }
 
     @Transactional
     fun editarPost(postId: UUID, email: String, request: EditarPostRequest): PostResponse {
         val usuario = resolverUsuario(email)
-
         val post = postRepository.findById(postId)
             .orElseThrow { ElementDoesNotExistException("El post no existe") }
 
@@ -173,11 +188,9 @@ class PostService(
         if (post.autor.id != usuario.id) throw NotAdminException("No tenés permisos para editar este post")
 
         if (post.contenido == request.contenido && post.titulo == request.titulo) {
-            return toResponse(post) // Nada cambia, retorna sin guardar revisión ni tocar updatedAt
+            return toResponse(post)
         }
 
-        // Guardar revisión del contenido anterior ANTES de modificar
-        //TODO: Evaluar que quizás lo podemos hacer con un script sql
         val revision = PostRevision(
             postId = post.id!!,
             oldContent = post.contenido,
@@ -195,7 +208,6 @@ class PostService(
     @Transactional
     fun eliminarPost(postId: UUID, email: String) {
         val usuario = resolverUsuario(email)
-
         val post = postRepository.findById(postId)
             .orElseThrow { ElementDoesNotExistException("El post no existe") }
 
