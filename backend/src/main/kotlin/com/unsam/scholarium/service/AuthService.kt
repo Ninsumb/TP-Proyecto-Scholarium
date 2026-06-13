@@ -17,7 +17,8 @@ class AuthService(
     private val usuarioRepository: UsuarioRepository,
     private val passwordEncoder: PasswordEncoder,
     private val jwtService: JwtService,
-    private val googleAuthService: GoogleAuthService
+    private val googleAuthService: GoogleAuthService,
+    private val mailService: MailService
 ) {
 
     fun register(request: RegisterRequest): Usuario {
@@ -132,25 +133,57 @@ class AuthService(
         return LoginResponse(token = newToken, refreshToken = newRefreshToken)
     }
 
+    fun forgotPassword(email: String) {
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: return
+
+        val resetToken = jwtService.generatePasswordResetToken(usuario.email)
+
+        // Cambiar por un link posta cuando se conecte al front
+        val link = "http://localhost:5173/reset-password?token=$resetToken"
+
+        mailService.send(
+            to = usuario.email,
+            subject = "Recuperar contraseña",
+            body = """
+                Hola ${usuario.nombre}
+    
+                Entrá al siguiente enlace:
+    
+                $link
+    
+                Expira en 30 minutos.
+            """.trimIndent()
+        )
+    }
+
+    fun resetPassword(token: String, passwordNueva: String, confirmacion: String) {
+        if (passwordNueva != confirmacion) throw RuntimeException("Las contraseñas no coinciden")
+
+        val email = jwtService.validatePasswordResetToken(token)
+
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw RuntimeException()
+
+        usuario.password = passwordEncoder.encode(passwordNueva)
+
+        usuarioRepository.save(usuario)
+    }
+
     fun changePassword(email: String, request: ChangePasswordRequest) {
         val usuario = usuarioRepository.findByEmail(email)
             ?: throw UnauthorizedException("Usuario no encontrado")
 
         // Verificar que sea un usuario de email/password (NO de Google)
-        if (usuario.password == null) {
-            throw UnauthorizedException("Esta cuenta fue creada con Google. No se puede cambiar contraseña.")
-        }
+        if (usuario.password == null) throw UnauthorizedException("Esta cuenta fue creada con Google. No se puede cambiar contraseña.")
 
         // Verificar contraseña actual
         val passwordCorrecta = passwordEncoder.matches(request.currentPassword, usuario.password)
-        if (!passwordCorrecta) {
-            throw UnauthorizedException("Contraseña actual incorrecta")
-        }
+
+        if (!passwordCorrecta) throw UnauthorizedException("Contraseña actual incorrecta")
 
         // Validar nueva contraseña
-        if (request.newPassword.length < 8) {
-            throw IllegalArgumentException("La nueva contraseña debe tener al menos 8 caracteres")
-        }
+        if (request.newPassword.length < 8) throw IllegalArgumentException("La nueva contraseña debe tener al menos 8 caracteres")
 
         // Actualizar contraseña
         usuario.password = passwordEncoder.encode(request.newPassword)

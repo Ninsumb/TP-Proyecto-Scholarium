@@ -18,7 +18,6 @@ import org.springframework.web.multipart.MultipartFile
 class UsuarioService(
     private val usuarioRepository: UsuarioRepository,
     private val membresiaRepository: MembresiaRepository,
-    private val carpetaRepository: CarpetaRepository,
     private val materiaRepository: MateriaRepository,
     private val materialRepository: MaterialRepository,
     private val cloudinaryService: CloudinaryFileStorageService

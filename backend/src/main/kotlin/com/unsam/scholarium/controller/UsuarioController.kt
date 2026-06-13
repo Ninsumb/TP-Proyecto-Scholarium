@@ -1,8 +1,10 @@
 package com.unsam.scholarium.controller
 
 import com.unsam.scholarium.dto.ActualizarPerfilRequest
+import com.unsam.scholarium.dto.ChangePasswordRequest
 import com.unsam.scholarium.dto.UsuarioMeResponse
 import com.unsam.scholarium.dto.UsuarioPortalResponse
+import com.unsam.scholarium.service.AuthService
 import com.unsam.scholarium.service.UsuarioService
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -20,7 +22,8 @@ import org.springframework.web.multipart.MultipartFile
 @RestController
 @RequestMapping("/api/usuarios")
 class UsuarioController (
-    private val usuarioService: UsuarioService
+    private val usuarioService: UsuarioService,
+    private val authService: AuthService
 ){
     @GetMapping("/me/portales")
     fun getMisPortales(authentication: Authentication): ResponseEntity<List<UsuarioPortalResponse>> {
@@ -47,8 +50,20 @@ class UsuarioController (
         return ResponseEntity.ok(usuarioService.actualizarPerfil(email, request))
     }
 
+    @PutMapping("/me/password")
+    fun cambiarPassword(
+        @RequestBody request: ChangePasswordRequest,
+        authentication: Authentication
+    ): ResponseEntity<Void> {
+        val email = authentication.name
+
+        authService.changePassword(email, request)
+
+        return ResponseEntity.noContent().build()
+    }
+
     @PatchMapping(
-        "/usuarios/me/foto-perfil",
+        "/me/foto-perfil",
         consumes = [MediaType.MULTIPART_FORM_DATA_VALUE]
     )
     fun actualizarFotoPerfil(
