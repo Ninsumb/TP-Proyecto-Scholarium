@@ -11,4 +11,5 @@ interface PortalBloqueoRepository : JpaRepository<PortalBloqueo, Long> {
     fun existsByPortalAndUsuario(portal: Portal, usuario: Usuario): Boolean
     fun findByPortalAndUsuario(portal: Portal, usuario: Usuario): PortalBloqueo?
     fun findAllByPortalId(portalId: Long): List<PortalBloqueo>
+    fun deleteByPortalAndUsuario(portal: Portal, usuario: Usuario)
 }

@@ -183,6 +183,7 @@ class DataInitializer {
             membresiaRepo.save(Membresia(usuario = noAdmin, portal = portal, rol = RolMembresia.MIEMBRO))
             membresiaRepo.save(Membresia(usuario = variasMembresias, portal = portal, rol = RolMembresia.MIEMBRO))
             membresiaRepo.save(Membresia(usuario = variasMembresias, portal = portalRedes, rol = RolMembresia.ADMIN))
+            membresiaRepo.save(Membresia(usuario = bloqueado, portal = portal, rol = RolMembresia.MIEMBRO))
             // laura@test.com no tiene membresía en ningún portal → sirve para probar acceso como visitante
 
             // ── PlantillaSolicitud ─────────────────────────────────────────
