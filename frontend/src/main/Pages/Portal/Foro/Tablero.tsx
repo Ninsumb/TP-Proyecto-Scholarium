@@ -17,6 +17,8 @@ import {
   X,
   Check,
   CornerDownRight,
+  UserPlus,
+  Lock
 } from "lucide-react";
 import { foroService } from "../../../services/Portal/ForoService";
 import { usuarioService } from "../../../services/UsuarioService";
@@ -26,6 +28,33 @@ import type {
   CrearPostRequest,
   TableroResponse,
 } from "../../../types/Portal/Foro";
+
+function AccesoDenegado({ portalId }: { portalId: string | undefined }) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+      <div className="max-w-md">
+        <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center mx-auto mb-6">
+          <Lock className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <h2 className="text-2xl font-semibold text-foreground mb-3">
+          Portal privado
+        </h2>
+        <p className="text-on-surface-variant mb-8">
+          Este portal es privado. Solo sus miembros pueden acceder a esta sección.
+          Si querés ver el contenido, enviá una solicitud para unirte.
+        </p>
+        <Link
+          to={`/portal/${portalId}/solicitud`}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors"
+          style={{ borderRadius: "var(--radius)" }}
+        >
+          <UserPlus className="w-5 h-5" />
+          Enviar Solicitud
+        </Link>
+      </div>
+    </div>
+  );
+}
 
 // ── Hook: rol del usuario en el portal actual ─────────────────────────────────
 
@@ -853,7 +882,7 @@ export function ForumBoardView() {
 
   const usuarioActualId = authService.getUserId();
   const rolUsuario = useRolEnPortal(portalIdNum);
-  const { isMember, isAdmin } = usePortalContext();
+  const { isMember, isAdmin, isOpen } = usePortalContext();
   const canInteract = isMember || isAdmin;
 
   const [tablero, setTablero] = useState<TableroResponse | null>(null);
@@ -894,6 +923,10 @@ export function ForumBoardView() {
   const handlePostEditado = (updated: PostResponse) => {
     setPosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
   };
+
+  if (!isMember && !isAdmin && !isOpen) {
+    return <AccesoDenegado portalId={portalId} />;
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">

@@ -3,6 +3,7 @@ import { useParams, Link, useOutletContext } from "react-router";
 import {
   FileText, Download, Upload, ArrowLeft, Calendar,
   User, Edit2, Save, X, Search, Loader2,
+  UserPlus, Lock
 } from "lucide-react";
 import { UploadMaterialModal } from "./SubirMaterialModal";
 import { materialService } from "../../../services/Material/MaterialService";
@@ -14,6 +15,35 @@ interface PortalContext {
   isMember: boolean;
   isAdmin: boolean;
   isOpen: boolean;
+}
+
+//TODO: Este componente en realidad se puede abstraer... por cuestiones de tiempo lo dejo acá
+
+function AccesoDenegado({ portalId }: { portalId: string | undefined }) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+      <div className="max-w-md">
+        <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center mx-auto mb-6">
+          <Lock className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <h2 className="text-2xl font-semibold text-foreground mb-3">
+          Portal privado
+        </h2>
+        <p className="text-on-surface-variant mb-8">
+          Este portal es privado. Solo sus miembros pueden acceder a esta sección.
+          Si querés ver el contenido, enviá una solicitud para unirte.
+        </p>
+        <Link
+          to={`/portal/${portalId}/solicitud`}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors"
+          style={{ borderRadius: "var(--radius)" }}
+        >
+          <UserPlus className="w-5 h-5" />
+          Enviar Solicitud
+        </Link>
+      </div>
+    </div>
+  );
 }
 
 export function SubjectDetail() {
@@ -107,12 +137,8 @@ export function SubjectDetail() {
   };
 
   if (!puedeAcceder) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-12 text-center text-destructive font-medium">
-        Este portal es privado. Solo los miembros pueden ver el contenido de sus materias.
-      </div>
-    );
-  }
+      return <AccesoDenegado portalId={portalId} />;
+    }
 
   const filteredMaterials = filterType === "all"
     ? materials

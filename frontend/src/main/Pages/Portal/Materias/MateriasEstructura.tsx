@@ -12,6 +12,8 @@ import {
     Trash2,
     FolderSymlink,
     MoveRight,
+    UserPlus,
+    Lock,
 } from "lucide-react";
 import { carpetaService } from "../../../services/Portal/CarpetaService";
 import type { CarpetaArbol } from "../../../types/Portal/Carpeta";
@@ -30,6 +32,33 @@ interface FolderOption {
     id: string;
     nombre: string;
     depth: number;
+}
+
+function AccesoDenegado({ portalId }: { portalId: string | undefined }) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+      <div className="max-w-md">
+        <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center mx-auto mb-6">
+          <Lock className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <h2 className="text-2xl font-semibold text-foreground mb-3">
+          Portal privado
+        </h2>
+        <p className="text-on-surface-variant mb-8">
+          Este portal es privado. Solo sus miembros pueden acceder a esta sección.
+          Si querés ver el contenido, enviá una solicitud para unirte.
+        </p>
+        <Link
+          to={`/portal/${portalId}/solicitud`}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors"
+          style={{ borderRadius: "var(--radius)" }}
+        >
+          <UserPlus className="w-5 h-5" />
+          Enviar Solicitud
+        </Link>
+      </div>
+    </div>
+  );
 }
 
 // ─── Helper: aplanar el árbol en una lista con profundidad ─────────────────────
@@ -219,9 +248,10 @@ function ModalActions({ confirmLabel, onConfirm, onCancel, confirmDisabled, dang
 // ─── Componente principal ──────────────────────────────────────────────────────
 export function Subjects() {
     const { portalId } = useParams();
-    const { isAdmin } = useOutletContext<{
+    const { isAdmin, isMember, isOpen } = useOutletContext<{
         isAdmin: boolean;
         isMember: boolean;
+        isOpen: boolean;
     }>();
 
     const [folderStructure, setFolderStructure] = useState<CarpetaArbol[]>([]);
@@ -498,6 +528,10 @@ export function Subjects() {
     // ── Early returns ───────────────────────────────────────────────────────────
     if (loading)
         return <div className="p-8 text-muted-foreground">Cargando estructura...</div>;
+
+    if (!isMember && !isAdmin && !isOpen) {
+        return <AccesoDenegado portalId={portalId} />;
+    }
 
     const targetFolderIsEmpty =
         targetFolder &&
