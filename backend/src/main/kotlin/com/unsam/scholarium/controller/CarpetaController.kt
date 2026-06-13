@@ -62,6 +62,7 @@ class CarpetaController(
         val response = MateriaResponse(
             id = materiaCreada.id!!,
             nombre = materiaCreada.nombre,
+            descripcion = materiaCreada.descripcion,
             carpetaId = materiaCreada.carpeta.id!!,
             orden = materiaCreada.orden,
             updatedAt = materiaCreada.updatedAt!!.toInstant()

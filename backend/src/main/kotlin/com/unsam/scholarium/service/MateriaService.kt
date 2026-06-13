@@ -1,5 +1,6 @@
 package com.unsam.scholarium.service
 
+import com.unsam.scholarium.dto.ActualizarMateriaRequest
 import com.unsam.scholarium.dto.CrearMateriaRequest
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
@@ -101,18 +102,18 @@ class MateriaService(
     @Transactional(readOnly = true)
     fun actualizarNombreMateria(
         materiaId: UUID,
-        nuevoNombre: String,
+        request: ActualizarMateriaRequest,
         email: String
     ): Materia {
 
         val materia = materiaRepository.findById(materiaId)
             .orElseThrow { ElementDoesNotExistException("Materia no encontrada") }
 
-        if (nuevoNombre.isBlank()) {
+        if (request.nombre.isBlank()) {
             throw BusinessException("El nombre no puede estar vacío")
         }
 
-        if (nuevoNombre.length > 150) {
+        if (request.nombre.length > 150) {
             throw BusinessException("El nombre no puede superar los 150 caracteres")
         }
 
@@ -123,7 +124,9 @@ class MateriaService(
 
         validarAdmin(usuario, portal)
 
-        materia.nombre = nuevoNombre
+
+        materia.nombre = request.nombre
+        request.descripcion?.let { materia.descripcion = it }
 
         return materiaRepository.save(materia)
     }
@@ -188,6 +191,7 @@ class MateriaService(
         return MateriaResponse(
             id = materia.id!!,
             nombre = materia.nombre,
+            descripcion = materia.descripcion,
             carpetaId = materia.carpeta.id!!,
             orden = materia.orden,
             updatedAt = materia.updatedAt!!.toInstant()

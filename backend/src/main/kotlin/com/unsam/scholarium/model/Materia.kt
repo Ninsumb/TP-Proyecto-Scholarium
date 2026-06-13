@@ -15,7 +15,10 @@ class Materia(
     @Column(nullable = false, length = 150)
     var nombre: String,
 
-    //TODO: Pensar que la Materia también poseería una descripción, posiblemente laaaarga y que en el front se formatearía a MD (dando la posiblidad de personalización con links, imagenes, etc).
+    //TODO: LA DESC DEBERIA TENER ALGUN LIMITE, ESO LO VEMOS DSP
+
+    @Column(nullable = true, columnDefinition = "TEXT")
+    var descripcion: String? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "carpeta_id", nullable = false)

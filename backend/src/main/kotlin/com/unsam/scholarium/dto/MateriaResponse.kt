@@ -6,6 +6,7 @@ import java.util.UUID
 data class MateriaResponse(
     val id: UUID,
     val nombre: String,
+    val descripcion: String?,
     val carpetaId: UUID,
     val orden: Int,
     val updatedAt: Instant

@@ -34,13 +34,14 @@ class MateriaController(
 
         val materiaActualizada = materiaService.actualizarNombreMateria(
             materiaId,
-            request.nombre,
+            request,
             email
         )
 
         val response = MateriaResponse(
             id = materiaActualizada.id!!,
             nombre = materiaActualizada.nombre,
+            descripcion = materiaActualizada.descripcion,
             carpetaId = materiaActualizada.carpeta.id!!,
             orden = materiaActualizada.orden,
             updatedAt = materiaActualizada.updatedAt!!.toInstant()
@@ -65,6 +66,7 @@ class MateriaController(
 
         val response = MateriaResponse(
             id = materiaActualizada.id!!,
+            descripcion = materiaActualizada.descripcion,
             nombre = materiaActualizada.nombre,
             carpetaId = materiaActualizada.carpeta.id!!,
             orden = materiaActualizada.orden,
