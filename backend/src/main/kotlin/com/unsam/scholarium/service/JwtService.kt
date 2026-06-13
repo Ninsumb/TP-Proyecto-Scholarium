@@ -79,4 +79,22 @@ class JwtService(
             false
         }
     }
+
+    fun generatePasswordResetToken(email: String): String {
+        return Jwts.builder()
+            .subject(email)
+            .claim("type", "password-reset")
+            .issuedAt(Date())
+            .expiration(Date(System.currentTimeMillis() + 30 * 60 * 1000))
+            .signWith(getSigningKey())
+            .compact()
+    }
+
+    fun validatePasswordResetToken(token: String): String {
+        val claims = extractAllClaims(token)
+
+        if (claims["type"] != "password-reset") throw RuntimeException("Token inválido")
+
+        return claims.subject
+    }
 }

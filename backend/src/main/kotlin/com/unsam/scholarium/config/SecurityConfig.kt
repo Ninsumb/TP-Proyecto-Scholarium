@@ -30,6 +30,8 @@ class SecurityConfig {
                         "/api/auth/register",
                         "/api/auth/google",
                         "/api/auth/refresh",
+                        "/api/auth/forgot-password",
+                        "/api/auth/reset-password",
                         "/error",
                     ).permitAll()
                     //.requestMatchers(HttpMethod.POST, "/api/portales").permitAll()

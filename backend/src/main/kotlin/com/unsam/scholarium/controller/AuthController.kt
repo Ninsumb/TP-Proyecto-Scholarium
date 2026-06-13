@@ -2,11 +2,14 @@ package com.unsam.scholarium.controller
 
 import com.unsam.scholarium.dto.ChangeEmailRequest
 import com.unsam.scholarium.dto.ChangePasswordRequest
+import com.unsam.scholarium.dto.ForgotPasswordRequest
 import com.unsam.scholarium.dto.GoogleLoginRequest
 import com.unsam.scholarium.dto.LoginRequest
 import com.unsam.scholarium.dto.LoginResponse
+import com.unsam.scholarium.dto.MessageResponse
 import com.unsam.scholarium.dto.RegisterRequest
 import com.unsam.scholarium.dto.RegisterResponse
+import com.unsam.scholarium.dto.ResetPasswordRequest
 import com.unsam.scholarium.service.AuthService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -52,6 +55,31 @@ class AuthController(
         return authService.refresh(request.refreshToken)
     }
 
+    @PostMapping("/forgot-password")
+    fun forgotPassword(
+        @RequestBody request: ForgotPasswordRequest
+    ): ResponseEntity<MessageResponse> {
+
+        authService.forgotPassword(request.email)
+
+        return ResponseEntity.ok().build()
+    }
+
+    @PostMapping("/reset-password")
+    fun resetPassword(
+        @RequestBody request: ResetPasswordRequest
+    ): ResponseEntity<Void> {
+
+        authService.resetPassword(
+            request.token,
+            request.passwordNueva,
+            request.confirmacionPassword
+        )
+
+        return ResponseEntity.noContent().build()
+    }
+
+    // TODO: Borrar este endpoint, ya que la funcionalidad de cambiar contraseña es parte del usuario
     @PostMapping("/change-password")
     fun changePassword(
         @RequestBody request: ChangePasswordRequest,
