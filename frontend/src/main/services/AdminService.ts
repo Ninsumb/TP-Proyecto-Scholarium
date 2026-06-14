@@ -224,6 +224,44 @@ class AdminService {
     );
     return response.data;
   }
+
+  // ── Acciones Directas sobre Miembros ──────────────────────────────────────
+
+  /**
+   * Promueve un miembro a administrador.
+   * PUT /api/portales/{portalId}/miembros/{usuarioId}/promover
+   */
+  async promoverAdmin(portalId: number, usuarioId: number): Promise<void> {
+    await apiClient.put(`/portales/${portalId}/miembros/${usuarioId}/promover`);
+  }
+
+  /**
+   * Degrada un administrador a miembro normal.
+   * PUT /api/portales/{portalId}/miembros/{usuarioId}/degradar
+   */
+  async degradarAdmin(portalId: number, usuarioId: number): Promise<void> {
+    await apiClient.put(`/portales/${portalId}/miembros/${usuarioId}/degradar`);
+  }
+
+  /**
+   * Expulsa/Remueve a un miembro del portal.
+   * DELETE /api/portales/{portalId}/miembros/{usuarioId}
+   */
+  async removerMiembro(portalId: number, usuarioId: number): Promise<void> {
+    await apiClient.delete(`/portales/${portalId}/miembros/${usuarioId}`);
+  }
+
+/**
+   * Bloquea a un miembro.
+
+   * DELETE /api/portales/{portalId}/bloqueos/{usuarioId}
+   */
+  async bloquearMiembro(portalId: number, usuarioId: number): Promise<void> {
+    await apiClient.delete(`/portales/${portalId}/bloqueos/${usuarioId}`);
+  }
+
+
+
 }
 
 export const adminService = new AdminService();

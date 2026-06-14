@@ -4,6 +4,7 @@ import {
   ChevronUp, ChevronDown, Check, X, Clock, Loader2,
 } from "lucide-react";
 import { adminService } from "../../../services/AdminService";
+import { authService } from "../../../services/AuthService";
 import { usePortalContext } from "../../../hooks/usePortalContext";
 import type {
   MiembroResponse,
@@ -11,27 +12,31 @@ import type {
   RolMembresia,
 } from "../../../types/Admin/Admin";
 
-// ─── ActionMenu (sin cambios — lo gestiona otra compañera) ───────────────────
+// ─── ActionMenu (Gestión de acciones sobre miembros) ─────────────────────────
 
 interface ActionMenuProps {
   member: MiembroResponse;
-  onAction: (action: string, needsVote: boolean) => void;
+  currentUserId: number | null;
+  onAction: (action: string, member: MiembroResponse) => void;
 }
 
-function ActionMenu({ member, onAction }: ActionMenuProps) {
+function ActionMenu({ member, currentUserId, onAction }: ActionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  // El admin no ve las opciones de degradar/remover/bloquear sobre sí mismo
+  if (member.usuarioId === currentUserId) return null;
 
   const actions =
     member.rol === "ADMIN"
       ? [
-          { label: "Degradar a Miembro",       value: "demote",  needsVote: true },
-          { label: "Expulsar",                  value: "kick",    needsVote: true },
-          { label: "Bloquear",                  value: "ban",     needsVote: true },
+          { label: "Degradar a Miembro",       value: "demote" },
+          { label: "Expulsar",                 value: "kick" },
+          { label: "Bloquear",                 value: "ban" },
         ]
       : [
-          { label: "Ascender a Administrador",  value: "promote", needsVote: false },
-          { label: "Expulsar",                  value: "kick",    needsVote: true },
-          { label: "Bloquear",                  value: "ban",     needsVote: true },
+          { label: "Ascender a Administrador", value: "promote" },
+          { label: "Expulsar",                 value: "kick" },
+          { label: "Bloquear",                 value: "ban" },
         ];
 
   return (
@@ -54,7 +59,7 @@ function ActionMenu({ member, onAction }: ActionMenuProps) {
               <button
                 key={action.value}
                 onClick={() => {
-                  onAction(action.value, action.needsVote);
+                  onAction(action.value, member);
                   setIsOpen(false);
                 }}
                 className="w-full text-left px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors first:rounded-t-sm last:rounded-b-sm"
@@ -65,6 +70,64 @@ function ActionMenu({ member, onAction }: ActionMenuProps) {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// ─── Modal de confirmación de Acción Directa sobre Miembro ────────────────────
+
+interface MemberActionConfirmModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  action: string;
+  memberName: string;
+  loading?: boolean;
+}
+
+function MemberActionConfirmModal({
+  isOpen, onClose, onConfirm, action, memberName, loading
+}: MemberActionConfirmModalProps) {
+  if (!isOpen) return null;
+
+  // Ya solo queda Ascender como acción directa
+  const info = {
+    promote: { 
+      title: "Ascender a Administrador", 
+      text: `¿Estás seguro que deseas ascender a ${memberName} a administrador?`, 
+      btnClass: "bg-primary text-primary-foreground hover:bg-primary-dim" 
+    }
+  }[action] || { title: "Confirmar Acción", text: "¿Estás seguro?", btnClass: "bg-primary" };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card max-w-lg w-full shadow-2xl" style={{ borderRadius: "var(--radius)" }}>
+        <div className="border-b border-border px-6 py-4">
+          <h2 className="text-card-foreground">{info.title}</h2>
+        </div>
+        <div className="p-6">
+          <p className="text-sm text-foreground mb-6">{info.text}</p>
+          <div className="flex gap-3 justify-end">
+            <button
+              onClick={onClose}
+              disabled={loading}
+              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
+              style={{ borderRadius: "var(--radius)" }}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={loading}
+              className={`px-5 py-2.5 transition-colors flex items-center gap-2 disabled:opacity-50 ${info.btnClass}`}
+              style={{ borderRadius: "var(--radius)" }}
+            >
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              Confirmar
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -248,6 +311,7 @@ const TIPO_LABEL: Record<string, string> = {
 export function AdminPanel() {
   const { portal } = usePortalContext();
   const portalId = portal?.id as number;
+  const currentUserId = authService.getUserId();
 
   const [activeTab, setActiveTab] = useState<"members" | "history" | "votes">("members");
 
@@ -264,8 +328,9 @@ export function AdminPanel() {
   const [showClosedVotes, setShowClosedVotes] = useState(false);
   const [loadingClosedVotes, setLoadingClosedVotes] = useState(false);
 
-  // Loading individual al votar
+  // Loading al votar u operar sobre un miembro
   const [votingId, setVotingId] = useState<number | null>(null);
+  const [isExecutingAction, setIsExecutingAction] = useState(false);
 
   const [error,      setError]      = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -281,7 +346,9 @@ export function AdminPanel() {
     isOpen: boolean;
     title: string;
     actionDescription: string;
-  }>({ isOpen: false, title: "", actionDescription: "" });
+    action: string;
+    member: MiembroResponse | null;
+  }>({ isOpen: false, title: "", actionDescription: "", action: "", member: null });
 
   const [voteConfirmModal, setVoteConfirmModal] = useState<{
     isOpen: boolean;
@@ -289,6 +356,12 @@ export function AdminPanel() {
     voteId: number;
     actionDescription: string;
   }>({ isOpen: false, voteType: "approve", voteId: 0, actionDescription: "" });
+
+  const [memberActionModal, setMemberActionModal] = useState<{
+    isOpen: boolean;
+    action: string;
+    member: MiembroResponse | null;
+  }>({ isOpen: false, action: "", member: null });
 
   // ── Carga de miembros ─────────────────────────────────────────────────────
 
@@ -351,13 +424,111 @@ export function AdminPanel() {
     if (next) fetchClosedVotes();
   };
 
-  // ── Acciones de miembro (el handler lo deja preparado para la compañera) ──
+  // ── Acciones de miembro (Directas vs Votaciones) ─────────────────────────
 
-  const handleMemberAction = (_action: string, _needsVote: boolean) => {
-    // TODO: implementado por otra compañera en el siguiente issue
+  const handleMemberAction = (action: string, member: MiembroResponse) => {
+    if (action === "promote") {
+      // Ascender sigue siendo la única acción directa
+      setMemberActionModal({ isOpen: true, action, member });
+    } else if (action === "kick" || action === "ban" || action === "demote") {
+      // Degradar, Expulsar y Bloquear ahora abren el modal de votación solicitando el motivo
+      let description = "";
+      let title = "";
+      
+      if (action === "kick") {
+        description = `Expulsión del miembro: ${member.nombre}`;
+        title = "Proponer Expulsión de Miembro";
+      } else if (action === "ban") {
+        description = `Bloqueo del miembro: ${member.nombre}`;
+        title = "Proponer Bloqueo de Miembro";
+      } else if (action === "demote") {
+        description = `Degradar administrador a miembro: ${member.nombre}`;
+        title = "Proponer Degradar Administrador";
+      }
+      
+      setVoteModal({
+        isOpen: true,
+        title,
+        actionDescription: description,
+        action,
+        member
+      });
+    }
   };
 
-  // ── Votaciones ────────────────────────────────────────────────────────────
+  // Ejecutor de acciones directas (Promover)
+  const confirmMemberAction = async () => {
+    if (!memberActionModal.member || !portalId) return;
+    
+    const { action, member } = memberActionModal;
+    const uId = member.usuarioId;
+    setIsExecutingAction(true);
+    setError(null);
+
+    try {
+      if (action === "promote") {
+        await adminService.promoverAdmin(portalId, uId);
+        showSuccess(`Se ha ascendido a ${member.nombre} a Administrador.`);
+      }
+      await fetchMembers(); 
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const msg = axiosErr?.response?.data?.message ?? "Ocurrió un error al ejecutar la acción sobre el miembro.";
+      setError(msg);
+    } finally {
+      setIsExecutingAction(false);
+      setMemberActionModal({ isOpen: false, action: "", member: null });
+    }
+  };
+
+  // Ejecutor de propuestas de votación (Degradar / Expulsar / Bloquear)
+  const handleCreateVoteProposal = async (reason: string) => {
+    if (!voteModal.member || !portalId) return;
+
+    const { action, member } = voteModal;
+    setIsExecutingAction(true);
+    setError(null);
+
+    let tipoVotacion = "";
+    let actionLabel = "";
+    
+    if (action === "kick") {
+      tipoVotacion = "EXPULSION_MIEMBRO";
+      actionLabel = "expulsar";
+    } else if (action === "ban") {
+      tipoVotacion = "BLOQUEO_MIEMBRO";
+      actionLabel = "bloquear";
+    } else if (action === "demote") {
+      tipoVotacion = "DEGRADAR_ADMIN";
+      actionLabel = "degradar";
+    }
+
+    try {
+      await adminService.crearVotacion(portalId, {
+        tipo: tipoVotacion,
+        motivo: reason,
+        // Al requerirse el id objetivo para este tipo de votaciones en el backend,
+        // asegúrate de que tu interfaz lo incluya en caso de ser necesario.
+        // Ej: usuarioObjetivoId: member.usuarioId 
+      });
+
+      showSuccess(`Se ha abierto la votación para ${actionLabel} a ${member.nombre}.`);
+      
+      if (activeTab === "votes") {
+        const data = await adminService.getVotaciones(portalId, "ABIERTA");
+        setVotes(data);
+      }
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const msg = axiosErr?.response?.data?.message ?? "No se pudo iniciar la propuesta de votación.";
+      setError(msg);
+    } finally {
+      setIsExecutingAction(false);
+      setVoteModal({ isOpen: false, title: "", actionDescription: "", action: "", member: null });
+    }
+  };
+
+  // ── Votaciones (Aprobar / Rechazar propuestas existentes) ──────────────────
 
   const handleVote = (voteId: number, voteType: "approve" | "reject") => {
     const vote = votes.find((v) => v.id === voteId);
@@ -378,17 +549,14 @@ export function AdminPanel() {
       const updated = await adminService.votar(voteId, { aprueba: voteType === "approve" });
 
       if (updated.estado !== "ABIERTA") {
-        // La votación se cerró (mayoría alcanzada): sacarla de la lista de abiertas
         setVotes((prev) => prev.filter((v) => v.id !== voteId));
-        // Invalidar historial para que se recargue si el usuario lo abre
         setClosedVotes([]);
         showSuccess(
           updated.estado === "APROBADA"
-            ? "¡Voto registrado. La votación alcanzó mayoría y se ejecutó la acción."
+            ? "¡Voto registrado! La votación alcanzó la mayoría y se ejecutó la acción."
             : "Voto registrado. La propuesta fue rechazada.",
         );
       } else {
-        // Sigue abierta: actualizar contadores
         setVotes((prev) =>
           prev.map((v) => (v.id === voteId ? updated : v)),
         );
@@ -441,11 +609,11 @@ export function AdminPanel() {
       {/* Feedback global */}
       {error && (
         <div
-          className="mb-4 p-4 bg-destructive/10 border border-destructive/30 text-destructive text-sm"
+          className="mb-4 p-4 bg-destructive/10 border border-destructive/30 text-destructive text-sm flex justify-between items-center"
           style={{ borderRadius: "var(--radius)" }}
         >
-          {error}
-          <button className="ml-2 underline" onClick={() => setError(null)}>Cerrar</button>
+          <span>{error}</span>
+          <button className="ml-2 underline font-medium" onClick={() => setError(null)}>Cerrar</button>
         </div>
       )}
       {successMsg && (
@@ -538,7 +706,11 @@ export function AdminPanel() {
                       </div>
                     </div>
                   </div>
-                  <ActionMenu member={member} onAction={handleMemberAction} />
+                  <ActionMenu 
+                    member={member} 
+                    currentUserId={currentUserId} 
+                    onAction={handleMemberAction} 
+                  />
                 </div>
               ))}
               {members.length === 0 && (
@@ -552,8 +724,6 @@ export function AdminPanel() {
       )}
 
       {/* ── Tab: Historial ── */}
-      {/* El historial de acciones admin requiere un endpoint dedicado que no existe todavía.
-          Por ahora se muestra un placeholder. Cuando el back lo implemente, se conecta aquí. */}
       {activeTab === "history" && (
         <div className="text-center py-16">
           <div
@@ -598,9 +768,6 @@ export function AdminPanel() {
               <div className="space-y-4">
                 {votes.map((vote) => {
                   const isVoting = votingId === vote.id;
-                  // El back no devuelve si el usuario actual ya votó.
-                  // Para saberlo necesitaríamos un endpoint adicional o que el back lo incluya en VotacionResponse.
-                  // Por ahora se detecta optimistamente: si el usuario ya votó, el back retorna 409.
 
                   return (
                     <div
@@ -819,15 +986,29 @@ export function AdminPanel() {
         </div>
       )}
 
-      {/* ── Modales ── */}
-      <VoteModal
-        isOpen={voteModal.isOpen}
-        onClose={() => setVoteModal((prev) => ({ ...prev, isOpen: false }))}
-        onConfirm={() => {}}  // placeholder — las acciones de miembro las implementa la compañera
-        title={voteModal.title}
-        actionDescription={voteModal.actionDescription}
+      {/* ── Modales del sistema ── */}
+      
+      {/* Modal para confirmación de acciones directas (ahora solo para Ascender) */}
+      <MemberActionConfirmModal
+        isOpen={memberActionModal.isOpen}
+        onClose={() => setMemberActionModal({ isOpen: false, action: "", member: null })}
+        onConfirm={confirmMemberAction}
+        action={memberActionModal.action}
+        memberName={memberActionModal.member?.nombre || ""}
+        loading={isExecutingAction}
       />
 
+      {/* Modal para apertura de votaciones (incluye Expulsar, Bloquear y Degradar) */}
+      <VoteModal
+        isOpen={voteModal.isOpen}
+        onClose={() => setVoteModal({ isOpen: false, title: "", actionDescription: "", action: "", member: null })}
+        onConfirm={handleCreateVoteProposal}
+        title={voteModal.title}
+        actionDescription={voteModal.actionDescription}
+        loading={isExecutingAction}
+      />
+
+      {/* Modal para emitir un voto en propuestas abiertas */}
       <VoteConfirmModal
         isOpen={voteConfirmModal.isOpen}
         onClose={() => setVoteConfirmModal((prev) => ({ ...prev, isOpen: false }))}
