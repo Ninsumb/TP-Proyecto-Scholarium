@@ -22,9 +22,35 @@ class CloudinaryFileStorageService(
         validar(file)
 
         return try {
+            val extension = file.originalFilename
+                ?.substringAfterLast(".")
+                ?.lowercase()
+
+            val resourceType =
+                when {
+                    file.contentType?.startsWith("image/") == true -> "image"
+                    extension == "pdf" -> "image"
+                    else -> "raw"
+                }
+
+            val nombreArchivo =
+                file.originalFilename
+                    ?.substringBeforeLast(".")
+                    ?.replace(" ", "-")
+
             val result = cloudinary.uploader().upload(
                 file.bytes,
-                ObjectUtils.emptyMap()
+                ObjectUtils.asMap(
+                    "resource_type", resourceType,
+                    "type", "upload",
+                    "access_mode", "public",
+                    "access_control", listOf(
+                        mapOf("access_type" to "anonymous")
+                    ),
+                    "public_id", "$nombreArchivo.$extension",
+                    "use_filename", true,
+                    "overwrite", false
+                )
             )
 
             ArchivoSubidoResponse(
@@ -83,8 +109,7 @@ class CloudinaryFileStorageService(
 private fun validar(file: MultipartFile) {
     val allowedTypes = setOf(
         "application/pdf",
-        "application/zip",
-        "application/x-zip-compressed",
+        "application/docx",
 
         "image/jpeg",
         "image/png",
@@ -99,7 +124,7 @@ private fun validar(file: MultipartFile) {
         "png",
         "gif",
         "webp",
-        "zip"
+        "docx"
     )
 
     val extension = file.originalFilename
