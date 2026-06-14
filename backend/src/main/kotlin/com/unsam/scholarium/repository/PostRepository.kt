@@ -66,19 +66,27 @@ interface PostRepository : JpaRepository<Post, UUID> {
       AND p.post_padre_id IS NULL
       AND p.eliminado = false
       AND (
-          p.titulo ILIKE '%' || :q || '%'
-          OR p.contenido ILIKE '%' || :q || '%'
+          EXISTS (
+              SELECT 1
+              FROM unnest(:tokens) AS token
+              WHERE lower(COALESCE(p.titulo, ''))  LIKE '%' || lower(token) || '%'
+                 OR lower(p.contenido)              LIKE '%' || lower(token) || '%'
+          )
           OR EXISTS (
               WITH RECURSIVE hilo AS (
-                  SELECT r.id, r.contenido, r.eliminado FROM posts r
+                  SELECT r.id, r.contenido, r.eliminado
+                  FROM posts r
                   WHERE r.post_padre_id = p.id
                   UNION ALL
-                  SELECT r2.id, r2.contenido, r2.eliminado FROM posts r2
+                  SELECT r2.id, r2.contenido, r2.eliminado
+                  FROM posts r2
                   INNER JOIN hilo h ON r2.post_padre_id = h.id
               )
-              SELECT 1 FROM hilo
-              WHERE hilo.contenido ILIKE '%' || :q || '%'
-                AND hilo.eliminado = false
+              SELECT 1
+              FROM hilo
+              CROSS JOIN unnest(:tokens) AS token
+              WHERE hilo.eliminado = false
+                AND lower(hilo.contenido) LIKE '%' || lower(token) || '%'
           )
       )
     ORDER BY p.created_at DESC
@@ -87,6 +95,6 @@ interface PostRepository : JpaRepository<Post, UUID> {
     )
     fun buscarPostsEnTablero(
         @Param("tableroId") tableroId: UUID,
-        @Param("q") q: String
+        @Param("tokens") tokens: Array<String>
     ): List<Post>
 }

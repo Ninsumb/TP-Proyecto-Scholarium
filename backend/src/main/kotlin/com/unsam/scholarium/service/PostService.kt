@@ -232,7 +232,15 @@ class PostService(
         val tablero = resolverTablero(tableroId)
         validarAccesoLecturaDesdePortalId(usuario.id!!, tablero.portal.id!!, tablero.portal)
 
-        return postRepository.buscarPostsEnTablero(tableroId, q.trim())
+        val tokens = q.trim()
+            .split("\\s+".toRegex())
+            .filter { it.isNotBlank() }
+            .distinct()
+            .toTypedArray()
+
+        if (tokens.isEmpty()) return emptyList()
+
+        return postRepository.buscarPostsEnTablero(tableroId, tokens)
             .map { toResponse(it) }
     }
 }
