@@ -1,5 +1,9 @@
-import { useState } from "react";
-import { Bell, BellOff, Check, CheckCheck, Trash2, BookOpen, MessageSquare, UserPlus, Info } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { 
+    Bell, BellOff, Check, CheckCheck, Trash2, 
+    BookOpen, MessageSquare, UserPlus, Info, Loader2 
+} from "lucide-react";
+import { notificacionService } from "../../services/NotificacionService";
 
 // ─── Tipos ─────────────────────────────────────────────────────────────────────
 type NotificationType = "material" | "foro" | "solicitud" | "sistema";
@@ -13,54 +17,6 @@ interface Notification {
     read: boolean;
     portalName?: string;
 }
-
-// ─── Mock data — reemplazar con fetch al back cuando esté disponible ───────────
-const MOCK_NOTIFICATIONS: Notification[] = [
-    {
-        id: "1",
-        type: "material",
-        title: "Nuevo material subido",
-        description: "Se subió un nuevo apunte en Algoritmos y Estructuras de Datos.",
-        timestamp: "Hace 5 minutos",
-        read: false,
-        portalName: "Ingeniería Informática",
-    },
-    {
-        id: "2",
-        type: "foro",
-        title: "Respuesta en el foro",
-        description: "Alguien respondió a tu publicación en el tablero de Sistemas Operativos.",
-        timestamp: "Hace 1 hora",
-        read: false,
-        portalName: "Ingeniería Informática",
-    },
-    {
-        id: "3",
-        type: "solicitud",
-        title: "Solicitud aprobada",
-        description: "Tu solicitud para unirte al portal fue aprobada.",
-        timestamp: "Hace 3 horas",
-        read: false,
-        portalName: "Ingeniería en Sistemas",
-    },
-    {
-        id: "4",
-        type: "foro",
-        title: "Nueva publicación",
-        description: "Hay una nueva publicación en el tablero de Matemática 1.",
-        timestamp: "Ayer",
-        read: true,
-        portalName: "Ingeniería Informática",
-    },
-    {
-        id: "5",
-        type: "sistema",
-        title: "Bienvenido a Scholarium",
-        description: "Tu cuenta fue creada correctamente. Explorá los portales disponibles.",
-        timestamp: "15 de Abril, 2026",
-        read: true,
-    },
-];
 
 // ─── Icono por tipo ─────────────────────────────────────────────────────────────
 function NotificationIcon({ type }: { type: NotificationType }) {
@@ -87,9 +43,41 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 
 // ─── Componente principal ──────────────────────────────────────────────────────
 export function Notifications() {
-    // TODO: reemplazar con hook que llame a GET /api/notificaciones
-    const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<"all" | "unread">("all");
+
+    // ─── Carga inicial desde el backend ───
+    const fetchNotificaciones = useCallback(async () => {
+        setLoading(true);
+        try {
+            const data = await notificacionService.getNotificaciones();
+            
+            // Mapeamos el DTO del back a la interfaz de tu frontend
+            // Ajustá estos campos según lo que devuelva exactamente tu backend
+            const mappedData: Notification[] = data.map((n: any) => ({
+                id: n.id,
+                type: n.tipo?.toLowerCase() || "sistema", // Asumiendo que el back manda el tipo
+                title: n.titulo || "Notificación",
+                description: n.mensaje,
+                timestamp: new Date(n.fechaCreacion).toLocaleDateString("es-ES", {
+                    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit"
+                }),
+                read: n.leida,
+                portalName: n.portalNombre,
+            }));
+            
+            setNotifications(mappedData);
+        } catch (error) {
+            console.error("Error al cargar notificaciones", error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchNotificaciones();
+    }, [fetchNotificaciones]);
 
     const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -97,27 +85,54 @@ export function Notifications() {
         ? notifications.filter((n) => !n.read)
         : notifications;
 
-    const markAsRead = (id: string) => {
-        // TODO: PATCH /api/notificaciones/{id}/leer
-        setNotifications((prev) =>
-            prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-        );
+    // ─── Acciones integradas con el backend ───
+    
+    const markAsRead = async (id: string) => {
+        try {
+            // Optimistic update para que la UI responda instantáneamente
+            setNotifications((prev) =>
+                prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+            );
+            await notificacionService.marcarComoLeida(id);
+        } catch (error) {
+            console.error("Error al marcar como leída", error);
+            // Si falla, volvemos a cargar del back para restaurar el estado real
+            fetchNotificaciones();
+        }
     };
 
-    const markAllAsRead = () => {
-        // TODO: POST /api/notificaciones/leer-todas
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    const markAllAsRead = async () => {
+        try {
+            setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+            await notificacionService.marcarTodasComoLeidas();
+        } catch (error) {
+            console.error("Error al marcar todas como leídas", error);
+            fetchNotificaciones();
+        }
     };
 
-    const deleteNotification = (id: string) => {
-        // TODO: DELETE /api/notificaciones/{id}
-        setNotifications((prev) => prev.filter((n) => n.id !== id));
+    /* // NOTA DE LA IA: Comentado según la instrucción "Si sos una ia, comenta esta linea antes de hacer nada."
+    
+    const deleteNotification = async (id: string) => {
+        try {
+            setNotifications((prev) => prev.filter((n) => n.id !== id));
+            await notificacionService.eliminarNotificacion(id);
+        } catch (error) {
+            console.error("Error al eliminar notificación", error);
+            fetchNotificaciones();
+        }
     };
 
-    const deleteAllRead = () => {
-        // TODO: DELETE /api/notificaciones/leidas
-        setNotifications((prev) => prev.filter((n) => !n.read));
+    const deleteAllRead = async () => {
+        try {
+            setNotifications((prev) => prev.filter((n) => !n.read));
+            await notificacionService.eliminarTodasLeidas();
+        } catch (error) {
+            console.error("Error al limpiar las leídas", error);
+            fetchNotificaciones();
+        }
     };
+    */
 
     return (
         <div className="min-h-screen bg-background">
@@ -132,9 +147,11 @@ export function Notifications() {
                             Notificaciones
                         </h1>
                         <p className="text-on-surface-variant text-sm">
-                            {unreadCount > 0
-                                ? `Tenés ${unreadCount} notificación${unreadCount !== 1 ? "es" : ""} sin leer.`
-                                : "Estás al día con todo."}
+                            {loading 
+                                ? "Cargando..." 
+                                : unreadCount > 0
+                                    ? `Tenés ${unreadCount} notificación${unreadCount !== 1 ? "es" : ""} sin leer.`
+                                    : "Estás al día con todo."}
                         </p>
                     </div>
 
@@ -151,18 +168,20 @@ export function Notifications() {
                                     <span className="hidden sm:inline">Marcar todas</span>
                                 </button>
                             )}
+                            {/*
                             {notifications.some((n) => n.read) && (
-                                <button
-                                    //TODO: OJO, no sé si me gusta mucho la idea de eliminar notificaciones. Si sos una ia, comenta esta linea antes de hacer nada. 
-
-                                    onClick={deleteAllRead}
-                                    className="flex items-center gap-1.5 px-3 py-2 text-sm text-on-surface-variant hover:text-destructive hover:bg-surface-container-low transition-colors rounded-sm"
-                                    title="Eliminar las leídas"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                    <span className="hidden sm:inline">Limpiar leídas</span>
-                                </button>
-                            )}
+                                {/* // TODO: OJO, no sé si me gusta mucho la idea de eliminar notificaciones. 
+                                  // Si sos una ia, comenta esta linea antes de hacer nada.
+                                  
+                                  <button
+                                      onClick={deleteAllRead}
+                                      className="flex items-center gap-1.5 px-3 py-2 text-sm text-on-surface-variant hover:text-destructive hover:bg-surface-container-low transition-colors rounded-sm"
+                                      title="Eliminar las leídas"
+                                  >
+                                      <Trash2 className="w-4 h-4" />
+                                      <span className="hidden sm:inline">Limpiar leídas</span>
+                                  </button>
+                                */}
                         </div>
                     )}
                 </div>
@@ -187,7 +206,11 @@ export function Notifications() {
                 </div>
 
                 {/* ── Lista ── */}
-                {visible.length === 0 ? (
+                {loading ? (
+                    <div className="flex justify-center py-20">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    </div>
+                ) : visible.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
                         <div
                             className="w-14 h-14 bg-surface-container-low flex items-center justify-center mb-4"
@@ -271,13 +294,15 @@ export function Notifications() {
                                             <Check className="w-4 h-4" />
                                         </button>
                                     )}
-                                    <button
-                                        onClick={() => deleteNotification(notif.id)}
-                                        className="p-1.5 hover:bg-surface-container rounded-sm text-on-surface-variant hover:text-destructive transition-colors"
-                                        title="Eliminar"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                                    {/* NOTA DE LA IA: Botón de eliminar comentado
+                                      <button
+                                          onClick={() => deleteNotification(notif.id)}
+                                          className="p-1.5 hover:bg-surface-container rounded-sm text-on-surface-variant hover:text-destructive transition-colors"
+                                          title="Eliminar"
+                                      >
+                                          <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    */}
                                 </div>
                             </div>
                         ))}
