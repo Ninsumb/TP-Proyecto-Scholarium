@@ -78,7 +78,7 @@ class NotificacionService(
             tipo = notificacion.tipo,
             titulo = notificacion.titulo,
             descripcion = notificacion.descripcion,
-            portalNombre = notificacion.portalNombre,
+            portalNombre = notificacion.portal?.carrera, //O COMO SEA !!!
             leida = notificacion.leida,
             fechaCreacion = notificacion.fechaCreacion,
             entidadId = notificacion.entidadId
