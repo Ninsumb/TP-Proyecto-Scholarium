@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Lock,
     Mail,
@@ -9,17 +9,64 @@ import {
     EyeOff,
     Camera,
 } from "lucide-react";
+import { usuarioService } from "../../services/UsuarioService";
+import { authService } from "../../services/AuthService";
+import type { UsuarioMeResponse } from "../../services/UsuarioService";
 
-// ─── Tipos ─────────────────────────────────────────────────────────────────────
-interface AccountInfo {
-    username: string;
-    avatarUrl: string;
-    memberSince: string;
-    email: string;
-    registrationDate: string;
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
+// "2026-04-15T00:00:00" → "15 de abril de 2026"
+function formatFechaLarga(iso: string): string {
+    return new Date(iso).toLocaleDateString("es-AR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+    });
 }
 
-// ─── Componente: Sección con header ───────────────────────────────────────────
+// "2026-04-15T00:00:00" → "Abril 2026"
+function formatMesAnio(iso: string): string {
+    const d = new Date(iso);
+    const mes = d.toLocaleDateString("es-AR", { month: "long" });
+    return `${mes.charAt(0).toUpperCase()}${mes.slice(1)} ${d.getFullYear()}`;
+}
+
+// ─── AvatarPreview ─────────────────────────────────────────────────────────────
+// Replica el mismo patrón del componente Avatar genérico (iniciales + foto)
+// pero en tamaño fijo 80×80 para el formulario de perfil.
+// No reutilizamos Avatar directamente porque ese componente tiene sizes sm/md
+// y no queremos romper su contrato agregando un size "lg" solo para este caso.
+
+interface AvatarPreviewProps {
+    nombre: string;
+    fotoPerfil: string | null | undefined;
+}
+
+function AvatarPreview({ nombre, fotoPerfil }: AvatarPreviewProps) {
+    if (fotoPerfil) {
+        return (
+            <img
+                src={fotoPerfil}
+                alt={nombre}
+                className="w-20 h-20 object-cover flex-shrink-0"
+                style={{ borderRadius: "var(--radius)" }}
+            />
+        );
+    }
+    return (
+        <div
+            className="w-20 h-20 bg-primary/15 flex items-center justify-center text-primary flex-shrink-0"
+            style={{ borderRadius: "var(--radius)" }}
+        >
+            <span className="text-xl font-medium select-none">
+                {nombre.slice(0, 2).toUpperCase()}
+            </span>
+        </div>
+    );
+}
+
+// ─── Section ───────────────────────────────────────────────────────────────────
+
 interface SectionProps {
     icon: React.ReactNode;
     title: string;
@@ -49,7 +96,8 @@ function Section({ icon, title, danger, children }: SectionProps) {
     );
 }
 
-// ─── Componente: Input con label ───────────────────────────────────────────────
+// ─── Field ─────────────────────────────────────────────────────────────────────
+
 interface FieldProps {
     label: string;
     children: React.ReactNode;
@@ -66,48 +114,89 @@ function Field({ label, children, hint }: FieldProps) {
     );
 }
 
+// ─── Estilos compartidos ───────────────────────────────────────────────────────
+
 const inputClass =
     "w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all";
 
-// ─── Componente principal ──────────────────────────────────────────────────────
-export function AccountSettings() {
-    // ── Datos de la cuenta ──────────────────────────────────────────────────────
-    const [account, setAccount] = useState<AccountInfo>({
-        username: localStorage.getItem("userName") || "Usuario",
-        avatarUrl: localStorage.getItem("userAvatar") || "",
-        memberSince: "Abril 2026",
-        email: localStorage.getItem("userEmail") || "",
-        registrationDate: "15 de Abril, 2026",
-    });
+const btnPrimaryClass =
+    "px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed";
 
-    // ── Estado de edición de perfil ─────────────────────────────────────────────
-    const [profileDraft, setProfileDraft] = useState({
-        username: account.username,
-        avatarUrl: account.avatarUrl,
-    });
+// ─── AccountSettings ───────────────────────────────────────────────────────────
+
+export function AccountSettings() {
+
+    // ══ Carga inicial del perfil ══════════════════════════════════════════════════
+
+    const [perfil, setPerfil] = useState<UsuarioMeResponse | null>(null);
+    const [loadingPerfil, setLoadingPerfil] = useState(true);
+
+    useEffect(() => {
+        usuarioService
+            .getMiPerfil()
+            .then(setPerfil)
+            .finally(() => setLoadingPerfil(false));
+    }, []);
+
+    // ══ Sección: Perfil ═══════════════════════════════════════════════════════════
+
+    const [nombreDraft, setNombreDraft] = useState("");
+    const [fotoPreview, setFotoPreview] = useState<string | null>(null); // URL local (FileReader)
+    const [fotoArchivo, setFotoArchivo] = useState<File | null>(null);   // File real para el PATCH
     const [isDragging, setIsDragging] = useState(false);
+    const [savingProfile, setSavingProfile] = useState(false);
     const [profileSaved, setProfileSaved] = useState(false);
+    const [profileError, setProfileError] = useState("");
+
+    // Sincronizar draft cuando llegan los datos del servidor
+    useEffect(() => {
+        if (perfil) setNombreDraft(perfil.nombre);
+    }, [perfil]);
 
     const handleAvatarFile = (file: File) => {
         if (!file.type.startsWith("image/")) return;
+        setFotoArchivo(file);
         const reader = new FileReader();
-        reader.onloadend = () => {
-            const result = reader.result as string;
-            setProfileDraft((d) => ({ ...d, avatarUrl: result }));
-        };
+        reader.onloadend = () => setFotoPreview(reader.result as string);
         reader.readAsDataURL(file);
     };
 
-    const handleSaveProfile = () => {
-        setAccount((prev) => ({ ...prev, ...profileDraft }));
-        localStorage.setItem("userName", profileDraft.username);
-        localStorage.setItem("userAvatar", profileDraft.avatarUrl);
-        // TODO: PUT /api/usuarios/me  body: { username, avatarUrl }
-        setProfileSaved(true);
-        setTimeout(() => setProfileSaved(false), 2500);
+    const handleSaveProfile = async () => {
+        if (!perfil) return;
+        setSavingProfile(true);
+        setProfileError("");
+        try {
+            // Paso 1: si hay foto nueva, subirla primero
+            if (fotoArchivo) {
+                const nuevaUrl = await usuarioService.actualizarFotoPerfil(fotoArchivo);
+                setPerfil((prev) => prev ? { ...prev, fotoPerfil: nuevaUrl } : prev);
+                setFotoArchivo(null);
+                setFotoPreview(null);
+            }
+            // Paso 2: si el nombre cambió, actualizarlo
+            if (nombreDraft.trim() !== perfil.nombre) {
+                const actualizado = await usuarioService.actualizarPerfil({
+                    nombre: nombreDraft.trim(),
+                });
+                setPerfil(actualizado);
+            }
+            setProfileSaved(true);
+            setTimeout(() => setProfileSaved(false), 2500);
+        } catch {
+            setProfileError("No se pudieron guardar los cambios. Intentá de nuevo.");
+        } finally {
+            setSavingProfile(false);
+        }
     };
 
-    // ── Estado de contraseña ────────────────────────────────────────────────────
+    // La foto que se muestra en el AvatarPreview:
+    // - si el usuario eligió una imagen localmente (aún sin subir) → fotoPreview
+    // - si no, la que vino del servidor → perfil.fotoPerfil
+    // - si no hay ninguna → null (el AvatarPreview muestra iniciales)
+    const fotoActual = fotoPreview ?? perfil?.fotoPerfil ?? null;
+
+    // ══ Sección: Contraseña ═══════════════════════════════════════════════════════
+
     const [passwordData, setPasswordData] = useState({
         currentPassword: "",
         newPassword: "",
@@ -115,10 +204,15 @@ export function AccountSettings() {
     });
     const [showCurrentPwd, setShowCurrentPwd] = useState(false);
     const [showNewPwd, setShowNewPwd] = useState(false);
+    const [savingPwd, setSavingPwd] = useState(false);
     const [pwdError, setPwdError] = useState("");
+    const [pwdSuccess, setPwdSuccess] = useState(false);
 
-    const handleChangePassword = (e: React.FormEvent) => {
+    const handleChangePassword = async (e: React.FormEvent) => {
         e.preventDefault();
+        setPwdError("");
+
+        // Validaciones client-side antes de tocar el servidor
         if (passwordData.newPassword !== passwordData.confirmPassword) {
             setPwdError("Las contraseñas no coinciden.");
             return;
@@ -127,38 +221,106 @@ export function AccountSettings() {
             setPwdError("La nueva contraseña debe tener al menos 8 caracteres.");
             return;
         }
-        setPwdError("");
-        // TODO: POST /api/auth/change-password  body: { currentPassword, newPassword }
-        setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+
+        setSavingPwd(true);
+        try {
+            await usuarioService.cambiarPassword({
+                currentPassword: passwordData.currentPassword,
+                newPassword: passwordData.newPassword,
+            });
+            setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+            setPwdSuccess(true);
+            setTimeout(() => setPwdSuccess(false), 2500);
+        } catch (err: any) {
+            // El backend devuelve el mensaje en response.data.message (Spring Boot default)
+            const msg = err?.response?.data?.message;
+            setPwdError(msg ?? "La contraseña actual es incorrecta o hubo un error.");
+        } finally {
+            setSavingPwd(false);
+        }
     };
 
-    // ── Estado de email ─────────────────────────────────────────────────────────
-    const [emailData, setEmailData] = useState({
-        newEmail: "",
-        password: "",
-    });
+    // ══ Sección: Email ════════════════════════════════════════════════════════════
 
-    const handleChangeEmail = (e: React.FormEvent) => {
+    const [emailData, setEmailData] = useState({ newEmail: "", password: "" });
+    const [savingEmail, setSavingEmail] = useState(false);
+    const [emailError, setEmailError] = useState("");
+    const [emailSuccess, setEmailSuccess] = useState(false);
+
+    const handleChangeEmail = async (e: React.FormEvent) => {
         e.preventDefault();
-        // TODO: POST /api/auth/change-email  body: { newEmail, password }
-        localStorage.setItem("userEmail", emailData.newEmail);
-        setAccount((prev) => ({ ...prev, email: emailData.newEmail }));
-        setEmailData({ newEmail: "", password: "" });
+        setEmailError("");
+
+        if (!emailData.newEmail.trim() || !emailData.password.trim()) {
+            setEmailError("Completá todos los campos.");
+            return;
+        }
+
+        setSavingEmail(true);
+        try {
+            const { token, refreshToken } = await usuarioService.cambiarEmail({
+                newEmail: emailData.newEmail.trim(),
+                password: emailData.password,
+            });
+
+            authService.saveSession({ token, refreshToken });
+
+            // Actualizar el estado local para que "Email actual" refleje el cambio
+            setPerfil((prev) => prev ? { ...prev, email: emailData.newEmail.trim() } : prev);
+            setEmailData({ newEmail: "", password: "" });
+            setEmailSuccess(true);
+            setTimeout(() => setEmailSuccess(false), 2500);
+        } catch (err: any) {
+            const msg = err?.response?.data?.message;
+            setEmailError(msg ?? "No se pudo actualizar el email. Verificá los datos.");
+        } finally {
+            setSavingEmail(false);
+        }
     };
 
-    // ── Estado de eliminación de cuenta ────────────────────────────────────────
+    // ══ Sección: Eliminar cuenta ══════════════════════════════════════════════════
+
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deletingAccount, setDeletingAccount] = useState(false);
 
-    const handleDeleteAccount = () => {
-        // TODO: DELETE /api/usuarios/me
-        localStorage.clear();
+    const handleDeleteAccount = async () => {
+        setDeletingAccount(true);
+        try {
+            await usuarioService.eliminarCuenta();
+            localStorage.clear();
+            window.location.href = "/";
+        } catch {
+            // Si falla el DELETE, volvemos al estado anterior sin explotar
+            setDeletingAccount(false);
+            setShowDeleteConfirm(false);
+        }
     };
 
-    // ── Render ──────────────────────────────────────────────────────────────────
+    // ══ Render ════════════════════════════════════════════════════════════════════
+
+    if (loadingPerfil) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <p className="text-on-surface-variant text-sm">Cargando...</p>
+            </div>
+        );
+    }
+
+    if (!perfil) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <p className="text-destructive text-sm">
+                    No se pudo cargar la información de la cuenta.
+                </p>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-background">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-                {/* Header de página */}
+
+                {/* ── Header de página ── */}
                 <div className="mb-8">
                     <h1 className="text-foreground" style={{ fontFamily: "Work Sans, sans-serif" }}>
                         Configuración de Cuenta
@@ -169,29 +331,17 @@ export function AccountSettings() {
                 </div>
 
                 <div className="space-y-6">
-                    {/* ══ SECCIÓN: Perfil ══════════════════════════════════════════════════════ */}
+
+                    {/* ══ SECCIÓN: Perfil ═════════════════════════════════════════════════════ */}
                     <Section icon={<UserIcon className="w-5 h-5 text-primary" />} title="Perfil">
                         <div className="space-y-5">
-                            {/* Avatar */}
+
                             <Field label="Foto de perfil">
                                 <div className="flex items-center gap-4">
-                                    {/* Previsualización circular */}
-                                    <div
-                                        className="w-20 h-20 bg-surface-container-low flex items-center justify-center flex-shrink-0 overflow-hidden relative group"
-                                        style={{ borderRadius: "var(--radius)" }}
-                                    >
-                                        {profileDraft.avatarUrl ? (
-                                            <img
-                                                src={profileDraft.avatarUrl}
-                                                alt="Avatar"
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            <UserIcon className="w-10 h-10 text-on-surface-variant" />
-                                        )}
-                                    </div>
-
-                                    {/* Zona de drop */}
+                                    <AvatarPreview
+                                        nombre={nombreDraft || perfil.nombre}
+                                        fotoPerfil={fotoActual}
+                                    />
                                     <div
                                         onDrop={(e) => {
                                             e.preventDefault();
@@ -239,14 +389,11 @@ export function AccountSettings() {
                                 </div>
                             </Field>
 
-                            {/* Nombre de usuario */}
                             <Field label="Nombre de usuario">
                                 <input
                                     type="text"
-                                    value={profileDraft.username}
-                                    onChange={(e) =>
-                                        setProfileDraft((d) => ({ ...d, username: e.target.value }))
-                                    }
+                                    value={nombreDraft}
+                                    onChange={(e) => setNombreDraft(e.target.value)}
                                     className={inputClass}
                                     style={{ borderRadius: "var(--radius)" }}
                                     placeholder="Tu nombre de usuario"
@@ -256,34 +403,34 @@ export function AccountSettings() {
                             <div className="flex items-center gap-3 pt-1">
                                 <button
                                     onClick={handleSaveProfile}
-                                    disabled={!profileDraft.username.trim()}
-                                    className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                                    disabled={!nombreDraft.trim() || savingProfile}
+                                    className={btnPrimaryClass}
                                     style={{ borderRadius: "var(--radius)" }}
                                 >
-                                    Guardar cambios
+                                    {savingProfile ? "Guardando..." : "Guardar cambios"}
                                 </button>
                                 {profileSaved && (
-                                    <span className="text-sm text-primary">
-                                        ✓ Guardado correctamente
-                                    </span>
+                                    <span className="text-sm text-primary">✓ Guardado correctamente</span>
+                                )}
+                                {profileError && (
+                                    <span className="text-sm text-destructive">{profileError}</span>
                                 )}
                             </div>
+
                         </div>
                     </Section>
 
-                    {/* ══ SECCIÓN: Seguridad ═══════════════════════════════════════════════════ */}
+                    {/* ══ SECCIÓN: Seguridad ══════════════════════════════════════════════════ */}
                     <Section icon={<Lock className="w-5 h-5 text-primary" />} title="Seguridad">
                         <form onSubmit={handleChangePassword} className="space-y-4">
+
                             <Field label="Contraseña actual">
                                 <div className="relative">
                                     <input
                                         type={showCurrentPwd ? "text" : "password"}
                                         value={passwordData.currentPassword}
                                         onChange={(e) =>
-                                            setPasswordData((d) => ({
-                                                ...d,
-                                                currentPassword: e.target.value,
-                                            }))
+                                            setPasswordData((d) => ({ ...d, currentPassword: e.target.value }))
                                         }
                                         className={`${inputClass} pr-12`}
                                         style={{ borderRadius: "var(--radius)" }}
@@ -295,11 +442,10 @@ export function AccountSettings() {
                                         className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-accent transition-colors"
                                         style={{ borderRadius: "var(--radius)" }}
                                     >
-                                        {showCurrentPwd ? (
-                                            <EyeOff className="w-4 h-4 text-on-surface-variant" />
-                                        ) : (
-                                            <Eye className="w-4 h-4 text-on-surface-variant" />
-                                        )}
+                                        {showCurrentPwd
+                                            ? <EyeOff className="w-4 h-4 text-on-surface-variant" />
+                                            : <Eye className="w-4 h-4 text-on-surface-variant" />
+                                        }
                                     </button>
                                 </div>
                             </Field>
@@ -310,10 +456,7 @@ export function AccountSettings() {
                                         type={showNewPwd ? "text" : "password"}
                                         value={passwordData.newPassword}
                                         onChange={(e) =>
-                                            setPasswordData((d) => ({
-                                                ...d,
-                                                newPassword: e.target.value,
-                                            }))
+                                            setPasswordData((d) => ({ ...d, newPassword: e.target.value }))
                                         }
                                         className={`${inputClass} pr-12`}
                                         style={{ borderRadius: "var(--radius)" }}
@@ -325,11 +468,10 @@ export function AccountSettings() {
                                         className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-accent transition-colors"
                                         style={{ borderRadius: "var(--radius)" }}
                                     >
-                                        {showNewPwd ? (
-                                            <EyeOff className="w-4 h-4 text-on-surface-variant" />
-                                        ) : (
-                                            <Eye className="w-4 h-4 text-on-surface-variant" />
-                                        )}
+                                        {showNewPwd
+                                            ? <EyeOff className="w-4 h-4 text-on-surface-variant" />
+                                            : <Eye className="w-4 h-4 text-on-surface-variant" />
+                                        }
                                     </button>
                                 </div>
                             </Field>
@@ -339,10 +481,7 @@ export function AccountSettings() {
                                     type="password"
                                     value={passwordData.confirmPassword}
                                     onChange={(e) =>
-                                        setPasswordData((d) => ({
-                                            ...d,
-                                            confirmPassword: e.target.value,
-                                        }))
+                                        setPasswordData((d) => ({ ...d, confirmPassword: e.target.value }))
                                     }
                                     className={inputClass}
                                     style={{ borderRadius: "var(--radius)" }}
@@ -350,27 +489,29 @@ export function AccountSettings() {
                                 />
                             </Field>
 
-                            {pwdError && (
-                                <p className="text-sm text-destructive">{pwdError}</p>
-                            )}
+                            {pwdError && <p className="text-sm text-destructive">{pwdError}</p>}
+                            {pwdSuccess && <p className="text-sm text-primary">✓ Contraseña actualizada correctamente</p>}
 
                             <button
                                 type="submit"
-                                className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm"
+                                disabled={savingPwd}
+                                className={btnPrimaryClass}
                                 style={{ borderRadius: "var(--radius)" }}
                             >
-                                Cambiar contraseña
+                                {savingPwd ? "Guardando..." : "Cambiar contraseña"}
                             </button>
+
                         </form>
                     </Section>
 
                     {/* ══ SECCIÓN: Email ═══════════════════════════════════════════════════════ */}
                     <Section icon={<Mail className="w-5 h-5 text-primary" />} title="Correo Electrónico">
                         <form onSubmit={handleChangeEmail} className="space-y-4">
+
                             <Field label="Email actual">
                                 <input
                                     type="email"
-                                    value={account.email}
+                                    value={perfil.email}
                                     disabled
                                     className="w-full px-4 py-2.5 border border-border bg-surface-container text-on-surface-variant"
                                     style={{ borderRadius: "var(--radius)" }}
@@ -390,7 +531,10 @@ export function AccountSettings() {
                                 />
                             </Field>
 
-                            <Field label="Confirmar con contraseña">
+                            <Field
+                                label="Confirmar con contraseña"
+                                hint="Por seguridad necesitamos verificar tu identidad."
+                            >
                                 <input
                                     type="password"
                                     value={emailData.password}
@@ -399,17 +543,24 @@ export function AccountSettings() {
                                     }
                                     className={inputClass}
                                     style={{ borderRadius: "var(--radius)" }}
-                                    placeholder="Ingresá tu contraseña"
+                                    placeholder="Ingresá tu contraseña actual"
                                 />
                             </Field>
 
+                            {emailError && <p className="text-sm text-destructive">{emailError}</p>}
+                            {emailSuccess && (
+                                <p className="text-sm text-primary">✓ Email actualizado correctamente</p>
+                            )}
+
                             <button
                                 type="submit"
-                                className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm"
+                                disabled={savingEmail}
+                                className={btnPrimaryClass}
                                 style={{ borderRadius: "var(--radius)" }}
                             >
-                                Actualizar email
+                                {savingEmail ? "Actualizando..." : "Actualizar email"}
                             </button>
+
                         </form>
                     </Section>
 
@@ -419,6 +570,7 @@ export function AccountSettings() {
                         title="Información General"
                     >
                         <div className="space-y-4">
+
                             <div className="flex items-start gap-3">
                                 <UserIcon className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                                 <div>
@@ -426,7 +578,7 @@ export function AccountSettings() {
                                         Miembro desde
                                     </div>
                                     <div className="text-sm text-on-surface-variant">
-                                        {account.memberSince}
+                                        {formatMesAnio(perfil.createdAt)}
                                     </div>
                                 </div>
                             </div>
@@ -438,10 +590,11 @@ export function AccountSettings() {
                                         Fecha de registro
                                     </div>
                                     <div className="text-sm text-on-surface-variant">
-                                        {account.registrationDate}
+                                        {formatFechaLarga(perfil.createdAt)}
                                     </div>
                                 </div>
                             </div>
+
                         </div>
                     </Section>
 
@@ -480,22 +633,25 @@ export function AccountSettings() {
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => setShowDeleteConfirm(false)}
-                                        className="px-5 py-2.5 border border-border hover:bg-surface-container transition-colors"
+                                        disabled={deletingAccount}
+                                        className="px-5 py-2.5 border border-border hover:bg-surface-container transition-colors disabled:opacity-40"
                                         style={{ borderRadius: "var(--radius)" }}
                                     >
                                         Cancelar
                                     </button>
                                     <button
                                         onClick={handleDeleteAccount}
-                                        className="px-5 py-2.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors shadow-sm"
+                                        disabled={deletingAccount}
+                                        className="px-5 py-2.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors shadow-sm disabled:opacity-60"
                                         style={{ borderRadius: "var(--radius)" }}
                                     >
-                                        Sí, eliminar definitivamente
+                                        {deletingAccount ? "Eliminando..." : "Sí, eliminar definitivamente"}
                                     </button>
                                 </div>
                             </div>
                         )}
                     </Section>
+
                 </div>
             </div>
         </div>
