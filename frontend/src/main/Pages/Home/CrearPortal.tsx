@@ -27,21 +27,7 @@ const ICONOS_DISPONIBLES: { value: string; label: string; Icon: LucideIcon }[] =
   { value: "Terminal",      label: "Terminal",      Icon: Terminal },
 ];
 
-// ─── Paleta de colores ────────────────────────────────────────────────────────
-const COLORES_DISPONIBLES = [
-  { hex: "#2563EB", label: "Azul" },
-  { hex: "#7C3AED", label: "Púrpura" },
-  { hex: "#059669", label: "Verde" },
-  { hex: "#D97706", label: "Naranja" },
-  { hex: "#DC2626", label: "Rojo" },
-  { hex: "#BE185D", label: "Rosa" },
-  { hex: "#0891B2", label: "Cian" },
-  { hex: "#4F46E5", label: "Índigo" },
-  { hex: "#65A30D", label: "Lima" },
-  { hex: "#B45309", label: "Marrón" },
-  { hex: "#0F766E", label: "Esmeralda" },
-  { hex: "#9333EA", label: "Violeta" },
-];
+
 
 type ModoVisual = "icono" | "imagen";
 
@@ -443,25 +429,60 @@ export function CreatePortal() {
                 </div>
 
                 {/* Paleta de colores */}
+                
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-3">
                     Color de fondo
                   </label>
-                  <div className="flex flex-wrap gap-3">
-                    {COLORES_DISPONIBLES.map(({ hex, label }) => (
-                      <button
-                        key={hex}
-                        type="button"
-                        onClick={() => setColorSeleccionado(hex)}
-                        title={label}
-                        className="relative w-10 h-10 rounded-sm transition-all hover:scale-110"
-                        style={{ backgroundColor: hex }}
+                  <div className="flex items-center gap-4">
+                    <label
+                      className="relative w-14 h-14 cursor-pointer group flex-shrink-0"
+                      style={{ borderRadius: "var(--radius)" }}
+                    >
+                      <input
+                        type="color"
+                        value={colorSeleccionado}
+                        onChange={(e) => setColorSeleccionado(e.target.value)}
+                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                      />
+                      <div
+                        className="w-full h-full shadow-md ring-2 ring-white/20 group-hover:ring-primary/50 transition-all"
+                        style={{
+                          backgroundColor: colorSeleccionado,
+                          borderRadius: "var(--radius)",
+                        }}
+                      />
+                      <div
+                        className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20"
+                        style={{ borderRadius: "var(--radius)" }}
                       >
-                        {colorSeleccionado === hex && (
-                          <Check className="absolute inset-0 m-auto w-5 h-5 text-white" />
-                        )}
-                      </button>
-                    ))}
+                        <Palette className="w-4 h-4 text-white" />
+                      </div>
+                    </label>
+
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-medium text-foreground">
+                        Color seleccionado
+                      </span>
+                      <div
+                        className="flex items-center gap-2 px-3 py-1.5 bg-surface-container border border-border w-fit"
+                        style={{ borderRadius: "var(--radius)" }}
+                      >
+                        <div
+                          className="w-3 h-3 flex-shrink-0"
+                          style={{
+                            backgroundColor: colorSeleccionado,
+                            borderRadius: "2px",
+                          }}
+                        />
+                        <span className="text-sm font-mono text-foreground tracking-wider">
+                          {colorSeleccionado.toUpperCase()}
+                        </span>
+                      </div>
+                      <span className="text-xs text-on-surface-variant">
+                        Hacé click en el cuadrado para cambiar
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

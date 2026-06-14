@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
-import { Settings, Lock, Upload, Palette, AlertTriangle, Archive, Loader2 } from "lucide-react";
+import { Settings, Lock, Upload, Palette, AlertTriangle, Archive, Loader2, Search, Check,
+  GraduationCap, BookOpen, Code, Briefcase, FlaskConical,
+  Calculator, Languages, Network, BarChart2, Rocket, Cpu, Terminal,
+  type LucideIcon
+} from "lucide-react";
 import { adminService } from "../../../services/AdminService";
 import { usePortalContext } from "../../../Hooks/usePortalContext";
 import type { TipoAcceso } from '../../../types/Portal/Portal';
@@ -12,20 +16,19 @@ import { Toast } from "../../../Components/common/Toast";
 
 // ─── Opciones de icono y color ────────────────────────────────────────────────
 
-const iconOptions = [
-  { id: "book",       label: "Libro",        icon: "📚" },
-  { id: "graduate",   label: "Graduación",   icon: "🎓" },
-  { id: "science",    label: "Ciencia",      icon: "🔬" },
-  { id: "computer",   label: "Computadora",  icon: "💻" },
-  { id: "flask",      label: "Química",      icon: "🧪" },
-  { id: "atom",       label: "Física",       icon: "⚛️" },
-  { id: "calculator", label: "Matemáticas",  icon: "🧮" },
-  { id: "brain",      label: "Psicología",   icon: "🧠" },
-];
-
-const backgroundColors = [
-  "#2c4456", "#1e3a5f", "#4a5568", "#2d3748",
-  "#38a169", "#3182ce", "#805ad5", "#dd6b20",
+const ICONOS_DISPONIBLES: { value: string; label: string; Icon: LucideIcon }[] = [
+  { value: "GraduationCap", label: "Birrete",      Icon: GraduationCap },
+  { value: "BookOpen",      label: "Libro",         Icon: BookOpen },
+  { value: "Code",          label: "Código",        Icon: Code },
+  { value: "Briefcase",     label: "Maletín",       Icon: Briefcase },
+  { value: "FlaskConical",  label: "Laboratorio",   Icon: FlaskConical },
+  { value: "Calculator",    label: "Calculadora",   Icon: Calculator },
+  { value: "Languages",     label: "Idiomas",       Icon: Languages },
+  { value: "Network",       label: "Redes",         Icon: Network },
+  { value: "BarChart2",     label: "Datos",         Icon: BarChart2 },
+  { value: "Rocket",        label: "Cohete",        Icon: Rocket },
+  { value: "Cpu",           label: "CPU",           Icon: Cpu },
+  { value: "Terminal",      label: "Terminal",      Icon: Terminal },
 ];
 
 // ─── Modales ──────────────────────────────────────────────────────────────────
@@ -185,22 +188,23 @@ export function PortalConfig() {
 
   // ── Estado visual ─────────────────────────────────────────────────────────
   // Mismo caso: estado local editable, sincronizado cuando portal llega.
-  const [visualData, setVisualData] = useState({
-    type:            "icon" as "icon" | "image",
-    selectedIcon:    "computer",
-    backgroundColor: "#2c4456",
-    customImage:     null as string | null,
-  });
+ const [modoVisual, setModoVisual]               = useState<"icono" | "imagen">("icono");
+  const [iconoSeleccionado, setIconoSeleccionado] = useState("GraduationCap");
+  const [colorSeleccionado, setColorSeleccionado] = useState("#2563EB");
+  const [busquedaIcono, setBusquedaIcono]         = useState("");
+  const [customImage, setCustomImage]             = useState<string | null>(null);
 
   useEffect(() => {
     if (!portal) return;
-    setVisualData({
-      type:            portal.logoUrl ? "image" : "icon",
-      selectedIcon:    portal.iconoPortal ?? "computer",
-      backgroundColor: portal.colorPortal ?? "#2c4456",
-      customImage:     portal.logoUrl ?? null,
-    });
+    setModoVisual(portal.logoUrl ? "imagen" : "icono");
+    setIconoSeleccionado(portal.iconoPortal ?? "GraduationCap");
+    setColorSeleccionado(portal.colorPortal ?? "#2563EB");
+    setCustomImage(portal.logoUrl ?? null);
   }, [portal]);
+
+  const iconosFiltrados = ICONOS_DISPONIBLES.filter((i) =>
+    i.label.toLowerCase().includes(busquedaIcono.toLowerCase())
+  );
 
   // ── Estado de acceso ──────────────────────────────────────────────────────
   // areRequestsOpen y joinRequirements vienen del back (PlantillaSolicitud).
@@ -314,9 +318,9 @@ export function PortalConfig() {
         closeConfirmModal();
         try {
           await adminService.actualizarPortal(portalId, {
-            iconoPortal: visualData.type === "icon"  ? visualData.selectedIcon    : null,
-            colorPortal: visualData.type === "icon"  ? visualData.backgroundColor : null,
-            logoUrl:     visualData.type === "image" ? (visualData.customImage ?? null) : null,
+            iconoPortal: modoVisual === "icono" ? iconoSeleccionado : null,
+            colorPortal: modoVisual === "icono" ? colorSeleccionado : null,
+            logoUrl:     modoVisual === "imagen" ? (customImage ?? null) : null,
           });
           showSuccess("Identidad visual actualizada correctamente.");
         } catch {
@@ -332,8 +336,8 @@ export function PortalConfig() {
     if (file && file.type.startsWith("image/")) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        const result = reader.result as string;
-        setVisualData((prev) => ({ ...prev, customImage: result, type: "image" }));
+        setCustomImage(reader.result as string);
+        setModoVisual("imagen");
       };
       reader.readAsDataURL(file);
     }
@@ -579,6 +583,7 @@ export function PortalConfig() {
         </section>
 
         {/* ── Identidad Visual ── */}
+        
         <section
           className="bg-surface-container-lowest p-6 shadow-sm"
           style={{ borderRadius: "var(--radius)" }}
@@ -591,92 +596,159 @@ export function PortalConfig() {
           </div>
 
           <div className="space-y-5">
-            {/* Selector de tipo */}
-            <div>
-              <label className="block mb-3 text-sm font-medium text-foreground">Tipo de Imagen</label>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setVisualData((prev) => ({ ...prev, type: "icon" }))}
-                  className={`flex-1 px-4 py-3 border-2 transition-colors ${
-                    visualData.type === "icon"
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-border hover:bg-accent text-foreground"
-                  }`}
-                  style={{ borderRadius: "var(--radius)" }}
-                >
-                  Icono Predefinido
-                </button>
-                <button
-                  onClick={() => setVisualData((prev) => ({ ...prev, type: "image" }))}
-                  className={`flex-1 px-4 py-3 border-2 transition-colors ${
-                    visualData.type === "image"
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-border hover:bg-accent text-foreground"
-                  }`}
-                  style={{ borderRadius: "var(--radius)" }}
-                >
-                  Imagen Personalizada
-                </button>
-              </div>
+            {/* Selector de modo */}
+            <div
+              className="grid grid-cols-2 gap-2 p-1"
+              style={{ background: "rgba(169, 180, 185, 0.1)", borderRadius: "var(--radius)" }}
+            >
+              <button
+                onClick={() => setModoVisual("icono")}
+                className={`py-2 px-4 text-sm font-medium transition-all ${
+                  modoVisual === "icono"
+                    ? "bg-surface-container-lowest text-foreground shadow-sm"
+                    : "text-on-surface-variant hover:text-foreground"
+                }`}
+                style={{ borderRadius: "var(--radius)" }}
+              >
+                Ícono + color
+              </button>
+              <button
+                onClick={() => setModoVisual("imagen")}
+                className={`py-2 px-4 text-sm font-medium transition-all ${
+                  modoVisual === "imagen"
+                    ? "bg-surface-container-lowest text-foreground shadow-sm"
+                    : "text-on-surface-variant hover:text-foreground"
+                }`}
+                style={{ borderRadius: "var(--radius)" }}
+              >
+                Subir imagen
+              </button>
             </div>
 
-            {/* Iconos predefinidos */}
-            {visualData.type === "icon" && (
-              <>
+            {/* Panel ícono + color */}
+            {modoVisual === "icono" && (
+              <div className="space-y-4">
+                {/* Buscador */}
                 <div>
-                  <label className="block mb-3 text-sm font-medium text-foreground">Selecciona un Icono</label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {iconOptions.map((option) => (
+                  <label className="block text-sm font-medium text-foreground mb-2">Ícono</label>
+                  <div className="relative mb-3">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
+                    <input
+                      type="text"
+                      placeholder="Buscar ícono..."
+                      value={busquedaIcono}
+                      onChange={(e) => setBusquedaIcono(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 text-sm bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      style={{ borderRadius: "var(--radius)", border: "2px solid rgba(169, 180, 185, 0.15)" }}
+                    />
+                  </div>
+                  <div className="grid grid-cols-6 gap-2">
+                    {iconosFiltrados.map(({ value, label, Icon }) => (
                       <button
-                        key={option.id}
-                        onClick={() => setVisualData((prev) => ({ ...prev, selectedIcon: option.id }))}
-                        className={`p-4 border-2 transition-colors ${
-                          visualData.selectedIcon === option.id
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:bg-accent"
+                        key={value}
+                        onClick={() => setIconoSeleccionado(value)}
+                        title={label}
+                        className={`relative flex flex-col items-center gap-1 p-3 transition-all ${
+                          iconoSeleccionado === value
+                            ? "ring-2 ring-primary bg-primary/10"
+                            : "hover:bg-surface-container-low"
                         }`}
                         style={{ borderRadius: "var(--radius)" }}
                       >
-                        <div className="text-3xl mb-1">{option.icon}</div>
-                        <div className="text-xs text-foreground">{option.label}</div>
+                        <Icon className="w-5 h-5 text-foreground" />
+                        <span className="text-xs text-on-surface-variant truncate w-full text-center">
+                          {label}
+                        </span>
+                        {iconoSeleccionado === value && (
+                          <div className="absolute top-1 right-1">
+                            <Check className="w-3 h-3 text-primary" />
+                          </div>
+                        )}
                       </button>
                     ))}
+                    {iconosFiltrados.length === 0 && (
+                      <p className="col-span-6 text-sm text-on-surface-variant text-center py-4">
+                        No hay íconos que coincidan.
+                      </p>
+                    )}
                   </div>
                 </div>
 
+                {/* Color picker libre */}
+                
                 <div>
-                  <label className="block mb-3 text-sm font-medium text-foreground">Color de Fondo</label>
-                  <div className="grid grid-cols-8 gap-2">
-                    {backgroundColors.map((color) => (
-                      <button
-                        key={color}
-                        onClick={() => setVisualData((prev) => ({ ...prev, backgroundColor: color }))}
-                        className={`w-full aspect-square border-2 transition-all ${
-                          visualData.backgroundColor === color
-                            ? "border-primary scale-110"
-                            : "border-border"
-                        }`}
-                        style={{ borderRadius: "var(--radius)", backgroundColor: color }}
+                  <label className="block text-sm font-medium text-foreground mb-3">
+                    Color de fondo
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <label
+                      className="relative w-14 h-14 cursor-pointer group flex-shrink-0"
+                      style={{ borderRadius: "var(--radius)" }}
+                    >
+                      <input
+                        type="color"
+                        value={colorSeleccionado}
+                        onChange={(e) => setColorSeleccionado(e.target.value)}
+                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
                       />
-                    ))}
+                      <div
+                        className="w-full h-full shadow-md ring-2 ring-white/20 group-hover:ring-primary/50 transition-all"
+                        style={{
+                          backgroundColor: colorSeleccionado,
+                          borderRadius: "var(--radius)",
+                        }}
+                      />
+                      <div
+                        className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20"
+                        style={{ borderRadius: "var(--radius)" }}
+                      >
+                        <Palette className="w-4 h-4 text-white" />
+                      </div>
+                    </label>
+
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-medium text-foreground">
+                        Color seleccionado
+                      </span>
+                      <div
+                        className="flex items-center gap-2 px-3 py-1.5 bg-surface-container border border-border w-fit"
+                        style={{ borderRadius: "var(--radius)" }}
+                      >
+                        <div
+                          className="w-3 h-3 flex-shrink-0"
+                          style={{
+                            backgroundColor: colorSeleccionado,
+                            borderRadius: "2px",
+                          }}
+                        />
+                        <span className="text-sm font-mono text-foreground tracking-wider">
+                          {colorSeleccionado.toUpperCase()}
+                        </span>
+                      </div>
+                      <span className="text-xs text-on-surface-variant">
+                        Hacé click en el cuadrado para cambiar
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </>
+              </div>
             )}
 
-            {/* Imagen personalizada */}
-            {visualData.type === "image" && (
+            {/* Panel imagen */}
+            {modoVisual === "imagen" && (
               <div>
-                <label className="block mb-3 text-sm font-medium text-foreground">Subir Imagen</label>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Imagen del portal
+                </label>
                 <div
                   className="border-2 border-dashed border-border p-8 text-center transition-colors hover:border-primary hover:bg-primary/5 cursor-pointer"
                   style={{ borderRadius: "var(--radius)" }}
                   onClick={() => document.getElementById("image-upload")?.click()}
                 >
-                  {visualData.customImage ? (
+                  {customImage ? (
                     <div className="space-y-3">
                       <img
-                        src={visualData.customImage}
+                        src={customImage}
                         alt="Preview"
                         className="w-32 h-32 object-cover mx-auto"
                         style={{ borderRadius: "var(--radius)" }}
@@ -704,30 +776,35 @@ export function PortalConfig() {
               </div>
             )}
 
-            {/* Preview */}
+            {/* Vista previa */}
             <div>
-              <label className="block mb-3 text-sm font-medium text-foreground">Vista Previa</label>
-              <div className="p-6 bg-surface-container" style={{ borderRadius: "var(--radius)" }}>
-                <div className="max-w-xs">
+              <label className="block text-sm font-medium text-foreground mb-2">Vista Previa</label>
+              <div className="p-5 bg-surface-container" style={{ borderRadius: "var(--radius)" }}>
+                <div className="flex items-center gap-4">
+                  {/* Avatar igual al que aparece en ExplorarPortales */}
                   <div
-                    className="w-full h-40 flex items-center justify-center mb-3 overflow-hidden"
+                    className="w-14 h-14 flex items-center justify-center flex-shrink-0"
                     style={{
                       borderRadius: "var(--radius)",
-                      backgroundColor: visualData.type === "icon" ? visualData.backgroundColor : undefined,
+                      backgroundColor: modoVisual === "icono" ? colorSeleccionado : undefined,
+                      overflow: "hidden",
                     }}
                   >
-                    {visualData.type === "icon" ? (
-                      <span className="text-6xl">
-                        {iconOptions.find((opt) => opt.id === visualData.selectedIcon)?.icon}
-                      </span>
-                    ) : visualData.customImage ? (
-                      <img src={visualData.customImage} alt="Portal" className="w-full h-full object-cover" />
+                    {modoVisual === "imagen" && customImage ? (
+                      <img src={customImage} alt="Portal" className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-on-surface-variant">Sin imagen</span>
+                      (() => {
+                        const found = ICONOS_DISPONIBLES.find((i) => i.value === iconoSeleccionado);
+                        if (!found) return null;
+                        const { Icon } = found;
+                        return <Icon className="w-7 h-7 text-white" />;
+                      })()
                     )}
                   </div>
-                  <h3 className="text-foreground font-medium">{identityData.careerName}</h3>
-                  <p className="text-sm text-on-surface-variant">{identityData.universityName}</p>
+                  <div>
+                    <p className="font-semibold text-foreground">{portal?.carrera ?? "Nombre de la carrera"}</p>
+                    <p className="text-sm text-on-surface-variant">{portal?.universidad ?? "Universidad"}</p>
+                  </div>
                 </div>
               </div>
             </div>
