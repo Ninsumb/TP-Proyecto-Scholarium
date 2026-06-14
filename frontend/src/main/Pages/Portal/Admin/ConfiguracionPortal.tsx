@@ -8,8 +8,7 @@ import type {
   CrearVotacionRequest,
 } from "../../../types/Admin/Admin";
 
-// ─── Opciones de icono y color (sin cambios respecto al original) ─────────────
-
+// ─── Opciones de icono y color ────────────────────────────────────────────────
 
 const iconOptions = [
   { id: "book",       label: "Libro",        icon: "📚" },
@@ -27,7 +26,7 @@ const backgroundColors = [
   "#38a169", "#3182ce", "#805ad5", "#dd6b20",
 ];
 
-// ─── Modales (igual que el original) ─────────────────────────────────────────
+// ─── Modales ──────────────────────────────────────────────────────────────────
 
 interface VoteModalProps {
   isOpen: boolean;
@@ -93,7 +92,6 @@ function VoteModal({ isOpen, onClose, onConfirm, title, description, loading }: 
     }
   };
 
-  // Limpiar reason al cerrar
   const handleClose = () => {
     setReason("");
     onClose();
@@ -151,30 +149,59 @@ function VoteModal({ isOpen, onClose, onConfirm, title, description, loading }: 
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export function PortalConfig() {
-  const { portal } = usePortalContext();
-  const portalId = portal?.id as number;
+  const { portal, portalId } = usePortalContext();
 
-  // Estado de identidad — inicializado desde el contexto del portal
+  // ── isPortalOpen: derivado directo del contexto, nunca en useState ────────
+  // Razón: portal llega null en el primer render (fetch asíncrono).
+  // Si lo metés en useState, se inicializa como false y nunca se actualiza.
+  // Al derivarlo acá se recalcula en cada render, siempre fresco.
+  const isPortalOpen = portal?.tipoAcceso === 'ABIERTO';
+
+  // ── Estado de identidad ───────────────────────────────────────────────────
+  // Sí necesita ser estado local porque el usuario edita estos campos.
+  // Se inicializa vacío y se sincroniza con useEffect cuando portal llega.
   const [identityData, setIdentityData] = useState({
-    universityName: portal?.universidad ?? "",
-    careerName:     portal?.carrera ?? "",
-    academicUnit:   portal?.unidadAcademica ?? "",
-    description:    portal?.descripcion ?? "",
+    universityName: "",
+    careerName:     "",
+    academicUnit:   "",
+    description:    "",
   });
 
-  // Estado visual — inicializado desde el contexto del portal
+  useEffect(() => {
+    if (!portal) return;
+    setIdentityData({
+      universityName: portal.universidad ?? "",
+      careerName:     portal.carrera ?? "",
+      academicUnit:   portal.unidadAcademica ?? "",
+      description:    portal.descripcion ?? "",
+    });
+  }, [portal]);
+
+  // ── Estado visual ─────────────────────────────────────────────────────────
+  // Mismo caso: estado local editable, sincronizado cuando portal llega.
   const [visualData, setVisualData] = useState({
-    type:            (portal?.logoUrl ? "image" : "icon") as "icon" | "image",
-    selectedIcon:    portal?.iconoPortal ?? "computer",
-    backgroundColor: portal?.colorPortal ?? "#2c4456",
-    customImage:     portal?.logoUrl ?? null as string | null,
+    type:            "icon" as "icon" | "image",
+    selectedIcon:    "computer",
+    backgroundColor: "#2c4456",
+    customImage:     null as string | null,
   });
 
-  // Estado de acceso — se carga desde el back (PlantillaSolicitud)
+  useEffect(() => {
+    if (!portal) return;
+    setVisualData({
+      type:            portal.logoUrl ? "image" : "icon",
+      selectedIcon:    portal.iconoPortal ?? "computer",
+      backgroundColor: portal.colorPortal ?? "#2c4456",
+      customImage:     portal.logoUrl ?? null,
+    });
+  }, [portal]);
+
+  // ── Estado de acceso ──────────────────────────────────────────────────────
+  // areRequestsOpen y joinRequirements vienen del back (PlantillaSolicitud).
+  // isPortalOpen ya NO vive acá — ver derivación arriba.
   const [accessData, setAccessData] = useState({
-      isPortalOpen:     portal?.tipoAcceso === 'ABIERTO',
-      areRequestsOpen:  true,
-      joinRequirements: "",
+    areRequestsOpen:  true,
+    joinRequirements: "",
   });
 
   // Loading states granulares
@@ -210,11 +237,10 @@ export function PortalConfig() {
     adminService
       .getPlantilla(portalId)
       .then((plantilla: PlantillaSolicitudResponse) => {
-        setAccessData((prev) => ({
-          ...prev,
+        setAccessData({
           areRequestsOpen:  plantilla.abierta,
           joinRequirements: plantilla.requisitos ?? "",
-        }));
+        });
       })
       .catch(() => setError("No se pudo cargar la configuración de solicitudes."))
       .finally(() => setLoadingPlantilla(false));
@@ -227,7 +253,7 @@ export function PortalConfig() {
     setTimeout(() => setSuccessMsg(null), 3000);
   };
 
-  const closeVoteModal = () => setVoteModal((prev) => ({ ...prev, isOpen: false }));
+  const closeVoteModal   = () => setVoteModal((prev)   => ({ ...prev, isOpen: false }));
   const closeConfirmModal = () => setConfirmModal((prev) => ({ ...prev, isOpen: false }));
 
   // ── Acciones de identidad ─────────────────────────────────────────────────
@@ -260,7 +286,7 @@ export function PortalConfig() {
         closeConfirmModal();
         try {
           await adminService.actualizarPortal(portalId, {
-            descripcion:    identityData.description  || null,
+            descripcion:     identityData.description  || null,
             unidadAcademica: identityData.academicUnit || null,
           });
           showSuccess("Descripción actualizada correctamente.");
@@ -273,7 +299,7 @@ export function PortalConfig() {
     });
   };
 
-  // ── Acciones de identidad visual ─────────────────────────────────────────
+  // ── Acciones de identidad visual ──────────────────────────────────────────
 
   const handleSaveVisualIdentity = () => {
     setConfirmModal({
@@ -304,7 +330,7 @@ export function PortalConfig() {
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
-        setVisualData({ ...visualData, customImage: result, type: "image" });
+        setVisualData((prev) => ({ ...prev, customImage: result, type: "image" }));
       };
       reader.readAsDataURL(file);
     }
@@ -317,7 +343,7 @@ export function PortalConfig() {
       isOpen: true,
       type:   "portalAccess",
       title:  "Proponer Cambio de Acceso al Portal",
-      description: `Estás proponiendo cambiar el portal a modo ${accessData.isPortalOpen ? "Cerrado" : "Abierto"}. Esta acción requiere votación de todos los administradores.`,
+      description: `Estás proponiendo cambiar el portal a modo ${isPortalOpen ? "Cerrado" : "Abierto"}. Esta acción requiere votación de todos los administradores.`,
     });
   };
 
@@ -384,7 +410,6 @@ export function PortalConfig() {
   const handleConfirmVote = async (reason: string) => {
     setLoadingVote(true);
 
-    // Mapeo del tipo de voteModal al TipoVotacion del back
     const tipoMap: Record<typeof voteModal.type, CrearVotacionRequest["tipo"]> = {
       university:   "CAMBIO_INFO_PORTAL",
       career:       "CAMBIO_INFO_PORTAL",
@@ -392,12 +417,15 @@ export function PortalConfig() {
       archive:      "ARCHIVAR_PORTAL",
     };
 
-    // Para universidad/carrera mandamos el nuevo valor en metadatos
     let metadatos: string | null = null;
     if (voteModal.type === "university") {
       metadatos = JSON.stringify({ campo: "universidad", valor: identityData.universityName });
     } else if (voteModal.type === "career") {
       metadatos = JSON.stringify({ campo: "carrera", valor: identityData.careerName });
+    } else if (voteModal.type === "portalAccess") {
+      // El nuevo tipo es el inverso del actual: si está ABIERTO se propone CERRADO y viceversa.
+      const nuevoTipo: TipoAcceso = isPortalOpen ? "CERRADO" : "ABIERTO";
+      metadatos = JSON.stringify({ nuevoTipoAcceso: nuevoTipo });
     }
 
     try {
@@ -583,7 +611,7 @@ export function PortalConfig() {
               <label className="block mb-3 text-sm font-medium text-foreground">Tipo de Imagen</label>
               <div className="flex gap-3">
                 <button
-                  onClick={() => setVisualData({ ...visualData, type: "icon" })}
+                  onClick={() => setVisualData((prev) => ({ ...prev, type: "icon" }))}
                   className={`flex-1 px-4 py-3 border-2 transition-colors ${
                     visualData.type === "icon"
                       ? "border-primary bg-primary/5 text-primary"
@@ -594,7 +622,7 @@ export function PortalConfig() {
                   Icono Predefinido
                 </button>
                 <button
-                  onClick={() => setVisualData({ ...visualData, type: "image" })}
+                  onClick={() => setVisualData((prev) => ({ ...prev, type: "image" }))}
                   className={`flex-1 px-4 py-3 border-2 transition-colors ${
                     visualData.type === "image"
                       ? "border-primary bg-primary/5 text-primary"
@@ -616,7 +644,7 @@ export function PortalConfig() {
                     {iconOptions.map((option) => (
                       <button
                         key={option.id}
-                        onClick={() => setVisualData({ ...visualData, selectedIcon: option.id })}
+                        onClick={() => setVisualData((prev) => ({ ...prev, selectedIcon: option.id }))}
                         className={`p-4 border-2 transition-colors ${
                           visualData.selectedIcon === option.id
                             ? "border-primary bg-primary/5"
@@ -637,7 +665,7 @@ export function PortalConfig() {
                     {backgroundColors.map((color) => (
                       <button
                         key={color}
-                        onClick={() => setVisualData({ ...visualData, backgroundColor: color })}
+                        onClick={() => setVisualData((prev) => ({ ...prev, backgroundColor: color }))}
                         className={`w-full aspect-square border-2 transition-all ${
                           visualData.backgroundColor === color
                             ? "border-primary scale-110"
@@ -749,10 +777,10 @@ export function PortalConfig() {
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <div className="text-sm font-medium text-foreground mb-1">
-                    Portal {accessData.isPortalOpen ? "Abierto" : "Cerrado"}
+                    Portal {isPortalOpen ? "Abierto" : "Cerrado"}
                   </div>
                   <p className="text-xs text-on-surface-variant">
-                    {accessData.isPortalOpen
+                    {isPortalOpen
                       ? "No miembros pueden ver Materias y Foro en modo lectura"
                       : "No miembros solo pueden ver la página de Inicio"}
                   </p>
@@ -760,13 +788,13 @@ export function PortalConfig() {
                 <button
                   onClick={handleProposePortalAccessChange}
                   className={`px-4 py-2 transition-colors ${
-                    accessData.isPortalOpen
+                    isPortalOpen
                       ? "bg-green-600 text-white hover:bg-green-700"
                       : "bg-surface-container text-foreground hover:bg-accent"
                   }`}
                   style={{ borderRadius: "var(--radius)" }}
                 >
-                  {accessData.isPortalOpen ? "Abierto" : "Cerrado"}
+                  {isPortalOpen ? "Abierto" : "Cerrado"}
                 </button>
               </div>
               <p className="text-xs text-on-surface-variant flex items-center gap-1">
@@ -816,7 +844,7 @@ export function PortalConfig() {
               <textarea
                 rows={4}
                 value={accessData.joinRequirements}
-                onChange={(e) => setAccessData({ ...accessData, joinRequirements: e.target.value })}
+                onChange={(e) => setAccessData((prev) => ({ ...prev, joinRequirements: e.target.value }))}
                 className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                 style={{ borderRadius: "var(--radius)" }}
                 placeholder="Indica qué deben incluir los usuarios en su solicitud (ej: número de legajo, año de cursada, etc.)"
