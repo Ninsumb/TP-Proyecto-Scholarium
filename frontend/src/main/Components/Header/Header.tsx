@@ -1,25 +1,50 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { GraduationCap, User, LogOut, Bell } from "lucide-react";
 import { Sun, Moon } from "lucide-react";
+import { useState, useEffect } from "react";
 import { authService } from "../../services/AuthService";
+import { notificacionService } from "../../services/NotificacionService";
 
 export type HeaderProps = {
     darkTheme: Boolean;
     switchTheme: () => void;
-    // Cuando el sistema de notificaciones esté implementado, este prop
-    // vendrá del contexto/store global con el conteo real del back.
-    // Por ahora se puede pasar desde el componente padre o dejarlo en 0.
+    // La prop sigue existiendo por retrocompatibilidad, pero ahora es opcional 
+    // porque el Header hace su propio fetch.
     unreadNotifications?: number;
 };
 
 export const Header = (props: HeaderProps) => {
     const navigate = useNavigate();
-    const unread = props.unreadNotifications ?? 0;
+    const location = useLocation(); // Para recargar notificaciones al cambiar de página
+    const [unread, setUnread] = useState(props.unreadNotifications ?? 0);
 
     const handleLogout = () => {
         authService.clearSession();
         navigate("/login");
     };
+
+    // Efecto para buscar notificaciones desde el backend
+    useEffect(() => {
+        if (!authService.isAuthenticated()) return;
+
+        const fetchUnread = async () => {
+            try {
+                const data = await notificacionService.getNotificaciones();
+                // Contamos las que tienen "leida === false"
+                const count = data.filter(n => !n.leida).length;
+                setUnread(count);
+            } catch (error) {
+                console.error("Error al cargar notificaciones en el header", error);
+            }
+        };
+
+        // Si se pasa por props, respetamos la prop, sino fetcheamos
+        if (props.unreadNotifications === undefined) {
+            fetchUnread();
+        } else {
+            setUnread(props.unreadNotifications);
+        }
+    }, [props.unreadNotifications, location.pathname]); // location.pathname actualiza la burbuja al navegar
 
     return (
         <nav className="bg-primary">
@@ -65,7 +90,6 @@ export const Header = (props: HeaderProps) => {
                                         borderRadius: "999px",
                                         fontSize: "10px",
                                         padding: "0 3px",
-                                        // Tiny ring so it lifts off the icon visually
                                         boxShadow: "0 0 0 2px var(--primary)",
                                     }}
                                 >
