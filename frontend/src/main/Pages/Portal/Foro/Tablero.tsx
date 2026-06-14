@@ -18,7 +18,8 @@ import {
   Check,
   CornerDownRight,
   UserPlus,
-  Lock
+  Lock,
+   Search,
 } from "lucide-react";
 import { foroService } from "../../../services/Portal/ForoService";
 import { usuarioService } from "../../../services/UsuarioService";
@@ -29,6 +30,30 @@ import type {
   CrearPostRequest,
   TableroResponse,
 } from "../../../types/Portal/Foro";
+
+// ── Highlight de palabras clave ───────────────────────────────────────────────
+
+function highlightText(text: string, query: string): React.ReactNode {
+  if (!query.trim()) return text;
+
+  // Escapamos caracteres especiales de regex
+  const escaped = query.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(${escaped})`, "gi");
+  const parts = text.split(regex);
+
+  return parts.map((part, i) =>
+    regex.test(part) ? (
+      <mark
+        key={i}
+        className="bg-yellow-200 dark:bg-yellow-800 text-foreground rounded-sm px-0.5"
+      >
+        {part}
+      </mark>
+    ) : (
+      part
+    )
+  );
+}
 
 function AccesoDenegado({ portalId }: { portalId: string | undefined }) {
   return (
@@ -206,6 +231,7 @@ interface ReplyItemProps {
   usuarioActualId: number | null;
   rolUsuario: "ADMIN" | "MIEMBRO" | null;
   canInteract: boolean;
+  searchQuery?: string;
   onEliminada: (id: string) => void;
   onEditada: (updated: PostResponse) => void;
   onNuevaRespuesta: (nueva: PostResponse) => void;
@@ -221,6 +247,7 @@ function ReplyItem({
   onEliminada,
   onEditada,
   onNuevaRespuesta,
+  searchQuery,
 }: ReplyItemProps) {
   const [editando, setEditando] = useState(false);
   const [contenidoEdit, setContenidoEdit] = useState(reply.contenido ?? "");
@@ -390,7 +417,11 @@ function ReplyItem({
             </div>
           ) : (
             <>
-              <p className="text-sm text-foreground leading-relaxed">{reply.contenido}</p>
+              <p className="text-sm text-foreground leading-relaxed">
+                {searchQuery && reply.contenido
+                  ? highlightText(reply.contenido, searchQuery)
+                  : reply.contenido}
+              </p>
 
               {/* Botón Responder */}
               {!editando && canInteract && (
@@ -459,11 +490,12 @@ interface PostItemProps {
   usuarioActualId: number | null;
   rolUsuario: "ADMIN" | "MIEMBRO" | null;
   canInteract: boolean;
+  searchQuery?: string;
   onEliminado: (id: string) => void;
   onEditado: (updated: PostResponse) => void;
 }
 
-function PostItem({ post, isLast, usuarioActualId, rolUsuario, canInteract, onEliminado, onEditado }: PostItemProps) {
+function PostItem({ post, isLast, usuarioActualId, rolUsuario, canInteract, searchQuery, onEliminado, onEditado }: PostItemProps) {
   const [expandido, setExpandido] = useState(false);
   const [respuestas, setRespuestas] = useState<PostResponse[]>([]);
   const [cargandoRespuestas, setCargandoRespuestas] = useState(false);
@@ -746,6 +778,7 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, canInteract, onEl
                     usuarioActualId={usuarioActualId}
                     rolUsuario={rolUsuario}
                     canInteract={canInteract}
+                    searchQuery={searchQuery}
                     onEliminada={(id) =>
                       setRespuestas((prev) =>
                         prev.map((x) =>
@@ -1125,6 +1158,49 @@ export function ForumBoardView() {
   const [error, setError] = useState<string | null>(null);
   const [showNewPostModal, setShowNewPostModal] = useState(false);
 
+  // ── Búsqueda ──────────────────────────────────────────────────────────────
+  const [searchInput, setSearchInput] = useState("");      // lo que el usuario tipea
+  const [searchQuery, setSearchQuery] = useState("");      // lo que efectivamente se buscó (con debounce)
+  const [searchResults, setSearchResults] = useState<PostResponse[]>([]);
+  const [buscando, setBuscando] = useState(false);
+  const [errorBusqueda, setErrorBusqueda] = useState<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const isSearchActive = searchQuery.trim().length > 0;
+
+  // Debounce: cada vez que cambia searchInput, esperamos 350ms antes de buscar
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    const trimmed = searchInput.trim();
+
+    if (!trimmed) {
+      setSearchQuery("");
+      setSearchResults([]);
+      setErrorBusqueda(null);
+      return;
+    }
+
+    debounceRef.current = setTimeout(async () => {
+      try {
+        setBuscando(true);
+        setErrorBusqueda(null);
+        const results = await foroService.buscarPosts(tableroId, trimmed);
+        setSearchResults(results);
+        setSearchQuery(trimmed);
+      } catch {
+        setErrorBusqueda("No se pudo realizar la búsqueda.");
+      } finally {
+        setBuscando(false);
+      }
+    }, 350);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchInput, tableroId]);
+
+  // ── Carga inicial ─────────────────────────────────────────────────────────
   useEffect(() => {
     const cargar = async () => {
       try {
@@ -1152,15 +1228,20 @@ export function ForumBoardView() {
 
   const handlePostEliminado = (id: string) => {
     setPosts((prev) => prev.filter((p) => p.id !== id));
+    setSearchResults((prev) => prev.filter((p) => p.id !== id));
   };
 
   const handlePostEditado = (updated: PostResponse) => {
     setPosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+    setSearchResults((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
   };
 
   if (!isMember && !isAdmin && !isOpen) {
     return <AccesoDenegado portalId={portalId} />;
   }
+
+  // Lista que se muestra: resultados si hay búsqueda activa, posts normales si no
+  const postsAMostrar = isSearchActive ? searchResults : posts;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -1174,7 +1255,7 @@ export function ForumBoardView() {
       </nav>
 
       {/* Header */}
-      <div className="mb-8 flex items-start justify-between gap-4">
+      <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           {tablero ? (
             <>
@@ -1196,7 +1277,7 @@ export function ForumBoardView() {
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-         {isAdmin && tablero && (
+          {isAdmin && tablero && (
             <TableroAdminMenu
               portalId={portalId!}
               tableroId={tableroId}
@@ -1217,7 +1298,61 @@ export function ForumBoardView() {
         </div>
       </div>
 
-      {/* Estados */}
+      {/* Barra de búsqueda */}
+      {!cargando && !error && (
+        <div className="mb-6 relative">
+          <div className="relative flex items-center">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Buscar en este tablero..."
+              className="w-full pl-10 pr-10 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all text-sm"
+              style={{ borderRadius: "var(--radius)" }}
+            />
+            {searchInput && (
+              <button
+                onClick={() => {
+                  setSearchInput("");
+                  setSearchQuery("");
+                  setSearchResults([]);
+                  setErrorBusqueda(null);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-on-surface-variant hover:text-foreground transition-colors"
+                aria-label="Limpiar búsqueda"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Indicador de estado de búsqueda */}
+          {buscando && (
+            <div className="absolute right-10 top-1/2 -translate-y-1/2">
+              <Loader2 className="w-4 h-4 animate-spin text-on-surface-variant" />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Feedback de resultados de búsqueda */}
+      {isSearchActive && !buscando && !errorBusqueda && (
+        <p className="text-sm text-on-surface-variant mb-4">
+          {searchResults.length === 0
+            ? `Sin resultados para "${searchQuery}"`
+            : `${searchResults.length} ${searchResults.length === 1 ? "resultado" : "resultados"} para "${searchQuery}"`}
+        </p>
+      )}
+
+      {errorBusqueda && (
+        <div className="flex items-center gap-2 mb-4 text-sm text-destructive">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          {errorBusqueda}
+        </div>
+      )}
+
+      {/* Estados de carga inicial */}
       {cargando && (
         <div className="flex items-center justify-center py-20 gap-3 text-on-surface-variant">
           <Loader2 className="w-6 h-6 animate-spin" />
@@ -1239,16 +1374,18 @@ export function ForumBoardView() {
         </div>
       )}
 
-      {!cargando && !error && posts.length === 0 && (
+      {/* Empty state */}
+      {!cargando && !error && !isSearchActive && posts.length === 0 && (
         <div className="text-center py-16">
           <MessageCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-30" />
           <p className="text-on-surface-variant">Todavía no hay publicaciones en este tablero.</p>
         </div>
       )}
 
-      {!cargando && !error && posts.length > 0 && (
+      {/* Lista de posts */}
+      {!cargando && !error && postsAMostrar.filter((p) => !p.eliminado).length > 0 && (
         <div className="bg-surface-container-lowest shadow-sm" style={{ borderRadius: "var(--radius)" }}>
-          {posts
+          {postsAMostrar
             .filter((p) => !p.eliminado)
             .map((post, index, arr) => (
               <PostItem
@@ -1258,6 +1395,7 @@ export function ForumBoardView() {
                 usuarioActualId={usuarioActualId}
                 rolUsuario={rolUsuario}
                 canInteract={canInteract}
+                searchQuery={isSearchActive ? searchQuery : ""}
                 onEliminado={handlePostEliminado}
                 onEditado={handlePostEditado}
               />
