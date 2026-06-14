@@ -6,6 +6,7 @@ import com.unsam.scholarium.dto.ArchivoSubidoResponse
 import com.unsam.scholarium.exception.BusinessException
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
+import com.cloudinary.Transformation
 
 interface FileStorageService {
 
@@ -77,10 +78,7 @@ class CloudinaryFileStorageService(
                     "folder",        "scholarium/fotos-perfil",
                     "public_id",     "usuario-$usuarioId",
                     "overwrite",     true,
-                    "resource_type", "image",
-                    "transformation", listOf(
-                        mapOf("width" to 256, "height" to 256, "crop" to "fill", "gravity" to "face")
-                    )
+                    "resource_type", "image"
                 )
             )
             result["secure_url"].toString()
