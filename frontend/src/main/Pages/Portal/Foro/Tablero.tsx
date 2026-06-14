@@ -23,6 +23,7 @@ import {
 import { foroService } from "../../../services/Portal/ForoService";
 import { usuarioService } from "../../../services/UsuarioService";
 import { authService } from "../../../services/AuthService";
+import { adminService } from "../../../services/AdminService";
 import type {
   PostResponse,
   CrearPostRequest,
@@ -872,6 +873,239 @@ function NewPostModal({ isOpen, tableroId, onClose, onCreado }: NewPostModalProp
     </div>
   );
 }
+// ── Menú de administración del tablero ───────────────────────────────────────
+
+interface TableroAdminMenuProps {
+  portalId: string;
+  tableroId: string;
+  nombre: string;
+  descripcion: string | null;
+}
+
+function TableroAdminMenu({ portalId, tableroId, nombre, descripcion }: TableroAdminMenuProps) {
+  const [abierto, setAbierto] = useState(false);
+
+  // Modal de votación para eliminar
+  const [voteModal, setVoteModal] = useState(false);
+  const [motivo, setMotivo] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [errorVote, setErrorVote] = useState<string | null>(null);
+  const [successVote, setSuccessVote] = useState(false);
+
+  // Modal de edición (sin endpoint aún)
+  const [editando, setEditando] = useState(false);
+  const [nuevoNombre, setNuevoNombre] = useState(nombre);
+  const [nuevaDescripcion, setNuevaDescripcion] = useState(descripcion ?? "");
+
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setAbierto(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleProponerEliminacion = async () => {
+    if (!motivo.trim()) return;
+    try {
+      setEnviando(true);
+      setErrorVote(null);
+      await adminService.crearVotacion(Number(portalId), {
+        tipo: "ELIMINAR_TABLERO",
+        motivo: motivo.trim(),
+        entidadId: tableroId,
+      });
+      setSuccessVote(true);
+      setMotivo("");
+    } catch (err: any) {
+      setErrorVote(err?.response?.data?.message ?? "No se pudo abrir la votación.");
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <>
+      {/* Modal de edición */}
+      {editando && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card max-w-lg w-full shadow-2xl" style={{ borderRadius: "var(--radius)" }}>
+            <div className="border-b border-border px-6 py-4">
+              <h2 className="text-card-foreground">Editar tablero</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block mb-2 text-sm font-medium text-foreground">Nombre</label>
+                <input
+                  type="text"
+                  value={nuevoNombre}
+                  onChange={(e) => setNuevoNombre(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  style={{ borderRadius: "var(--radius)" }}
+                />
+              </div>
+              <div>
+                <label className="block mb-2 text-sm font-medium text-foreground">
+                  Descripción (opcional)
+                </label>
+                <textarea
+                  rows={3}
+                  value={nuevaDescripcion}
+                  onChange={(e) => setNuevaDescripcion(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                  style={{ borderRadius: "var(--radius)" }}
+                />
+              </div>
+              <div
+                className="p-3 bg-yellow-600/10 border border-yellow-600/20 text-yellow-700 text-sm"
+                style={{ borderRadius: "var(--radius)" }}
+              >
+                El endpoint para editar tableros aún no está disponible.
+              </div>
+              <div className="flex gap-3 justify-end pt-2">
+                <button
+                  onClick={() => setEditando(false)}
+                  className="px-5 py-2.5 border border-border hover:bg-accent transition-colors"
+                  style={{ borderRadius: "var(--radius)" }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  disabled
+                  className="px-5 py-2.5 bg-primary text-primary-foreground opacity-50 cursor-not-allowed"
+                  style={{ borderRadius: "var(--radius)" }}
+                >
+                  Guardar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de votación para eliminar */}
+      {voteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card max-w-lg w-full shadow-2xl" style={{ borderRadius: "var(--radius)" }}>
+            <div className="border-b border-border px-6 py-4">
+              <h2 className="text-card-foreground">Proponer Eliminación de Tablero</h2>
+            </div>
+            <div className="p-6 space-y-4">
+
+              {successVote ? (
+                <>
+                  <div
+                    className="p-4 bg-green-600/10 border border-green-600/20 text-green-700 text-sm"
+                    style={{ borderRadius: "var(--radius)" }}
+                  >
+                    Votación abierta correctamente. Los administradores serán notificados.
+                  </div>
+                  <div className="flex justify-end pt-2">
+                    <button
+                      onClick={() => { setVoteModal(false); setSuccessVote(false); }}
+                      className="px-5 py-2.5 border border-border hover:bg-accent transition-colors"
+                      style={{ borderRadius: "var(--radius)" }}
+                    >
+                      Cerrar
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div
+                    className="p-4 bg-primary/5 border border-primary/20 text-sm text-foreground"
+                    style={{ borderRadius: "var(--radius)" }}
+                  >
+                    Estás proponiendo eliminar el tablero <span className="font-medium">"{nombre}"</span>. Esta acción requiere votación de todos los administradores. Si se aprueba, el tablero quedará inactivo.
+                  </div>
+                  <div>
+                    <label className="block mb-2 text-sm font-medium text-foreground">
+                      Motivo de la propuesta <span className="text-destructive">*</span>
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={motivo}
+                      onChange={(e) => setMotivo(e.target.value)}
+                      disabled={enviando}
+                      className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none disabled:opacity-50"
+                      style={{ borderRadius: "var(--radius)" }}
+                      placeholder="Explica por qué propones eliminar este tablero. Todos los administradores verán este mensaje."
+                    />
+                  </div>
+                  {errorVote && (
+                    <p className="text-sm text-destructive">{errorVote}</p>
+                  )}
+                  <div className="flex gap-3 justify-end pt-2">
+                    <button
+                      onClick={() => { setVoteModal(false); setMotivo(""); setErrorVote(null); }}
+                      disabled={enviando}
+                      className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
+                      style={{ borderRadius: "var(--radius)" }}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleProponerEliminacion}
+                      disabled={!motivo.trim() || enviando}
+                      className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      style={{ borderRadius: "var(--radius)" }}
+                    >
+                      {enviando && <Loader2 className="w-4 h-4 animate-spin" />}
+                      Abrir Votación
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Botón de tres puntos */}
+      <div className="relative" ref={ref}>
+        <button
+          onClick={() => setAbierto((v) => !v)}
+          className="p-2 hover:bg-accent transition-colors text-on-surface-variant hover:text-foreground"
+          style={{ borderRadius: "var(--radius)" }}
+          aria-label="Opciones del tablero"
+        >
+          <MoreHorizontal className="w-5 h-5" />
+        </button>
+
+        {abierto && (
+          <div
+            className="absolute right-0 top-full mt-1 z-50 bg-card border border-border shadow-lg min-w-[180px] py-1"
+            style={{ borderRadius: "var(--radius)" }}
+          >
+            <button
+              onClick={() => {
+                setAbierto(false);
+                setNuevoNombre(nombre);
+                setNuevaDescripcion(descripcion ?? "");
+                setEditando(true);
+              }}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left"
+            >
+              <Pencil className="w-4 h-4 text-primary" />
+              Editar tablero
+            </button>
+            <button
+              onClick={() => { setAbierto(false); setVoteModal(true); }}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors text-left"
+            >
+              <Trash2 className="w-4 h-4" />
+              Proponer eliminación
+            </button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
 
 // ── Componente principal ──────────────────────────────────────────────────────
 
@@ -961,16 +1195,26 @@ export function ForumBoardView() {
             <h1 className="text-foreground">Publicaciones</h1>
           )}
         </div>
-        {canInteract && (
-          <button
-            onClick={() => setShowNewPostModal(true)}
-            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap flex-shrink-0"
-            style={{ borderRadius: "var(--radius)" }}
-          >
-            <Plus className="w-5 h-5" />
-            Nueva Publicación
-          </button>
-        )}
+        <div className="flex items-center gap-2 flex-shrink-0">
+         {isAdmin && tablero && (
+            <TableroAdminMenu
+              portalId={portalId!}
+              tableroId={tableroId}
+              nombre={tablero.nombre}
+              descripcion={tablero.descripcion ?? null}
+            />
+          )}
+          {canInteract && (
+            <button
+              onClick={() => setShowNewPostModal(true)}
+              className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap"
+              style={{ borderRadius: "var(--radius)" }}
+            >
+              <Plus className="w-5 h-5" />
+              Nueva Publicación
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Estados */}
