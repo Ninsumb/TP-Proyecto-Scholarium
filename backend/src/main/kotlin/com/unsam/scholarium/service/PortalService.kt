@@ -482,4 +482,41 @@ class PortalService(
 
         portalBloqueoRepository.deleteByPortalAndUsuario(portal, usuarioObjetivo)
     }
+
+    @Transactional(rollbackOn = [Exception::class])
+    fun cambiarUniversidad(portalId: Long, nuevaUniversidad: String) {
+        val portal = portalRepository.findById(portalId).getOrNull()
+            ?: throw ElementDoesNotExistException("Portal no encontrado")
+        // Revalidar unicidad con la carrera existente
+        val universidadNormalizada = Portal.normalizarParaUnicidad(nuevaUniversidad)
+        val carreraNormalizada = Portal.normalizarParaUnicidad(portal.carrera)
+        if (portalRepository.existePortalConValoresNormalizados(universidadNormalizada, carreraNormalizada)) {
+            throw BusinessException("Ya existe un portal con esa universidad y carrera")
+        }
+        portal.universidad = nuevaUniversidad.trim()
+        portal.universidadNormalizada = universidadNormalizada
+        portalRepository.save(portal)
+    }
+
+    @Transactional(rollbackOn = [Exception::class])
+    fun cambiarCarrera(portalId: Long, nuevaCarrera: String) {
+        val portal = portalRepository.findById(portalId).getOrNull()
+            ?: throw ElementDoesNotExistException("Portal no encontrado")
+        val universidadNormalizada = Portal.normalizarParaUnicidad(portal.universidad)
+        val carreraNormalizada = Portal.normalizarParaUnicidad(nuevaCarrera)
+        if (portalRepository.existePortalConValoresNormalizados(universidadNormalizada, carreraNormalizada)) {
+            throw BusinessException("Ya existe un portal con esa universidad y carrera")
+        }
+        portal.carrera = nuevaCarrera.trim()
+        portal.carreraNormalizada = carreraNormalizada
+        portalRepository.save(portal)
+    }
+
+    @Transactional(rollbackOn = [Exception::class])
+    fun archivarPortal(portalId: Long) {
+        val portal = portalRepository.findById(portalId).getOrNull()
+            ?: throw ElementDoesNotExistException("Portal no encontrado")
+        portal.activo = false
+        portalRepository.save(portal)
+    }
 }

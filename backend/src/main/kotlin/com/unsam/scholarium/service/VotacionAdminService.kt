@@ -30,7 +30,9 @@ class VotacionAdminService(
     private val usuarioRepository: UsuarioRepository,
     private val membresiaRepository: MembresiaRepository,
     @Lazy private val portalService: PortalService,
-    private val objectMapper: com.fasterxml.jackson.databind.ObjectMapper,  // ← agregar
+    @Lazy private val materiaService: MateriaService,
+    @Lazy private val foroService: ForoService,
+    private val objectMapper: com.fasterxml.jackson.databind.ObjectMapper,
 ) {
 
     companion object {
@@ -229,6 +231,7 @@ class VotacionAdminService(
         val emailProponente = votacion.proponente.email
 
         when (votacion.tipo) {
+
             TipoVotacion.DEGRADAR_ADMIN -> {
                 val usuarioId = votacion.entidadId?.toLongOrNull()
                     ?: throw BusinessException("entidadId inválido para DEGRADAR_ADMIN")
@@ -239,15 +242,22 @@ class VotacionAdminService(
                 )
             }
 
-            // TODO: cuando exista membresiaService.expulsar(usuarioId, portalId)
-            TipoVotacion.EXPULSION_MIEMBRO -> { /* TODO */ }
+            TipoVotacion.EXPULSION_MIEMBRO -> {
+                val usuarioId = votacion.entidadId?.toLongOrNull()
+                    ?: throw BusinessException("entidadId inválido para EXPULSION_MIEMBRO")
+                portalService.removerMiembro(
+                    portalId = votacion.portal.id!!,
+                    usuarioObjetivoId = usuarioId,
+                    emailAdmin = emailProponente,
+                )
+            }
 
-            // TODO: cuando exista portalBloqueoService.bloquear(portal, usuarioId, motivo)
+            //TODO CUANDO ESTE IMPLEMENTADO EL ENDPOINT
             TipoVotacion.BLOQUEO_MIEMBRO -> { /* TODO */ }
 
-            // TODO: portalService.cambiarTipoAcceso(portal, nuevoTipo desde metadatos)
-            TipoVotacion.CAMBIO_TIPO_ACCESO -> {  val metadatosJson = votacion.metadatos
-                ?: throw BusinessException("metadatos requeridos para CAMBIO_TIPO_ACCESO")
+            TipoVotacion.CAMBIO_TIPO_ACCESO -> {
+                val metadatosJson = votacion.metadatos
+                    ?: throw BusinessException("metadatos requeridos para CAMBIO_TIPO_ACCESO")
                 val nuevoTipoStr = objectMapper.readTree(metadatosJson)
                     .get("nuevoTipoAcceso")?.asText()
                     ?: throw BusinessException("Campo nuevoTipoAcceso ausente en metadatos")
@@ -255,19 +265,51 @@ class VotacionAdminService(
                 portalService.cambiarTipoAcceso(
                     portalId = votacion.portal.id!!,
                     nuevoTipo = nuevoTipo,
-                ) }
+                )
+            }
 
-            // TODO: portalService.cambiarInfo(portal, nuevaInfo desde metadatos)
-            TipoVotacion.CAMBIO_INFO_PORTAL -> { /* TODO */ }
+            TipoVotacion.CAMBIO_UNIVERSIDAD -> {
+                val metadatosJson = votacion.metadatos
+                    ?: throw BusinessException("metadatos requeridos para CAMBIO_UNIVERSIDAD")
+                val nuevoValor = objectMapper.readTree(metadatosJson)
+                    .get("nuevoValor")?.asText()
+                    ?: throw BusinessException("Campo nuevoValor ausente en metadatos")
+                portalService.cambiarUniversidad(
+                    portalId = votacion.portal.id!!,
+                    nuevaUniversidad = nuevoValor,
+                )
+            }
 
-            // TODO: materiaService.eliminar(UUID desde entidadId)
-            TipoVotacion.ELIMINAR_MATERIA -> { /* TODO */ }
+            TipoVotacion.CAMBIO_CARRERA -> {
+                val metadatosJson = votacion.metadatos
+                    ?: throw BusinessException("metadatos requeridos para CAMBIO_CARRERA")
+                val nuevoValor = objectMapper.readTree(metadatosJson)
+                    .get("nuevoValor")?.asText()
+                    ?: throw BusinessException("Campo nuevoValor ausente en metadatos")
+                portalService.cambiarCarrera(
+                    portalId = votacion.portal.id!!,
+                    nuevaCarrera = nuevoValor,
+                )
+            }
 
-            // TODO: tableroService.eliminar(tableroId desde entidadId)
-            TipoVotacion.ELIMINAR_TABLERO -> { /* TODO */ }
+            TipoVotacion.ELIMINAR_MATERIA -> {
+                //TODO: Impementar bien un endpoint que haga soft delete de la materia...
+               /* val materiaId = votacion.entidadId?.let {
+                    runCatching { java.util.UUID.fromString(it) }.getOrNull()
+                } ?: throw BusinessException("entidadId inválido para ELIMINAR_MATERIA")
+                materiaService.eliminarMateria(materiaId)*/
+            }
 
-            // TODO: portalService.archivar(portal)
-            TipoVotacion.ARCHIVAR_PORTAL -> { /* TODO */ }
+            TipoVotacion.ELIMINAR_TABLERO -> {
+                val tableroId = votacion.entidadId?.let {
+                    runCatching { java.util.UUID.fromString(it) }.getOrNull()
+                } ?: throw BusinessException("entidadId inválido para ELIMINAR_TABLERO")
+                foroService.eliminarTablero(tableroId)
+            }
+
+            TipoVotacion.ARCHIVAR_PORTAL -> {
+                portalService.archivarPortal(votacion.portal.id!!)
+            }
         }
     }
 

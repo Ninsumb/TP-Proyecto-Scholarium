@@ -411,19 +411,18 @@ export function PortalConfig() {
     setLoadingVote(true);
 
     const tipoMap: Record<typeof voteModal.type, CrearVotacionRequest["tipo"]> = {
-      university:   "CAMBIO_INFO_PORTAL",
-      career:       "CAMBIO_INFO_PORTAL",
+      university:   "CAMBIO_UNIVERSIDAD",
+      career:       "CAMBIO_CARRERA",
       portalAccess: "CAMBIO_TIPO_ACCESO",
       archive:      "ARCHIVAR_PORTAL",
     };
 
     let metadatos: string | null = null;
     if (voteModal.type === "university") {
-      metadatos = JSON.stringify({ campo: "universidad", valor: identityData.universityName });
+      metadatos = JSON.stringify({ nuevoValor: identityData.universityName });
     } else if (voteModal.type === "career") {
-      metadatos = JSON.stringify({ campo: "carrera", valor: identityData.careerName });
+      metadatos = JSON.stringify({ nuevoValor: identityData.careerName });
     } else if (voteModal.type === "portalAccess") {
-      // El nuevo tipo es el inverso del actual: si está ABIERTO se propone CERRADO y viceversa.
       const nuevoTipo: TipoAcceso = isPortalOpen ? "CERRADO" : "ABIERTO";
       metadatos = JSON.stringify({ nuevoTipoAcceso: nuevoTipo });
     }

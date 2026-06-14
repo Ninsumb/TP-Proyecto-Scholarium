@@ -6,6 +6,8 @@ import {
 import { adminService } from "../../../services/AdminService";
 import { authService } from "../../../services/AuthService";
 import { usePortalContext } from "../../../hooks/usePortalContext";
+import { usePortalContext } from "../../../Hooks/usePortalContext";
+
 import type {
   MiembroResponse,
   VotacionResponse,
@@ -296,15 +298,35 @@ function VoteConfirmModal({
 // ─── Helper: etiqueta legible de TipoVotacion ────────────────────────────────
 
 const TIPO_LABEL: Record<string, string> = {
-  EXPULSION_MIEMBRO: "Expulsión de miembro",
-  BLOQUEO_MIEMBRO:   "Bloqueo de miembro",
-  DEGRADAR_ADMIN:    "Degradar administrador",
+  EXPULSION_MIEMBRO:  "Expulsión de miembro",
+  BLOQUEO_MIEMBRO:    "Bloqueo de miembro",
+  DEGRADAR_ADMIN:     "Degradar administrador",
   CAMBIO_TIPO_ACCESO: "Cambio de tipo de acceso",
-  CAMBIO_INFO_PORTAL: "Cambio de información del portal",
-  ELIMINAR_MATERIA:  "Eliminación de materia",
-  ELIMINAR_TABLERO:  "Eliminación de tablero",
-  ARCHIVAR_PORTAL:   "Archivar portal",
+  CAMBIO_UNIVERSIDAD: "Cambio de universidad",
+  CAMBIO_CARRERA:     "Cambio de carrera",
+  ELIMINAR_MATERIA:   "Eliminación de materia",
+  ELIMINAR_TABLERO:   "Eliminación de tablero",
+  ARCHIVAR_PORTAL:    "Archivar portal",
 };
+
+function parseMetadatosLegible(tipo: string, metadatos: string | null): string | null {
+  if (!metadatos) return null;
+  try {
+    const parsed = JSON.parse(metadatos);
+    switch (tipo) {
+      case "CAMBIO_UNIVERSIDAD":
+        return `Nuevo nombre: "${parsed.nuevoValor}"`;
+      case "CAMBIO_CARRERA":
+        return `Nuevo nombre: "${parsed.nuevoValor}"`;
+      case "CAMBIO_TIPO_ACCESO":
+        return `Nuevo tipo de acceso: ${parsed.nuevoTipoAcceso === "ABIERTO" ? "Abierto" : "Cerrado"}`;
+      default:
+        return null;
+    }
+  } catch {
+    return null;
+  }
+}
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 
@@ -800,6 +822,14 @@ export function AdminPanel() {
                         <p className="text-sm text-foreground">
                           <span className="font-medium">Motivo:</span> {vote.motivo}
                         </p>
+                        {(() => {
+                          const detalle = parseMetadatosLegible(vote.tipo, vote.metadatos ?? null);
+                          return detalle ? (
+                            <p className="text-sm text-foreground mt-1">
+                              <span className="font-medium">Detalle:</span> {detalle}
+                            </p>
+                          ) : null;
+                        })()}
                       </div>
 
                       {/* Barra de progreso */}
@@ -955,6 +985,14 @@ export function AdminPanel() {
                             <p className="text-sm text-foreground">
                               <span className="font-medium">Motivo:</span> {vote.motivo}
                             </p>
+                            {(() => {
+                              const detalle = parseMetadatosLegible(vote.tipo, vote.metadatos ?? null);
+                              return detalle ? (
+                                <p className="text-sm text-foreground mt-1">
+                                  <span className="font-medium">Detalle:</span> {detalle}
+                                </p>
+                              ) : null;
+                            })()}
                           </div>
 
                           <div className="flex items-center justify-between text-xs text-on-surface-variant">

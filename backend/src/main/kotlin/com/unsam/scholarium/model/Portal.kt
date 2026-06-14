@@ -69,7 +69,7 @@ class Portal(
     val fechaRegistro: LocalDateTime = LocalDateTime.now(),
 
     @Column(nullable = false)
-    val activo: Boolean = true,
+    var activo: Boolean = true,
 ) {
     init {
         // Calcular normalizadas al momento de construcción

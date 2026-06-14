@@ -16,6 +16,7 @@ import com.unsam.scholarium.repository.PortalRepository
 import com.unsam.scholarium.repository.UsuarioRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import kotlin.jvm.optionals.getOrNull
 
 @Service
 class ForoService(
@@ -104,6 +105,14 @@ class ForoService(
 
         return foroRepository.findByPortalIdWithEtiqueta(portalId, etiquetaNombre)
             .map { toTableroResponse(it) }
+    }
+
+    @Transactional
+    fun eliminarTablero(tableroId: java.util.UUID) {
+        val tablero = foroRepository.findById(tableroId).getOrNull()
+            ?: throw ElementDoesNotExistException("Tablero no encontrado")
+        tablero.activo = false
+        foroRepository.save(tablero)
     }
 
     private fun toTableroResponse(tablero: Tablero) = TableroResponse(

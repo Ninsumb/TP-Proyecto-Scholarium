@@ -16,6 +16,7 @@ interface ForoRepository : JpaRepository<Tablero, UUID> {
     SELECT t FROM Tablero t 
     JOIN FETCH t.etiqueta e
     WHERE t.portal.id = :portalId 
+    AND t.activo = true
     AND (:etiquetaNombre IS NULL OR e.nombre = :etiquetaNombre)
     ORDER BY t.createdAt DESC
 """)
