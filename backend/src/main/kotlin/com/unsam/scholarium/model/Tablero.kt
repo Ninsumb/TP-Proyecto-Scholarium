@@ -27,6 +27,9 @@ class Tablero(
     @JoinColumn(name = "portal_id", nullable = false)
     var portal: Portal,
 
+    @Column(nullable = false)
+    var activo: Boolean = true,
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     val createdAt: Date? = null,

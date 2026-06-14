@@ -5,11 +5,12 @@ import jakarta.persistence.*
 import java.time.LocalDateTime
 
 enum class TipoVotacion {
+    DEGRADAR_ADMIN,
     EXPULSION_MIEMBRO,
     BLOQUEO_MIEMBRO,
-    DEGRADAR_ADMIN,
+    CAMBIO_UNIVERSIDAD,   // antes CAMBIO_INFO_PORTAL
+    CAMBIO_CARRERA,       // antes CAMBIO_INFO_PORTAL
     CAMBIO_TIPO_ACCESO,
-    CAMBIO_INFO_PORTAL,
     ELIMINAR_MATERIA,
     ELIMINAR_TABLERO,
     ARCHIVAR_PORTAL,
