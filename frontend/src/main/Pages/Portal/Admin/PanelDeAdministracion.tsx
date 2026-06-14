@@ -6,6 +6,8 @@ import {
 import { adminService } from "../../../services/AdminService";
 import { authService } from "../../../services/AuthService";
 import { usePortalContext } from "../../../Hooks/usePortalContext";
+import { useToast } from "../../../hooks/useToast";
+import { Toast } from "../../../Components/common/Toast";
 
 import type {
   MiembroResponse,
@@ -147,6 +149,10 @@ interface VoteModalProps {
 
 function VoteModal({ isOpen, onClose, onConfirm, title, actionDescription, loading }: VoteModalProps) {
   const [reason, setReason] = useState("");
+
+  useEffect(() => {
+    if (isOpen) setReason("");
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -360,13 +366,10 @@ export function AdminPanel() {
   const [votingId, setVotingId] = useState<number | null>(null);
   const [isExecutingAction, setIsExecutingAction] = useState(false);
 
-  const [error,      setError]      = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const { toast, showToast } = useToast();
 
-  const showSuccess = (msg: string) => {
-    setSuccessMsg(msg);
-    setTimeout(() => setSuccessMsg(null), 3500);
-  };
+  const showSuccess = (msg: string) => showToast(msg, "success");
+  const setError    = (msg: string | null) => { if (msg) showToast(msg, "error"); };
 
   // ── Modales ───────────────────────────────────────────────────────────────
 
@@ -636,23 +639,6 @@ export function AdminPanel() {
       </div>
 
       {/* Feedback global */}
-      {error && (
-        <div
-          className="mb-4 p-4 bg-destructive/10 border border-destructive/30 text-destructive text-sm flex justify-between items-center"
-          style={{ borderRadius: "var(--radius)" }}
-        >
-          <span>{error}</span>
-          <button className="ml-2 underline font-medium" onClick={() => setError(null)}>Cerrar</button>
-        </div>
-      )}
-      {successMsg && (
-        <div
-          className="mb-4 p-4 bg-green-600/10 border border-green-600/30 text-green-700 text-sm"
-          style={{ borderRadius: "var(--radius)" }}
-        >
-          {successMsg}
-        </div>
-      )}
 
       {/* Tabs */}
       <div className="mb-6 border-b border-border">
@@ -1062,6 +1048,8 @@ export function AdminPanel() {
         actionDescription={voteConfirmModal.actionDescription}
         loading={votingId !== null}
       />
+
+      <Toast toast={toast} />   
     </div>
   );
 }

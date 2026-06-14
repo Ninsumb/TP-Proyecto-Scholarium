@@ -7,6 +7,8 @@ import type {
   PlantillaSolicitudResponse,
   CrearVotacionRequest,
 } from "../../../types/Admin/Admin";
+import { useToast } from "../../../hooks/useToast";
+import { Toast } from "../../../Components/common/Toast";
 
 // ─── Opciones de icono y color ────────────────────────────────────────────────
 
@@ -83,6 +85,10 @@ function ConfirmModal({ isOpen, onClose, onConfirm, title, message, loading }: C
 
 function VoteModal({ isOpen, onClose, onConfirm, title, description, loading }: VoteModalProps) {
   const [reason, setReason] = useState("");
+
+  useEffect(() => {
+    if (isOpen) setReason("");
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -212,8 +218,7 @@ export function PortalConfig() {
   const [loadingToggleRequest, setLoadingToggleRequest] = useState(false);
   const [loadingVote,          setLoadingVote]           = useState(false);
 
-  const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const { toast, showToast } = useToast();
 
   // Modales
   const [voteModal, setVoteModal] = useState<{
@@ -248,10 +253,8 @@ export function PortalConfig() {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  const showSuccess = (msg: string) => {
-    setSuccessMsg(msg);
-    setTimeout(() => setSuccessMsg(null), 3000);
-  };
+  const showSuccess = (msg: string) => showToast(msg, "success");
+  const setError    = (msg: string | null) => { if (msg) showToast(msg, "error"); };
 
   const closeVoteModal   = () => setVoteModal((prev)   => ({ ...prev, isOpen: false }));
   const closeConfirmModal = () => setConfirmModal((prev) => ({ ...prev, isOpen: false }));
@@ -464,23 +467,6 @@ export function PortalConfig() {
       </div>
 
       {/* Feedback global */}
-      {error && (
-        <div
-          className="mb-4 p-4 bg-destructive/10 border border-destructive/30 text-destructive text-sm"
-          style={{ borderRadius: "var(--radius)" }}
-        >
-          {error}
-          <button className="ml-2 underline" onClick={() => setError(null)}>Cerrar</button>
-        </div>
-      )}
-      {successMsg && (
-        <div
-          className="mb-4 p-4 bg-green-600/10 border border-green-600/30 text-green-700 text-sm"
-          style={{ borderRadius: "var(--radius)" }}
-        >
-          {successMsg}
-        </div>
-      )}
 
       <div className="space-y-6">
 
@@ -916,6 +902,9 @@ export function PortalConfig() {
         message={confirmModal.message}
         loading={loadingDescription || loadingVisual || loadingToggleRequest || loadingRequirements}
       />
+
+      <Toast toast={toast} />
+
     </div>
   );
 }
