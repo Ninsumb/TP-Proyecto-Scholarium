@@ -1,15 +1,13 @@
 package com.unsam.scholarium.service
 
+import com.unsam.scholarium.dto.ActualizarPlantillaSolicitudRequest
 import com.unsam.scholarium.dto.CarpetaArbolDTO
 import com.unsam.scholarium.dto.CarpetaRequest
-
 import com.unsam.scholarium.dto.MateriaArbolDTO
 import com.unsam.scholarium.dto.CrearPortalRequest
 import com.unsam.scholarium.dto.PortalEstructuraDTO
-import com.unsam.scholarium.dto.CarpetaResponse
 import com.unsam.scholarium.dto.MembresiaResponse
 import com.unsam.scholarium.dto.PortalBusquedaResponse
-import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.ItemConflictException
@@ -33,7 +31,11 @@ import com.unsam.scholarium.repository.PortalRepository
 import com.unsam.scholarium.repository.UsuarioRepository
 import com.unsam.scholarium.dto.MiembroResponse
 import com.unsam.scholarium.dto.ActualizarPortalRequest
+import com.unsam.scholarium.dto.CambiarTipoAccesoRequest
+import com.unsam.scholarium.dto.VotacionResponse
 import com.unsam.scholarium.model.TipoAcceso
+import com.unsam.scholarium.model.TipoVotacion
+import com.unsam.scholarium.repository.PortalBloqueoRepository
 import jakarta.transaction.Transactional
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
@@ -50,6 +52,8 @@ class PortalService(
     private val usuarioRepository: UsuarioRepository,
     private val etiquetaRepository: EtiquetaRepository,
     private val plantillaSolicitudRepository: PlantillaSolicitudRepository,
+    private val votacionAdminService: VotacionAdminService,
+    private val portalBloqueoRepository: PortalBloqueoRepository
 ) {
     fun getDetalleById(id: Long, email: String): Triple<Portal, RolMembresia?, List<Int>> {
         val portal = portalRepository.findById(id).getOrNull()
@@ -68,9 +72,6 @@ class PortalService(
 
         return Triple(portal, membresia?.rol, stats)
     }
-
-
-
 
     fun getEstructuraPortal(id: Long, email: String): PortalEstructuraDTO {
         val portal = portalRepository.findById(id)
@@ -135,7 +136,6 @@ class PortalService(
             carpetas = carpetasRaiz.sortedBy { it.orden }
         )
     }
-
 
     /**
      * Crea un Portal nuevo y retorna la entidad persistida.
@@ -258,7 +258,56 @@ class PortalService(
     }
 
     @Transactional(rollbackOn = [Exception::class])
-    fun patch(portal: Portal, adminId: Long) {
+    fun solicitarCambioTipoAcceso(
+        portalId: Long,
+        email: String,
+        request: CambiarTipoAccesoRequest
+    ): VotacionResponse {
+        val portal = validarPortal(portalId)
+
+        val usuario = validarUsuario(email)
+
+        validarMembresiaUsuario(usuario, portalId, RolMembresia.ADMIN)
+
+        val votacion = votacionAdminService.crearVotacion(
+            portalId = portalId,
+            tipo = TipoVotacion.CAMBIO_TIPO_ACCESO,
+            motivo = request.motivo,
+            entidadId = portal.id.toString(),
+            metadatos = "nuevoTipoAcceso: ${request.nuevoTipoAcceso}",
+            emailProponente = email
+        )
+
+        return votacionAdminService.toResponse(votacion)
+    }
+
+    @Transactional(rollbackOn = [Exception::class])
+    fun actualizarPlantillaSolicitud(
+        idPortal: Long,
+        email: String,
+        request: ActualizarPlantillaSolicitudRequest
+    ) {
+        val usuario = validarUsuario(email)
+
+        validarMembresiaUsuario(usuario, idPortal, RolMembresia.ADMIN)
+
+        val plantilla = plantillaSolicitudRepository.findByPortalId(idPortal)
+            ?: throw ElementDoesNotExistException("Plantilla de solicitud no encontrada")
+
+        val requisitos = request.requisitos.trim()
+
+        if (requisitos.isBlank()) throw BusinessException("Los requisitos no pueden estar vacíos")
+
+        if (requisitos.length > 1000) throw BusinessException("Los requisitos son demasiado largos")
+
+        plantilla.requisitos = requisitos
+        plantilla.abierta = request.abierta
+
+        plantillaSolicitudRepository.save(plantilla)
+    }
+
+    @Transactional(rollbackOn = [Exception::class])
+    fun patch(portal: Portal) {
         portalRepository.save(portal)
     }
 
@@ -278,7 +327,6 @@ class PortalService(
 
     @Transactional(rollbackOn = [Exception::class])
     fun removerMiembro(portalId: Long, usuarioObjetivoId: Long, emailAdmin: String) {
-        val portal = validarPortal(portalId)
         val admin = validarUsuario(emailAdmin)
 
         val membresiaAdmin = membresiaRepository.findByUsuarioIdAndPortalId(admin.id!!, portalId)
@@ -298,7 +346,7 @@ class PortalService(
     }
 
     fun promoverAdmin(portalId: Long, usuarioObjetivoId: Long, emailAdmin: String): MembresiaResponse  {
-        val portal = validarPortal(portalId)
+        validarPortal(portalId)
         val admin = validarUsuario(emailAdmin)
 
         val membresiaAdmin = membresiaRepository.findByUsuarioIdAndPortalId(admin.id!!, portalId)
@@ -357,14 +405,6 @@ class PortalService(
         )
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-// AGREGAR ESTOS MÉTODOS AL PortalService EXISTENTE
-// (no es un archivo standalone: copiar los métodos dentro de la clase PortalService)
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Import adicional necesario en PortalService:
-
-
     /**
      * Devuelve todos los miembros activos del portal.
      * Solo accesible por admins del portal.
@@ -412,5 +452,26 @@ class PortalService(
         request.tipoAcceso?.let    { portal.tipoAcceso        = it    }
 
         return portalRepository.save(portal)
+    }
+
+    @Transactional(rollbackOn = [Exception::class])
+    fun levantarBloqueo(portalId: Long, userId: Long, emailAdmin: String) {
+        val portal = validarPortal(portalId)
+        val admin = validarUsuario(emailAdmin)
+
+        validarMembresiaUsuario(admin, portalId, RolMembresia.ADMIN)
+
+        val usuarioObjetivo = usuarioRepository.findById(userId).getOrNull()
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        val membresia = membresiaRepository.findByUsuarioIdAndPortalId(userId, portalId)
+
+        val estaBloqueado = portalBloqueoRepository.existsByPortalAndUsuario(portal, usuarioObjetivo)
+
+        if (!estaBloqueado) throw BusinessException("El usuario no está bloqueado")
+
+        membresia?.let { membresiaRepository.delete(it) }
+
+        portalBloqueoRepository.deleteByPortalAndUsuario(portal, usuarioObjetivo)
     }
 }

@@ -20,6 +20,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 import kotlin.jvm.optionals.getOrNull
+import org.springframework.context.annotation.Lazy
 
 @Service
 class VotacionAdminService(
@@ -28,7 +29,7 @@ class VotacionAdminService(
     private val portalRepository: PortalRepository,
     private val usuarioRepository: UsuarioRepository,
     private val membresiaRepository: MembresiaRepository,
-    private val portalService: PortalService,
+    @Lazy private val portalService: PortalService
 ) {
 
     companion object {

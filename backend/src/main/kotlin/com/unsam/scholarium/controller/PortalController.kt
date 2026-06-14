@@ -1,5 +1,6 @@
 package com.unsam.scholarium.controller
 
+import com.unsam.scholarium.dto.ActualizarPlantillaSolicitudRequest
 import com.unsam.scholarium.dto.CarpetaRequest
 import com.unsam.scholarium.dto.CarpetaResponse
 import com.unsam.scholarium.dto.CrearPortalRequest
@@ -13,6 +14,8 @@ import com.unsam.scholarium.dto.SolicitudRequest
 import com.unsam.scholarium.dto.SolicitudResponse
 import com.unsam.scholarium.dto.MiembroResponse
 import com.unsam.scholarium.dto.ActualizarPortalRequest
+import com.unsam.scholarium.dto.CambiarTipoAccesoRequest
+import com.unsam.scholarium.dto.VotacionResponse
 import com.unsam.scholarium.mapper.PortalMapper
 import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.service.MaterialService
@@ -61,7 +64,6 @@ class PortalController(
             portalService.getEstructuraPortal(id, email)
         )
     }
-
 
     @GetMapping("/{id}/material/pendiente")
     fun obtenerMaterialPendiente(
@@ -118,12 +120,37 @@ class PortalController(
         return ResponseEntity.status(HttpStatus.OK).body("Carpeta renombrada a $nuevoNombre")
     }
 
+    @PutMapping("/{idPortal}/tipo-acceso")
+    fun cambiarTipoAcceso(
+        @PathVariable idPortal: Long,
+        @RequestBody request: CambiarTipoAccesoRequest,
+        authentication: Authentication
+    ): ResponseEntity<VotacionResponse> {
+        val email = authentication.name
+
+        val votacion = portalService.solicitarCambioTipoAcceso(idPortal, email, request)
+
+        return ResponseEntity.accepted().body(votacion)
+    }
+
+    @PutMapping("/{id}/plantilla-solicitud")
+    fun actualizarPlantillaSolicitud(
+        @PathVariable id: Long,
+        @RequestBody request: ActualizarPlantillaSolicitudRequest,
+        authentication: Authentication
+    ): ResponseEntity<Void> {
+        val email = authentication.name
+
+        portalService.actualizarPlantillaSolicitud(id, email, request)
+
+        return ResponseEntity.ok().build()
+    }
+
     @PatchMapping
     fun patchPortal(
-        @RequestBody portal: Portal,
-        @RequestParam adminId: Long
+        @RequestBody portal: Portal
     ) {
-        portalService.patch(portal, adminId)
+        portalService.patch(portal)
     }
 
     @GetMapping("/buscar")
@@ -176,13 +203,6 @@ class PortalController(
         )
     }
 
-    // ══════════════════════════════════════════════════════════════════════════════
-// EN PortalController — agregar los siguientes imports y métodos:
-//
-// Import adicionales:
-
-// ══════════════════════════════════════════════════════════════════════════════
-
     /**
      * Lista todos los miembros activos del portal.
      * Solo admins.
@@ -210,8 +230,21 @@ class PortalController(
         authentication: Authentication,
     ): ResponseEntity<PortalResponse> {
         val email = authentication.name
-        val portalActualizado = portalService.actualizarPortal(portalId, email, request)
+        portalService.actualizarPortal(portalId, email, request)
         val detalleData = portalService.getDetalleById(portalId, email)
         return ResponseEntity.ok(PortalMapper.toDetalleDTO(detalleData))
+    }
+
+    @DeleteMapping("/{id}/bloqueos/{userId}")
+    fun levantarBloqueo(
+        @PathVariable id: Long,
+        @PathVariable userId: Long,
+        authentication: Authentication
+    ): ResponseEntity<Void> {
+        val email = authentication.name
+
+        portalService.levantarBloqueo(id, userId, email)
+
+        return ResponseEntity.noContent().build()
     }
 }
