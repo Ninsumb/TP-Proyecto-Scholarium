@@ -68,6 +68,11 @@ class DataInitializer {
             admin.fotoPerfil = subirFotoBootstrap("/bootstrap-assets/test.jpg", admin.id!!)
             usuarioRepo.save(admin)
 
+            val admin2 = usuarioRepo.save(
+                Usuario(nombre = "Pepita", email = "pepi@test.com", password = passwordEncoder.encode("1234"))
+            )
+            usuarioRepo.save(admin2)
+
             val solicitante = usuarioRepo.save(
                 Usuario(nombre = "Juan García", email = "juan@test.com", password = passwordEncoder.encode("1234"))
             )
@@ -179,6 +184,7 @@ class DataInitializer {
 
             // ── Membresías ────────────────────────────────────────────────
             membresiaRepo.save(Membresia(usuario = admin, portal = portal, rol = RolMembresia.ADMIN))
+            membresiaRepo.save(Membresia(usuario = admin2, portal = portal, rol = RolMembresia.ADMIN))
             membresiaRepo.save(Membresia(usuario = nuevoAdmin, portal = portal, rol = RolMembresia.ADMIN))
             membresiaRepo.save(Membresia(usuario = noAdmin, portal = portal, rol = RolMembresia.MIEMBRO))
             membresiaRepo.save(Membresia(usuario = variasMembresias, portal = portal, rol = RolMembresia.MIEMBRO))

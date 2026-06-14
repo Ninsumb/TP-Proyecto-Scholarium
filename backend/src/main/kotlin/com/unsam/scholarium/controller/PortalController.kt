@@ -120,7 +120,7 @@ class PortalController(
         return ResponseEntity.status(HttpStatus.OK).body("Carpeta renombrada a $nuevoNombre")
     }
 
-    @PutMapping("/{idPortal}/tipo-acceso")
+/*    @PutMapping("/{idPortal}/tipo-acceso")
     fun cambiarTipoAcceso(
         @PathVariable idPortal: Long,
         @RequestBody request: CambiarTipoAccesoRequest,
@@ -131,7 +131,7 @@ class PortalController(
         val votacion = portalService.solicitarCambioTipoAcceso(idPortal, email, request)
 
         return ResponseEntity.accepted().body(votacion)
-    }
+    }*/
 
     @PutMapping("/{id}/plantilla-solicitud")
     fun actualizarPlantillaSolicitud(

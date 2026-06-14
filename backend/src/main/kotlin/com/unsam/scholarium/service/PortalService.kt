@@ -257,7 +257,7 @@ class PortalService(
         carpetaRepository.save(carpeta)
     }
 
-    @Transactional(rollbackOn = [Exception::class])
+/*    @Transactional(rollbackOn = [Exception::class])
     fun solicitarCambioTipoAcceso(
         portalId: Long,
         email: String,
@@ -279,6 +279,14 @@ class PortalService(
         )
 
         return votacionAdminService.toResponse(votacion)
+    }*/
+
+    @Transactional(rollbackOn = [Exception::class])
+    fun cambiarTipoAcceso(portalId: Long, nuevoTipo: TipoAcceso) {
+        val portal = portalRepository.findById(portalId).getOrNull()
+            ?: throw ElementDoesNotExistException("Portal no encontrado")
+        portal.tipoAcceso = nuevoTipo
+        portalRepository.save(portal)
     }
 
     @Transactional(rollbackOn = [Exception::class])
@@ -449,7 +457,7 @@ class PortalService(
         request.iconoPortal?.let   { portal.iconoPortal       = it.trim().takeIf { v -> v.isNotBlank() } }
         request.colorPortal?.let   { portal.colorPortal       = it.trim().takeIf { v -> v.isNotBlank() } }
         request.logoUrl?.let       { portal.logoUrl           = it.trim().takeIf { v -> v.isNotBlank() } }
-        request.tipoAcceso?.let    { portal.tipoAcceso        = it    }
+
 
         return portalRepository.save(portal)
     }

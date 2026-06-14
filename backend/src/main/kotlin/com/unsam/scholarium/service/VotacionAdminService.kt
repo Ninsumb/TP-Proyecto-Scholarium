@@ -29,7 +29,8 @@ class VotacionAdminService(
     private val portalRepository: PortalRepository,
     private val usuarioRepository: UsuarioRepository,
     private val membresiaRepository: MembresiaRepository,
-    @Lazy private val portalService: PortalService
+    @Lazy private val portalService: PortalService,
+    private val objectMapper: com.fasterxml.jackson.databind.ObjectMapper,  // ← agregar
 ) {
 
     companion object {
@@ -245,7 +246,16 @@ class VotacionAdminService(
             TipoVotacion.BLOQUEO_MIEMBRO -> { /* TODO */ }
 
             // TODO: portalService.cambiarTipoAcceso(portal, nuevoTipo desde metadatos)
-            TipoVotacion.CAMBIO_TIPO_ACCESO -> { /* TODO */ }
+            TipoVotacion.CAMBIO_TIPO_ACCESO -> {  val metadatosJson = votacion.metadatos
+                ?: throw BusinessException("metadatos requeridos para CAMBIO_TIPO_ACCESO")
+                val nuevoTipoStr = objectMapper.readTree(metadatosJson)
+                    .get("nuevoTipoAcceso")?.asText()
+                    ?: throw BusinessException("Campo nuevoTipoAcceso ausente en metadatos")
+                val nuevoTipo = com.unsam.scholarium.model.TipoAcceso.valueOf(nuevoTipoStr)
+                portalService.cambiarTipoAcceso(
+                    portalId = votacion.portal.id!!,
+                    nuevoTipo = nuevoTipo,
+                ) }
 
             // TODO: portalService.cambiarInfo(portal, nuevaInfo desde metadatos)
             TipoVotacion.CAMBIO_INFO_PORTAL -> { /* TODO */ }
