@@ -223,4 +223,16 @@ class PostService(
         post.eliminado = true
         postRepository.save(post)
     }
+
+    @Transactional(readOnly = true)
+    fun buscarPostsEnTablero(tableroId: UUID, email: String, q: String): List<PostResponse> {
+        if (q.isBlank()) return emptyList()
+
+        val usuario = resolverUsuario(email)
+        val tablero = resolverTablero(tableroId)
+        validarAccesoLecturaDesdePortalId(usuario.id!!, tablero.portal.id!!, tablero.portal)
+
+        return postRepository.buscarPostsEnTablero(tableroId, q.trim())
+            .map { toResponse(it) }
+    }
 }

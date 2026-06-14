@@ -3,6 +3,7 @@ package com.unsam.scholarium.repository
 import com.unsam.scholarium.model.Post
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import java.util.UUID
 
 interface PostRepository : JpaRepository<Post, UUID> {
@@ -56,4 +57,36 @@ interface PostRepository : JpaRepository<Post, UUID> {
         nativeQuery = true
     )
     fun findAllRespuestasRecursivas(postId: UUID): List<Post>
+
+    @Query(
+        value = """
+    SELECT DISTINCT p.*
+    FROM posts p
+    WHERE p.tablero_id = :tableroId
+      AND p.post_padre_id IS NULL
+      AND p.eliminado = false
+      AND (
+          p.titulo ILIKE '%' || :q || '%'
+          OR p.contenido ILIKE '%' || :q || '%'
+          OR EXISTS (
+              WITH RECURSIVE hilo AS (
+                  SELECT r.id, r.contenido, r.eliminado FROM posts r
+                  WHERE r.post_padre_id = p.id
+                  UNION ALL
+                  SELECT r2.id, r2.contenido, r2.eliminado FROM posts r2
+                  INNER JOIN hilo h ON r2.post_padre_id = h.id
+              )
+              SELECT 1 FROM hilo
+              WHERE hilo.contenido ILIKE '%' || :q || '%'
+                AND hilo.eliminado = false
+          )
+      )
+    ORDER BY p.created_at DESC
+    """,
+        nativeQuery = true
+    )
+    fun buscarPostsEnTablero(
+        @Param("tableroId") tableroId: UUID,
+        @Param("q") q: String
+    ): List<Post>
 }
