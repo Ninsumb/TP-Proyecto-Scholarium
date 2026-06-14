@@ -114,7 +114,7 @@ class DataInitializer {
                     universidad = "Universidad Nacional de San Martín",
                     carrera = "Tecnicatura en Programación Informática",
                     unidadAcademica = "Escuela de Ciencia y Tecnología",
-                    descripcion = "Portal de la carrera de Programación: Full Stack, C y lenguajes raros.",
+                    descripcion = "Espacio para estudiantes de la Tecnicatura Universitaria en Programación Informática de la UNSAM. La carrera forma profesionales capaces de diseñar, desarrollar y mantener soluciones de software, participar en proyectos informáticos de mediana envergadura y adaptarse a las nuevas tecnologías. Aquí encontrarás materiales, recursos y discusiones sobre programación, algoritmos, bases de datos, redes, arquitectura de computadoras y desarrollo de software.",
                     iconoPortal = "Code",
                     colorPortal = "#2563EB",
                     tipoAcceso = TipoAcceso.ABIERTO,
@@ -126,7 +126,7 @@ class DataInitializer {
                 universidad = "Universidad Nacional de San Martín",
                 carrera = "Tecnicatura en Redes Informáticas",
                 unidadAcademica = "Escuela de Ciencia y Tecnología",
-                descripcion = "Redes, protocolos y todo lo que mantiene internet en pie.",
+                descripcion = "Portal de la Tecnicatura Universitaria en Redes Informáticas de la UNSAM. La carrera está orientada al diseño, instalación, administración y mantenimiento de redes de computadoras, formando profesionales capaces de implementar soluciones de comunicación, evaluar infraestructuras tecnológicas y colaborar en proyectos de redes y seguridad informática. Un espacio para compartir conocimientos sobre protocolos, conectividad, sistemas distribuidos y tecnologías de comunicación.",
                 iconoPortal = "Network",
                 colorPortal = "#7C3AED",
                 tipoAcceso = TipoAcceso.ABIERTO,
@@ -136,7 +136,7 @@ class DataInitializer {
             val portalDatos = portalRepo.save(Portal(
                 universidad = "Universidad Nacional de San Martín",
                 carrera = "Licenciatura en Ciencias de Datos",
-                descripcion = "Datos, modelos y predicciones.",
+                descripcion = "Comunidad de la Licenciatura en Ciencia de Datos de la UNSAM. La carrera combina matemática, estadística e informática para formar profesionales capaces de analizar grandes volúmenes de datos, construir modelos predictivos y desarrollar soluciones basadas en evidencia. Encontrarás materiales relacionados con programación, aprendizaje automático, estadística, visualización de datos e investigación aplicada.",
                 iconoPortal = "BarChart2",
                 colorPortal = "#059669",
                 tipoAcceso = TipoAcceso.CERRADO,
@@ -189,7 +189,7 @@ class DataInitializer {
             membresiaRepo.save(Membresia(usuario = noAdmin, portal = portal, rol = RolMembresia.MIEMBRO))
             membresiaRepo.save(Membresia(usuario = variasMembresias, portal = portal, rol = RolMembresia.MIEMBRO))
             membresiaRepo.save(Membresia(usuario = variasMembresias, portal = portalRedes, rol = RolMembresia.ADMIN))
-            membresiaRepo.save(Membresia(usuario = bloqueado, portal = portal, rol = RolMembresia.MIEMBRO))
+            /*membresiaRepo.save(Membresia(usuario = bloqueado, portal = portal, rol = RolMembresia.MIEMBRO))*/
             // laura@test.com no tiene membresía en ningún portal → sirve para probar acceso como visitante
 
             // ── PlantillaSolicitud ─────────────────────────────────────────
@@ -237,40 +237,769 @@ class DataInitializer {
                 )
             )
 
-            // ── Carpetas ──────────────────────────────────────────────────
-            val carpetaPrimerAnio = carpetaRepo.save(Carpeta(nombre = "Primer Año", portal = portal))
-            val carpetaSegundoAnio = carpetaRepo.save(Carpeta(nombre = "Segundo Año", portal = portal))
-            val carpetaTercerAnio = carpetaRepo.save(Carpeta(nombre = "Tercer Año", portal = portal))
-            val carpetaElectivas = carpetaRepo.save(Carpeta(nombre = "Electivas", portal = portal))
+            // ── Carpetas TPI ────────────────────────────────────────────────
 
-            // Subcarpetas
-            val carpetaCuatri1 = carpetaRepo.save(Carpeta(nombre = "Primer Cuatrimestre", portal = portal, carpetaPadre = carpetaPrimerAnio))
-            val carpetaCuatri2 = carpetaRepo.save(Carpeta(nombre = "Segundo Cuatrimestre", portal = portal, carpetaPadre = carpetaPrimerAnio))
-            val carpetaSeg1 = carpetaRepo.save(Carpeta(nombre = "Primer Cuatrimestre", portal = portal, carpetaPadre = carpetaSegundoAnio))
-            val carpetaSeg2 = carpetaRepo.save(Carpeta(nombre = "Segundo Cuatrimestre", portal = portal, carpetaPadre = carpetaSegundoAnio))
+            // Años
+            val primerAnio = carpetaRepo.save(
+                Carpeta(nombre = "Primer Año", portal = portal)
+            )
 
-            // ── Materias ──────────────────────────────────────────────────
-            // Primer año, cuatri 1
-            val materiaAlgo = materiaRepo.save(Materia(nombre = "Algoritmos y Estructuras de Datos", carpeta = carpetaCuatri1))
-            val materiaMatem = materiaRepo.save(Materia(nombre = "Matemática 1", carpeta = carpetaCuatri1))
-            val materiaIntro = materiaRepo.save(Materia(nombre = "Introducción a la Programación", carpeta = carpetaCuatri1))
+            val segundoAnio = carpetaRepo.save(
+                Carpeta(nombre = "Segundo Año", portal = portal)
+            )
 
-            // Primer año, cuatri 2
-            val materiaSO = materiaRepo.save(Materia(nombre = "Sistemas Operativos", carpeta = carpetaCuatri2))
-            val materiaArqui = materiaRepo.save(Materia(nombre = "Arquitectura de Computadoras", carpeta = carpetaCuatri2))
-            val materiaMatem2 = materiaRepo.save(Materia(nombre = "Matemática 2", carpeta = carpetaCuatri2))
+            val tercerAnio = carpetaRepo.save(
+                Carpeta(nombre = "Tercer Año", portal = portal)
+            )
 
-            // Segundo año, cuatri 1
-            val materiaBD = materiaRepo.save(Materia(nombre = "Base de Datos", carpeta = carpetaSeg1))
-            val materiaRedes = materiaRepo.save(Materia(nombre = "Redes de Computadoras", carpeta = carpetaSeg1))
+            // Cuatrimestres
+            val primerAnioC1 = carpetaRepo.save(
+                Carpeta(
+                    nombre = "Primer Cuatrimestre",
+                    portal = portal,
+                    carpetaPadre = primerAnio
+                )
+            )
 
-            // Segundo año, cuatri 2
-            val materiaWeb = materiaRepo.save(Materia(nombre = "Desarrollo Web", carpeta = carpetaSeg2))
-            val materiaSec = materiaRepo.save(Materia(nombre = "Seguridad Informática", carpeta = carpetaSeg2))
+            val primerAnioC2 = carpetaRepo.save(
+                Carpeta(
+                    nombre = "Segundo Cuatrimestre",
+                    portal = portal,
+                    carpetaPadre = primerAnio
+                )
+            )
 
-            // Electivas
-            val materiaIA = materiaRepo.save(Materia(nombre = "Inteligencia Artificial", carpeta = carpetaElectivas))
-            val materiaCloud = materiaRepo.save(Materia(nombre = "Cloud Computing", carpeta = carpetaElectivas))
+            val segundoAnioC1 = carpetaRepo.save(
+                Carpeta(
+                    nombre = "Tercer Cuatrimestre",
+                    portal = portal,
+                    carpetaPadre = segundoAnio
+                )
+            )
+
+            val segundoAnioC2 = carpetaRepo.save(
+                Carpeta(
+                    nombre = "Cuarto Cuatrimestre",
+                    portal = portal,
+                    carpetaPadre = segundoAnio
+                )
+            )
+
+            val tercerAnioC1 = carpetaRepo.save(
+                Carpeta(
+                    nombre = "Quinto Cuatrimestre",
+                    portal = portal,
+                    carpetaPadre = tercerAnio
+                )
+            )
+
+            val tercerAnioC2 = carpetaRepo.save(
+                Carpeta(
+                    nombre = "Sexto Cuatrimestre",
+                    portal = portal,
+                    carpetaPadre = tercerAnio
+                )
+            )
+
+
+            // ── Materias TPI ────────────────────────────────────────────────
+
+            // ===== PRIMER AÑO - 1° CUATRIMESTRE =====
+
+            val matematicaI = materiaRepo.save(
+                Materia(
+                    nombre = "Matemática I",
+                    descripcion = "Introducción al análisis matemático, álgebra y geometría aplicada a la informática. Incluye funciones, límites, derivadas, integrales, matrices, sistemas de ecuaciones y ecuaciones diferenciales con apoyo computacional.",
+                    carpeta = primerAnioC1
+                )
+            )
+
+            val laboratorioComputacionI = materiaRepo.save(
+                Materia(
+                    nombre = "Laboratorio de Computación I",
+                    descripcion = "Primer acercamiento al uso de computadoras y herramientas informáticas. Se trabajan conceptos básicos de programación, resolución de problemas, planillas de cálculo y aplicaciones estadísticas.",
+                    carpeta = primerAnioC1
+                )
+            )
+
+            val electricidadMagnetismo = materiaRepo.save(
+                Materia(
+                    nombre = "Electricidad y Magnetismo",
+                    descripcion = "Fundamentos de física orientados a sistemas informáticos y de comunicaciones. Abarca circuitos eléctricos, campos electromagnéticos, ondas, inducción y tecnologías de transmisión inalámbrica.",
+                    carpeta = primerAnioC1
+                )
+            )
+
+
+            // ===== PRIMER AÑO - 2° CUATRIMESTRE =====
+
+            val laboratorioComputacionII = materiaRepo.save(
+                Materia(
+                    nombre = "Laboratorio de Computación II",
+                    descripcion = "Profundización en programación y resolución de problemas mediante herramientas informáticas. Incluye sistemas operativos, redes, algoritmos numéricos y fundamentos de estadística aplicada.",
+                    carpeta = primerAnioC2
+                )
+            )
+
+            val sistemasProcesamientoDatos = materiaRepo.save(
+                Materia(
+                    nombre = "Sistemas de Procesamiento de Datos",
+                    descripcion = "Estudio de la organización interna de las computadoras modernas. Se analizan procesadores, memoria, dispositivos de entrada y salida, software de base y arquitecturas de alto desempeño.",
+                    carpeta = primerAnioC2
+                )
+            )
+
+            val matematicaII = materiaRepo.save(
+                Materia(
+                    nombre = "Matemática II",
+                    descripcion = "Curso orientado a lógica, teoría de conjuntos, combinatoria, álgebra y geometría analítica. Proporciona herramientas matemáticas fundamentales para la informática y el análisis formal.",
+                    carpeta = primerAnioC2
+                )
+            )
+
+
+            // ===== SEGUNDO AÑO - 1° CUATRIMESTRE =====
+
+            val algoritmosI = materiaRepo.save(
+                Materia(
+                    nombre = "Algoritmos I",
+                    descripcion = "Introducción al diseño, especificación y corrección de programas. Se estudian estructuras de datos básicas, tipos abstractos y procesamiento de secuencias mediante proyectos prácticos.",
+                    carpeta = segundoAnioC1
+                )
+            )
+
+            val matematicaIII = materiaRepo.save(
+                Materia(
+                    nombre = "Matemática III",
+                    descripcion = "Matemática discreta aplicada a la informática. Incluye lógica formal, álgebra de Boole, teoría de grafos, redes, conteo, recurrencia y análisis de algoritmos.",
+                    carpeta = segundoAnioC1
+                )
+            )
+
+            val arquitecturaSO = materiaRepo.save(
+                Materia(
+                    nombre = "Conceptos de Arquitecturas y Sistemas Operativos",
+                    descripcion = "Estudio de la relación entre el hardware y los sistemas operativos. Se trabajan procesos, administración de recursos, sistemas distribuidos y arquitecturas de computadoras.",
+                    carpeta = segundoAnioC1
+                )
+            )
+
+
+            // ===== SEGUNDO AÑO - 2° CUATRIMESTRE =====
+
+            val algoritmosII = materiaRepo.save(
+                Materia(
+                    nombre = "Algoritmos II",
+                    descripcion = "Profundización en estructuras de datos avanzadas y técnicas de diseño de algoritmos. Se estudian recursión, árboles, grafos, diccionarios y métodos formales de especificación.",
+                    carpeta = segundoAnioC2
+                )
+            )
+
+            val redesLocales = materiaRepo.save(
+                Materia(
+                    nombre = "Redes Locales",
+                    descripcion = "Introducción a las redes informáticas de área local. Incluye topologías, protocolos, servidores, TCP/IP, administración de sistemas en red y fundamentos de seguridad.",
+                    carpeta = segundoAnioC2
+                )
+            )
+
+            val metodosNumericos = materiaRepo.save(
+                Materia(
+                    nombre = "Métodos Numéricos",
+                    descripcion = "Herramientas matemáticas para la resolución computacional de problemas numéricos. Se estudian aproximación, interpolación, integración numérica, ecuaciones diferenciales y métodos iterativos.",
+                    carpeta = segundoAnioC2
+                )
+            )
+
+
+            // ===== TERCER AÑO - 1° CUATRIMESTRE =====
+
+            val algoritmosIII = materiaRepo.save(
+                Materia(
+                    nombre = "Algoritmos III",
+                    descripcion = "Desarrollo de aplicaciones distribuidas bajo el paradigma cliente-servidor. Se estudian sistemas distribuidos, comunicación entre procesos, transacciones, servicios de red y aplicaciones colaborativas.",
+                    carpeta = tercerAnioC1
+                )
+            )
+
+            val basesDatos = materiaRepo.save(
+                Materia(
+                    nombre = "Bases de Datos",
+                    descripcion = "Diseño, implementación y optimización de bases de datos. Incluye modelos de datos, SQL, transacciones, concurrencia, recuperación y administración de sistemas gestores.",
+                    carpeta = tercerAnioC1
+                )
+            )
+
+            val seminarioConcurrente = materiaRepo.save(
+                Materia(
+                    nombre = "Seminario de Programación Concurrente, Paralela y Distribuida",
+                    descripcion = "Introducción a la concurrencia y el paralelismo en sistemas informáticos. Se abordan sincronización, exclusión mutua, semáforos, monitores, scheduling y comunicación entre procesos.",
+                    carpeta = tercerAnioC1
+                )
+            )
+
+
+            // ===== TERCER AÑO - 2° CUATRIMESTRE =====
+
+            val herramientasModernas = materiaRepo.save(
+                Materia(
+                    nombre = "Programación con Herramientas Modernas",
+                    descripcion = "Desarrollo de aplicaciones web y distribuidas utilizando tecnologías modernas. Incluye interfaces web, acceso a bases de datos, programación segura y herramientas orientadas a Internet.",
+                    carpeta = tercerAnioC2
+                )
+            )
+
+            val proyectosSoftware = materiaRepo.save(
+                Materia(
+                    nombre = "Proyectos de Software",
+                    descripcion = "Aplicación práctica de metodologías de desarrollo mediante proyectos integradores. Se trabajan análisis, diseño, planificación, implementación y gestión de proyectos de software.",
+                    carpeta = tercerAnioC2
+                )
+            )
+
+            val paradigmasProgramacion = materiaRepo.save(
+                Materia(
+                    nombre = "Paradigmas de Programación",
+                    descripcion = "Estudio comparativo de distintos enfoques de programación, incluyendo paradigmas imperativo, orientado a objetos, funcional y lógico, junto con sus aplicaciones.",
+                    carpeta = tercerAnioC2
+                )
+            )
+
+
+            // ===== Carpetas TRI =====
+
+            val primerAnioTRI = carpetaRepo.save(
+                Carpeta(nombre = "Primer Año", portal = portalRedes)
+            )
+
+            val segundoAnioTRI = carpetaRepo.save(
+                Carpeta(nombre = "Segundo Año", portal = portalRedes)
+            )
+
+            val tercerAnioTRI = carpetaRepo.save(
+                Carpeta(nombre = "Tercer Año", portal = portalRedes)
+            )
+
+            val cuatrimestre1TRI = carpetaRepo.save(
+                Carpeta(
+                    nombre = "1° Cuatrimestre",
+                    portal = portalRedes,
+                    carpetaPadre = primerAnioTRI
+                )
+            )
+
+            val cuatrimestre2TRI = carpetaRepo.save(
+                Carpeta(
+                    nombre = "2° Cuatrimestre",
+                    portal = portalRedes,
+                    carpetaPadre = primerAnioTRI
+                )
+            )
+
+            val cuatrimestre3TRI = carpetaRepo.save(
+                Carpeta(
+                    nombre = "3° Cuatrimestre",
+                    portal = portalRedes,
+                    carpetaPadre = segundoAnioTRI
+                )
+            )
+
+            val cuatrimestre4TRI = carpetaRepo.save(
+                Carpeta(
+                    nombre = "4° Cuatrimestre",
+                    portal = portalRedes,
+                    carpetaPadre = segundoAnioTRI
+                )
+            )
+
+            val cuatrimestre5TRI = carpetaRepo.save(
+                Carpeta(
+                    nombre = "5° Cuatrimestre",
+                    portal = portalRedes,
+                    carpetaPadre = tercerAnioTRI
+                )
+            )
+
+            val cuatrimestre6TRI = carpetaRepo.save(
+                Carpeta(
+                    nombre = "6° Cuatrimestre",
+                    portal = portalRedes,
+                    carpetaPadre = tercerAnioTRI
+                )
+            )
+
+            // ===== 1° CUATRIMESTRE =====
+
+            materiaRepo.save(
+                Materia(
+                    nombre = "Matemática I",
+                    descripcion = "Introducción al análisis matemático, álgebra y geometría aplicada a problemas informáticos y de comunicaciones.",
+                    carpeta = cuatrimestre1TRI
+                )
+            )
+
+            materiaRepo.save(
+                Materia(
+                    nombre = "Laboratorio de Computación I",
+                    descripcion = "Primer acercamiento al uso de computadoras, herramientas informáticas, programación básica y resolución de problemas.",
+                    carpeta = cuatrimestre1TRI
+                )
+            )
+
+            materiaRepo.save(
+                Materia(
+                    nombre = "Electricidad y Magnetismo",
+                    descripcion = "Fundamentos de física orientados a sistemas electrónicos, comunicaciones y transmisión de información.",
+                    carpeta = cuatrimestre1TRI
+                )
+            )
+
+
+            // ===== 2° CUATRIMESTRE =====
+
+            materiaRepo.save(
+                Materia(
+                    nombre = "Laboratorio de Computación II",
+                    descripcion = "Programación aplicada, sistemas operativos, redes y herramientas computacionales para la resolución de problemas.",
+                    carpeta = cuatrimestre2TRI
+                )
+            )
+
+            materiaRepo.save(
+                Materia(
+                    nombre = "Sistemas de Procesamiento de Datos",
+                    descripcion = "Estudio de la arquitectura interna de las computadoras, procesadores, dispositivos de entrada y salida y software de base.",
+                    carpeta = cuatrimestre2TRI
+                )
+            )
+
+            materiaRepo.save(
+                Materia(
+                    nombre = "Matemática II",
+                    descripcion = "Lógica, teoría de conjuntos, combinatoria, álgebra y geometría analítica como herramientas fundamentales para la informática.",
+                    carpeta = cuatrimestre2TRI
+                )
+            )
+
+
+            // ===== 3° CUATRIMESTRE =====
+
+            materiaRepo.save(
+                Materia(
+                    nombre = "Algoritmos I",
+                    descripcion = "Diseño, implementación y verificación de algoritmos, estructuras de datos y tratamiento de secuencias y archivos.",
+                    carpeta = cuatrimestre3TRI
+                )
+            )
+
+            materiaRepo.save(
+                Materia(
+                    nombre = "Conceptos de Arquitecturas y Sistemas Operativos",
+                    descripcion = "Arquitectura de computadoras, administración de recursos y funcionamiento de sistemas operativos modernos.",
+                    carpeta = cuatrimestre3TRI
+                )
+            )
+
+            materiaRepo.save(
+                Materia(
+                    nombre = "Matemática III",
+                    descripcion = "Matemática discreta, lógica formal, álgebra de Boole, teoría de grafos, redes y análisis de algoritmos.",
+                    carpeta = cuatrimestre3TRI
+                )
+            )
+
+
+            // ===== 4° CUATRIMESTRE =====
+
+            materiaRepo.save(
+                Materia(
+                    nombre = "Redes de Información I",
+                    descripcion = "Fundamentos de comunicaciones de datos, modelo OSI, protocolos, redes LAN y tecnologías de transmisión.",
+                    carpeta = cuatrimestre4TRI
+                )
+            )
+
+            materiaRepo.save(
+                Materia(
+                    nombre = "Redes Locales",
+                    descripcion = "Diseño, instalación y administración de redes locales, topologías, servidores y protocolos de comunicación.",
+                    carpeta = cuatrimestre4TRI
+                )
+            )
+
+            materiaRepo.save(
+                Materia(
+                    nombre = "Proyecto I",
+                    descripcion = "Proyecto integrador enfocado en infraestructura física de redes, cableado estructurado, direccionamiento y planificación.",
+                    carpeta = cuatrimestre4TRI
+                )
+            )
+
+
+            // ===== 5° CUATRIMESTRE =====
+
+            materiaRepo.save(
+                Materia(
+                    nombre = "Redes de Información II",
+                    descripcion = "Protocolos avanzados de red, transmisión de voz y datos, aplicaciones distribuidas y comunicaciones seguras.",
+                    carpeta = cuatrimestre5TRI
+                )
+            )
+
+            materiaRepo.save(
+                Materia(
+                    nombre = "Administración de Redes de Computadoras",
+                    descripcion = "Configuración, monitoreo, seguridad y administración de infraestructuras de red y servicios asociados.",
+                    carpeta = cuatrimestre5TRI
+                )
+            )
+
+            materiaRepo.save(
+                Materia(
+                    nombre = "Proyecto II",
+                    descripcion = "Continuación del proyecto integrador con foco en configuración lógica, ruteo y administración de dispositivos de red.",
+                    carpeta = cuatrimestre5TRI
+                )
+            )
+
+
+            // ===== 6° CUATRIMESTRE =====
+
+            materiaRepo.save(
+                Materia(
+                    nombre = "Redes de Información III",
+                    descripcion = "Aplicaciones distribuidas, middleware, sistemas cliente-servidor, seguridad, VPN y servicios de red avanzados.",
+                    carpeta = cuatrimestre6TRI
+                )
+            )
+
+            materiaRepo.save(
+                Materia(
+                    nombre = "Sistemas Avanzados de Comunicación",
+                    descripcion = "Tecnologías avanzadas de transmisión de datos, QoS, redes de alta velocidad, servicios distribuidos y comunicaciones modernas.",
+                    carpeta = cuatrimestre6TRI
+                )
+            )
+
+            materiaRepo.save(
+                Materia(
+                    nombre = "Proyecto III",
+                    descripcion = "Proyecto final orientado al diseño de redes WAN, selección de protocolos y planificación integral de comunicaciones.",
+                    carpeta = cuatrimestre6TRI
+                )
+            )
+
+            // ===== AÑOS =====
+
+            val primerAnioDatos = carpetaRepo.save(
+                Carpeta(
+                    nombre = "Primer Año",
+                    portal = portalDatos
+                )
+            )
+
+            val segundoAnioDatos = carpetaRepo.save(
+                Carpeta(
+                    nombre = "Segundo Año",
+                    portal = portalDatos
+                )
+            )
+
+            val tercerAnioDatos = carpetaRepo.save(
+                Carpeta(
+                    nombre = "Tercer Año",
+                    portal = portalDatos
+                )
+            )
+
+            val cuartoAnioDatos = carpetaRepo.save(
+                Carpeta(
+                    nombre = "Cuarto Año",
+                    portal = portalDatos
+                )
+            )
+
+
+            // ===== CUATRIMESTRES =====
+
+            val cuatrimestre1Datos = carpetaRepo.save(
+                Carpeta(
+                    nombre = "1° Cuatrimestre",
+                    portal = portalDatos,
+                    carpetaPadre = primerAnioDatos
+                )
+            )
+
+            val cuatrimestre2Datos = carpetaRepo.save(
+                Carpeta(
+                    nombre = "2° Cuatrimestre",
+                    portal = portalDatos,
+                    carpetaPadre = primerAnioDatos
+                )
+            )
+
+            val cuatrimestre3Datos = carpetaRepo.save(
+                Carpeta(
+                    nombre = "3° Cuatrimestre",
+                    portal = portalDatos,
+                    carpetaPadre = segundoAnioDatos
+                )
+            )
+
+            val cuatrimestre4Datos = carpetaRepo.save(
+                Carpeta(
+                    nombre = "4° Cuatrimestre",
+                    portal = portalDatos,
+                    carpetaPadre = segundoAnioDatos
+                )
+            )
+
+            val cuatrimestre5Datos = carpetaRepo.save(
+                Carpeta(
+                    nombre = "5° Cuatrimestre",
+                    portal = portalDatos,
+                    carpetaPadre = tercerAnioDatos
+                )
+            )
+
+            val cuatrimestre6Datos = carpetaRepo.save(
+                Carpeta(
+                    nombre = "6° Cuatrimestre",
+                    portal = portalDatos,
+                    carpetaPadre = tercerAnioDatos
+                )
+            )
+
+            val cuatrimestre7Datos = carpetaRepo.save(
+                Carpeta(
+                    nombre = "7° Cuatrimestre",
+                    portal = portalDatos,
+                    carpetaPadre = cuartoAnioDatos
+                )
+            )
+
+            val cuatrimestre8Datos = carpetaRepo.save(
+                Carpeta(
+                    nombre = "8° Cuatrimestre",
+                    portal = portalDatos,
+                    carpetaPadre = cuartoAnioDatos
+                )
+            )
+
+            // ===== 1° CUATRIMESTRE =====
+
+            val analisisI = materiaRepo.save(
+                Materia(
+                    nombre = "Análisis I",
+                    descripcion = "Introducción al cálculo diferencial e integral de una variable. Estudia funciones, límites, continuidad, derivadas, integrales y ecuaciones diferenciales aplicadas a la resolución de problemas matemáticos y científicos.",
+                    carpeta = cuatrimestre1Datos
+                )
+            )
+
+            val introduccionCienciaDatos = materiaRepo.save(
+                Materia(
+                    nombre = "Introducción a la Ciencia de Datos",
+                    descripcion = "Primer acercamiento al análisis de datos y su aplicación a problemas reales. Incluye obtención, limpieza, exploración y visualización de datos, construcción de modelos estadísticos básicos y evaluación de resultados.",
+                    carpeta = cuatrimestre1Datos
+                )
+            )
+
+            val programacionI = materiaRepo.save(
+                Materia(
+                    nombre = "Programación I",
+                    descripcion = "Introducción a la programación utilizando Python. Se trabajan estructuras de control, tipos de datos, programación orientada a objetos, visualización de datos y herramientas fundamentales para el análisis computacional.",
+                    carpeta = cuatrimestre1Datos
+                )
+            )
+
+
+            // ===== 2° CUATRIMESTRE =====
+
+            val analisisII = materiaRepo.save(
+                Materia(
+                    nombre = "Análisis II",
+                    descripcion = "Extensión del cálculo a varias variables. Incluye funciones vectoriales, derivadas parciales, integrales múltiples, ecuaciones diferenciales y herramientas matemáticas para modelar fenómenos complejos.",
+                    carpeta = cuatrimestre2Datos
+                )
+            )
+
+            val matematicaDiscreta = materiaRepo.save(
+                Materia(
+                    nombre = "Matemática Discreta",
+                    descripcion = "Fundamentos matemáticos para la informática y la ciencia de datos. Abarca lógica, combinatoria, teoría de grafos, álgebra lineal, matrices, espacios vectoriales y transformaciones lineales.",
+                    carpeta = cuatrimestre2Datos
+                )
+            )
+
+            val introduccionAA = materiaRepo.save(
+                Materia(
+                    nombre = "Introducción al Aprendizaje Automático",
+                    descripcion = "Presentación de los conceptos fundamentales del aprendizaje automático, incluyendo regresión, clasificación, regularización, árboles de decisión, máquinas de soporte vectorial y evaluación de modelos.",
+                    carpeta = cuatrimestre2Datos
+                )
+            )
+
+
+            // ===== 3° CUATRIMESTRE =====
+
+            val infraestructuraCD = materiaRepo.save(
+                Materia(
+                    nombre = "Infraestructura para Ciencia de Datos",
+                    descripcion = "Estudio de la infraestructura tecnológica necesaria para proyectos de datos. Incluye arquitectura de computadoras, redes, virtualización, computación en la nube, clusters y procesamiento con GPU.",
+                    carpeta = cuatrimestre3Datos
+                )
+            )
+
+            val algoritmosICD = materiaRepo.save(
+                Materia(
+                    nombre = "Algoritmos I",
+                    descripcion = "Diseño e implementación de programas utilizando estructuras de datos básicas, especificación formal y técnicas de construcción y validación de algoritmos.",
+                    carpeta = cuatrimestre3Datos
+                )
+            )
+
+            val probabilidadEstadistica = materiaRepo.save(
+                Materia(
+                    nombre = "Probabilidad y Estadística",
+                    descripcion = "Introducción a la teoría de probabilidades y la estadística. Incluye distribuciones, inferencia, regresión, pruebas de hipótesis, procesos estocásticos y análisis descriptivo de datos.",
+                    carpeta = cuatrimestre3Datos
+                )
+            )
+
+
+            // ===== 4° CUATRIMESTRE =====
+
+            val estadisticaInferenciaI = materiaRepo.save(
+                Materia(
+                    nombre = "Estadística e Inferencia I",
+                    descripcion = "Estudio de métodos estadísticos clásicos y bayesianos para la construcción y validación de modelos. Incluye estimación, regresión, inferencia bayesiana y modelos gráficos.",
+                    carpeta = cuatrimestre4Datos
+                )
+            )
+
+            val algoritmosII2 = materiaRepo.save(
+                Materia(
+                    nombre = "Algoritmos II",
+                    descripcion = "Profundización en estructuras de datos avanzadas y metodologías formales de especificación e implementación de algoritmos, incluyendo árboles, grafos y diccionarios.",
+                    carpeta = cuatrimestre4Datos
+                )
+            )
+
+            val electivaI = materiaRepo.save(
+                Materia(
+                    nombre = "Electiva I",
+                    descripcion = "Espacio curricular destinado a complementar la formación mediante contenidos especializados elegidos por el estudiante.",
+                    carpeta = cuatrimestre4Datos
+                )
+            )
+
+
+            // ===== 5° CUATRIMESTRE =====
+
+            val estadisticaInferenciaII = materiaRepo.save(
+                Materia(
+                    nombre = "Estadística e Inferencia II",
+                    descripcion = "Continuación de los modelos estadísticos avanzados. Se estudian modelos bayesianos jerárquicos, procesos gaussianos, clustering, estimación de densidades y modelos no paramétricos.",
+                    carpeta = cuatrimestre5Datos
+                )
+            )
+
+            val programacionII = materiaRepo.save(
+                Materia(
+                    nombre = "Programación II",
+                    descripcion = "Herramientas avanzadas de programación para ciencia de datos. Incluye análisis de rendimiento, desarrollo en Python, uso de bibliotecas especializadas y control de versiones.",
+                    carpeta = cuatrimestre5Datos
+                )
+            )
+
+            val electivaII = materiaRepo.save(
+                Materia(
+                    nombre = "Electiva II",
+                    descripcion = "Asignatura optativa orientada a profundizar conocimientos en áreas específicas relacionadas con la ciencia de datos.",
+                    carpeta = cuatrimestre5Datos
+                )
+            )
+
+
+            // ===== 6° CUATRIMESTRE =====
+
+            val cienciaDatos = materiaRepo.save(
+                Materia(
+                    nombre = "Ciencia de Datos",
+                    descripcion = "Aplicación práctica de técnicas modernas de análisis de datos. Incluye métodos de muestreo, reducción de dimensionalidad, inferencia aproximada, visualización avanzada y modelado estadístico.",
+                    carpeta = cuatrimestre6Datos
+                )
+            )
+
+            val basesDatosCD = materiaRepo.save(
+                Materia(
+                    nombre = "Bases de Datos",
+                    descripcion = "Diseño, implementación y administración de bases de datos. Abarca modelado de datos, SQL, optimización de consultas, concurrencia y recuperación de información.",
+                    carpeta = cuatrimestre6Datos
+                )
+            )
+
+            val ingenieriaSoftware = materiaRepo.save(
+                Materia(
+                    nombre = "Ingeniería de Software",
+                    descripcion = "Principios y prácticas para el desarrollo de software de calidad. Incluye metodologías ágiles, DevOps, arquitectura de software, gestión de proyectos y aspectos éticos y legales.",
+                    carpeta = cuatrimestre6Datos
+                )
+            )
+
+
+            // ===== 7° CUATRIMESTRE =====
+
+            val aprendizajeAutomatico = materiaRepo.save(
+                Materia(
+                    nombre = "Aprendizaje Automático",
+                    descripcion = "Estudio profundo de algoritmos de aprendizaje supervisado. Incluye regresión logística, perceptrones, redes neuronales, árboles de decisión, random forests y support vector machines.",
+                    carpeta = cuatrimestre7Datos
+                )
+            )
+
+            val electivaIII = materiaRepo.save(
+                Materia(
+                    nombre = "Electiva III",
+                    descripcion = "Espacio de especialización que permite profundizar conocimientos en áreas específicas de interés profesional o académico.",
+                    carpeta = cuatrimestre7Datos
+                )
+            )
+
+            val optativaI = materiaRepo.save(
+                Materia(
+                    nombre = "Optativa I",
+                    descripcion = "Materia de libre elección destinada a ampliar la formación interdisciplinaria del estudiante.",
+                    carpeta = cuatrimestre7Datos
+                )
+            )
+
+
+            // ===== 8° CUATRIMESTRE =====
+
+            val aprendizajeProfundo = materiaRepo.save(
+                Materia(
+                    nombre = "Aprendizaje Profundo",
+                    descripcion = "Estudio de redes neuronales profundas y técnicas modernas de inteligencia artificial. Incluye CNN, LSTM, autoencoders, GANs, procesamiento de lenguaje natural y aprendizaje por refuerzo.",
+                    carpeta = cuatrimestre8Datos
+                )
+            )
+
+            val optativaII = materiaRepo.save(
+                Materia(
+                    nombre = "Optativa II",
+                    descripcion = "Materia optativa destinada a profundizar competencias específicas relacionadas con el perfil profesional de la carrera.",
+                    carpeta = cuatrimestre8Datos
+                )
+            )
+
+            val optativaIII = materiaRepo.save(
+                Materia(
+                    nombre = "Optativa III",
+                    descripcion = "Espacio curricular flexible para completar la formación mediante contenidos avanzados o interdisciplinarios.",
+                    carpeta = cuatrimestre8Datos
+                )
+            )
 
             // ── Material publicado ─────────────────────────────────────────
 
@@ -282,7 +1011,7 @@ class DataInitializer {
                 url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
                 publicId = "scholarium/mate1/parcial-1c-2023",
                 tamanio = 120, tipoArchivo = "pdf",
-                materia = materiaMatem, usuario = admin, estado = EstadoMaterial.PUBLICADO,
+                materia = arquitecturaSO, usuario = admin, estado = EstadoMaterial.PUBLICADO,
             ))
             materialRepo.save(Material(
                 nombre = "Segundo parcial 2023",
@@ -291,7 +1020,7 @@ class DataInitializer {
                 url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
                 publicId = "scholarium/mate1/parcial-2c-2023",
                 tamanio = 98, tipoArchivo = "pdf",
-                materia = materiaMatem, usuario = admin, estado = EstadoMaterial.PUBLICADO,
+                materia = arquitecturaSO, usuario = admin, estado = EstadoMaterial.PUBLICADO,
             ))
             materialRepo.save(Material(
                 nombre = "Primer parcial 2024",
@@ -300,7 +1029,7 @@ class DataInitializer {
                 url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
                 publicId = "scholarium/mate1/parcial-1c-2024",
                 tamanio = 110, tipoArchivo = "pdf",
-                materia = materiaMatem, usuario = noAdmin, estado = EstadoMaterial.PUBLICADO,
+                materia = arquitecturaSO, usuario = noAdmin, estado = EstadoMaterial.PUBLICADO,
             ))
 
             // Mate 1 — apuntes
@@ -311,7 +1040,7 @@ class DataInitializer {
                 url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
                 publicId = "scholarium/mate1/apunte-limites",
                 tamanio = 245, tipoArchivo = "pdf",
-                materia = materiaMatem, usuario = noAdmin, estado = EstadoMaterial.PUBLICADO,
+                materia = arquitecturaSO, usuario = noAdmin, estado = EstadoMaterial.PUBLICADO,
             ))
             materialRepo.save(Material(
                 nombre = "Apunte — Derivadas e integrales",
@@ -320,7 +1049,7 @@ class DataInitializer {
                 url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
                 publicId = "scholarium/mate1/apunte-derivadas",
                 tamanio = 310, tipoArchivo = "pdf",
-                materia = materiaMatem, usuario = admin, estado = EstadoMaterial.PUBLICADO,
+                materia = arquitecturaSO, usuario = admin, estado = EstadoMaterial.PUBLICADO,
             ))
             materialRepo.save(Material(
                 nombre = "Guía de práctica — Límites",
@@ -329,7 +1058,7 @@ class DataInitializer {
                 url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
                 publicId = "scholarium/mate1/guia-limites",
                 tamanio = 175, tipoArchivo = "pdf",
-                materia = materiaMatem, usuario = admin, estado = EstadoMaterial.PUBLICADO,
+                materia = arquitecturaSO, usuario = admin, estado = EstadoMaterial.PUBLICADO,
             ))
 
             // Algoritmos — materiales
@@ -340,7 +1069,7 @@ class DataInitializer {
                 url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
                 publicId = "scholarium/algo/parcial-2024",
                 tamanio = 88, tipoArchivo = "pdf",
-                materia = materiaAlgo, usuario = admin, estado = EstadoMaterial.PUBLICADO,
+                materia = arquitecturaSO, usuario = admin, estado = EstadoMaterial.PUBLICADO,
             ))
             materialRepo.save(Material(
                 nombre = "Apunte — Listas enlazadas",
@@ -349,7 +1078,7 @@ class DataInitializer {
                 url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
                 publicId = "scholarium/algo/apunte-listas",
                 tamanio = 200, tipoArchivo = "pdf",
-                materia = materiaAlgo, usuario = noAdmin, estado = EstadoMaterial.PUBLICADO,
+                materia = arquitecturaSO, usuario = noAdmin, estado = EstadoMaterial.PUBLICADO,
             ))
             materialRepo.save(Material(
                 nombre = "Guía de práctica — Recursividad",
@@ -358,7 +1087,7 @@ class DataInitializer {
                 url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
                 publicId = "scholarium/algo/guia-recursividad",
                 tamanio = 155, tipoArchivo = "pdf",
-                materia = materiaAlgo, usuario = admin, estado = EstadoMaterial.PUBLICADO,
+                materia = arquitecturaSO, usuario = admin, estado = EstadoMaterial.PUBLICADO,
             ))
 
             // Base de Datos — materiales
@@ -369,7 +1098,7 @@ class DataInitializer {
                 url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
                 publicId = "scholarium/bd/apunte-er",
                 tamanio = 280, tipoArchivo = "pdf",
-                materia = materiaBD, usuario = admin, estado = EstadoMaterial.PUBLICADO,
+                materia = arquitecturaSO, usuario = admin, estado = EstadoMaterial.PUBLICADO,
             ))
             materialRepo.save(Material(
                 nombre = "Guía SQL — Consultas avanzadas",
@@ -378,7 +1107,7 @@ class DataInitializer {
                 url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
                 publicId = "scholarium/bd/guia-sql",
                 tamanio = 190, tipoArchivo = "pdf",
-                materia = materiaBD, usuario = noAdmin, estado = EstadoMaterial.PUBLICADO,
+                materia = arquitecturaSO, usuario = noAdmin, estado = EstadoMaterial.PUBLICADO,
             ))
             materialRepo.save(Material(
                 nombre = "Parcial 2023 — Normalización",
@@ -387,7 +1116,7 @@ class DataInitializer {
                 url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
                 publicId = "scholarium/bd/parcial-normalizacion",
                 tamanio = 95, tipoArchivo = "pdf",
-                materia = materiaBD, usuario = admin, estado = EstadoMaterial.PUBLICADO,
+                materia = arquitecturaSO, usuario = admin, estado = EstadoMaterial.PUBLICADO,
             ))
 
             // Sistemas Operativos — materiales
@@ -398,7 +1127,7 @@ class DataInitializer {
                 url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
                 publicId = "scholarium/so/apunte-procesos",
                 tamanio = 320, tipoArchivo = "pdf",
-                materia = materiaSO, usuario = admin, estado = EstadoMaterial.PUBLICADO,
+                materia = arquitecturaSO, usuario = admin, estado = EstadoMaterial.PUBLICADO,
             ))
             materialRepo.save(Material(
                 nombre = "Parcial 2024 — Memoria y Scheduling",
@@ -407,7 +1136,7 @@ class DataInitializer {
                 url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
                 publicId = "scholarium/so/parcial-2024",
                 tamanio = 130, tipoArchivo = "pdf",
-                materia = materiaSO, usuario = noAdmin, estado = EstadoMaterial.PUBLICADO,
+                materia = arquitecturaSO, usuario = noAdmin, estado = EstadoMaterial.PUBLICADO,
             ))
 
             // Desarrollo Web — materiales
@@ -418,7 +1147,7 @@ class DataInitializer {
                 url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
                 publicId = "scholarium/web/apunte-rest",
                 tamanio = 210, tipoArchivo = "pdf",
-                materia = materiaWeb, usuario = admin, estado = EstadoMaterial.PUBLICADO,
+                materia = arquitecturaSO, usuario = admin, estado = EstadoMaterial.PUBLICADO,
             ))
 
             // Pendientes (para que el admin los vea en la sección de revisión)
@@ -429,7 +1158,7 @@ class DataInitializer {
                 url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
                 publicId = "scholarium/algo/resumen-pendiente",
                 tamanio = 75, tipoArchivo = "pdf",
-                materia = materiaAlgo, usuario = noAdmin, estado = EstadoMaterial.PENDIENTE,
+                materia = arquitecturaSO, usuario = noAdmin, estado = EstadoMaterial.PENDIENTE,
             ))
             materialRepo.save(Material(
                 nombre = "Final de Mate 2 — pendiente de aprobación",
@@ -438,7 +1167,7 @@ class DataInitializer {
                 url = "https://res.cloudinary.com/demo/image/upload/sample.pdf",
                 publicId = "scholarium/mate2/final-pendiente",
                 tamanio = 60, tipoArchivo = "pdf",
-                materia = materiaMatem2, usuario = solicitante, estado = EstadoMaterial.PENDIENTE,
+                materia = arquitecturaSO, usuario = solicitante, estado = EstadoMaterial.PENDIENTE,
             ))
 
             // ── Etiquetas ─────────────────────────────────────────────────

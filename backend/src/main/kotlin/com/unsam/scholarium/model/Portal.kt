@@ -35,7 +35,7 @@ class Portal(
     @Column(nullable = true, length = 200)
     var unidadAcademica: String? = null,
 
-    @Column(length = 300)
+    @Column(length = 1000)
     var descripcion: String? = null,
 
     @Column
@@ -81,7 +81,7 @@ class Portal(
     private fun validar() {
         if (universidad.isBlank()) throw BusinessException("La universidad es obligatoria")
         if (carrera.isBlank()) throw BusinessException("La carrera es obligatoria")
-        if ((descripcion?.length ?: 0) > 300) throw BusinessException("La descripción no puede tener más de 300 caracteres")
+        if ((descripcion?.length ?: 0) > 1000) throw BusinessException("La descripción no puede tener más de 1000 caracteres")
         if ((unidadAcademica?.length ?: 0) > 200) throw BusinessException("La unidad académica no puede tener más de 200 caracteres")
         colorPortal?.let {
             if (!it.matches(Regex("^#[0-9A-Fa-f]{6}$")))
