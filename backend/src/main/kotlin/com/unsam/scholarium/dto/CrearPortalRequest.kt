@@ -27,4 +27,5 @@ data class CrearPortalRequest(
     val logoUrl: String? = null,
     val iconoPortal: String? = null,
     val colorPortal: String? = null,
+    val tipoAcceso: String = "ABIERTO" 
 )

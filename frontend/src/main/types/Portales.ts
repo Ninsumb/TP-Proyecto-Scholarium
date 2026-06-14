@@ -29,7 +29,7 @@ export interface CrearPortalRequest {
   logoUrl?: string;
   iconoPortal?: string;
   colorPortal?: string;
-  //tipoAcceso: TipoAcceso;
+  tipoAcceso: TipoAcceso;
 }
 
 export interface CrearPortalResponse {
