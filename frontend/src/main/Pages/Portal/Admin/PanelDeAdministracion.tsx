@@ -5,13 +5,13 @@ import {
 } from "lucide-react";
 import { adminService } from "../../../services/AdminService";
 import { authService } from "../../../services/AuthService";
-import { usePortalContext } from "../../../hooks/usePortalContext";
 import { usePortalContext } from "../../../Hooks/usePortalContext";
 
 import type {
   MiembroResponse,
   VotacionResponse,
   RolMembresia,
+  CrearVotacionRequest,
 } from "../../../types/Admin/Admin";
 
 // ─── ActionMenu (Gestión de acciones sobre miembros) ─────────────────────────
@@ -320,6 +320,12 @@ function parseMetadatosLegible(tipo: string, metadatos: string | null): string |
         return `Nuevo nombre: "${parsed.nuevoValor}"`;
       case "CAMBIO_TIPO_ACCESO":
         return `Nuevo tipo de acceso: ${parsed.nuevoTipoAcceso === "ABIERTO" ? "Abierto" : "Cerrado"}`;
+      case "EXPULSION_MIEMBRO":
+        return parsed.nombreMiembro ? `Miembro: ${parsed.nombreMiembro}` : null;
+      case "DEGRADAR_ADMIN":
+        return parsed.nombreMiembro ? `Administrador: ${parsed.nombreMiembro}` : null;
+      case "BLOQUEO_MIEMBRO":
+        return parsed.nombreMiembro ? `Miembro: ${parsed.nombreMiembro}` : null;
       default:
         return null;
     }
@@ -511,9 +517,9 @@ export function AdminPanel() {
     setIsExecutingAction(true);
     setError(null);
 
-    let tipoVotacion = "";
+    let tipoVotacion: CrearVotacionRequest["tipo"] | "" = "";
     let actionLabel = "";
-    
+
     if (action === "kick") {
       tipoVotacion = "EXPULSION_MIEMBRO";
       actionLabel = "expulsar";
@@ -526,12 +532,13 @@ export function AdminPanel() {
     }
 
     try {
+      if (!tipoVotacion) return;
+
       await adminService.crearVotacion(portalId, {
         tipo: tipoVotacion,
         motivo: reason,
-        // Al requerirse el id objetivo para este tipo de votaciones en el backend,
-        // asegúrate de que tu interfaz lo incluya en caso de ser necesario.
-        // Ej: usuarioObjetivoId: member.usuarioId 
+        entidadId: String(member.usuarioId),
+        metadatos: JSON.stringify({ nombreMiembro: member.nombre }),
       });
 
       showSuccess(`Se ha abierto la votación para ${actionLabel} a ${member.nombre}.`);
