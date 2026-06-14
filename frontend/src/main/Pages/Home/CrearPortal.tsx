@@ -1,11 +1,10 @@
-// pages/Home/CrearPortal.tsx
-
 import { useState, useRef, useContext } from "react";
 import { useNavigate } from "react-router";
 import {
   ArrowLeft, Upload, Palette, X, Check, Search,
   GraduationCap, BookOpen, Code, Briefcase, FlaskConical,
   Calculator, Languages, Network, BarChart2, Rocket, Cpu, Terminal,
+  Globe, Lock, // <-- Agregamos íconos para el Tipo de Acceso
   type LucideIcon
 } from "lucide-react";
 import { portalService } from "../../services/PortalService";
@@ -51,6 +50,7 @@ interface FormState {
   universidad: string;
   unidadAcademica: string;
   descripcion: string;
+  tipoAcceso: "ABIERTO" | "CERRADO"; // <-- Nuevo campo
 }
 
 export function CreatePortal() {
@@ -64,6 +64,7 @@ export function CreatePortal() {
     universidad: "",
     unidadAcademica: "",
     descripcion: "",
+    tipoAcceso: "CERRADO", // Por defecto cerrado por seguridad
   });
 
   // ── Identidad visual ──
@@ -128,6 +129,7 @@ export function CreatePortal() {
         universidad: form.universidad.trim(),
         unidadAcademica: form.unidadAcademica.trim() || undefined,
         descripcion: form.descripcion.trim() || undefined,
+        tipoAcceso: form.tipoAcceso, // <-- Pasamos el tipo de acceso al servicio
         // identidad visual
         logoUrl: undefined, // TODO: reemplazar con logoUrl cuando esté Cloudinary
         iconoPortal: modoVisual === "icono" ? iconoSeleccionado : undefined,
@@ -275,6 +277,74 @@ export function CreatePortal() {
               <p className="text-xs text-muted-foreground text-right mt-1">
                 {form.descripcion.length}/300
               </p>
+            </div>
+          </section>
+
+          {/* ── Tipo de Acceso ─────────────────────────────────────────── */}
+          <section
+            className="space-y-4 pt-6"
+            style={{ borderTop: "1px solid rgba(169, 180, 185, 0.15)" }}
+          >
+            <h3
+              className="text-lg font-semibold text-foreground flex items-center gap-2"
+              style={{ fontFamily: "Work Sans, sans-serif" }}
+            >
+              Tipo de Acceso
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Determiná cómo se unirán los estudiantes a tu portal.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Tarjeta Abierto */}
+              <button
+                type="button"
+                onClick={() => setForm((prev) => ({ ...prev, tipoAcceso: "ABIERTO" }))}
+                className={`relative flex flex-col p-4 text-left cursor-pointer rounded-sm border-2 transition-all ${
+                  form.tipoAcceso === "ABIERTO"
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-surface-container-lowest hover:border-primary/50"
+                }`}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div
+                    className={`p-2 rounded-full ${
+                      form.tipoAcceso === "ABIERTO" ? "bg-primary text-primary-foreground" : "bg-surface-container text-muted-foreground"
+                    }`}
+                  >
+                    <Globe className="w-4 h-4" />
+                  </div>
+                  <span className="font-semibold text-foreground">Abierto</span>
+                </div>
+                <p className="text-xs text-muted-foreground ml-[44px]">
+                  Cualquier estudiante podrá unirse automáticamente al portal de la carrera.
+                </p>
+              </button>
+
+              {/* Tarjeta Cerrado */}
+              <button
+                type="button"
+                onClick={() => setForm((prev) => ({ ...prev, tipoAcceso: "CERRADO" }))}
+                className={`relative flex flex-col p-4 text-left cursor-pointer rounded-sm border-2 transition-all ${
+                  form.tipoAcceso === "CERRADO"
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-surface-container-lowest hover:border-primary/50"
+                }`}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div
+                    className={`p-2 rounded-full ${
+                      form.tipoAcceso === "CERRADO" ? "bg-primary text-primary-foreground" : "bg-surface-container text-muted-foreground"
+                    }`}
+                  >
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <span className="font-semibold text-foreground">Cerrado</span>
+                </div>
+                <p className="text-xs text-muted-foreground ml-[44px]">
+                  Los estudiantes enviarán una solicitud que requerirá tu aprobación.
+                </p>
+              </button>
             </div>
           </section>
 

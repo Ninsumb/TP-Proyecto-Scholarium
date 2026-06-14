@@ -167,6 +167,7 @@ class PortalService(
             logoUrl = request.logoUrl,
             iconoPortal = request.iconoPortal,
             colorPortal = request.colorPortal,
+            tipoAcceso = TipoAcceso.valueOf(request.tipoAcceso)
         )
 
         val membresiaAdmin = Membresia(
