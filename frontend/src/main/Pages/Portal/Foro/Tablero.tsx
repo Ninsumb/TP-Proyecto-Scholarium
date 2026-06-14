@@ -31,14 +31,40 @@ import type {
   TableroResponse,
 } from "../../../types/Portal/Foro";
 
+// Genera variantes simples de un token para tolerar typos de 1 carácter
+function expandirToken(token: string): string[] {
+  const variantes = new Set<string>([token]);
+
+  // Omisión de un carácter: "cokies" genera "okies", "ckies", "coies", etc.
+  for (let i = 0; i < token.length; i++) {
+    variantes.add(token.slice(0, i) + token.slice(i + 1));
+  }
+
+  // Transposición de dos caracteres adyacentes: "cokies" → "ockies", "ckoies", ...
+  for (let i = 0; i < token.length - 1; i++) {
+    const chars = token.split("");
+    [chars[i], chars[i + 1]] = [chars[i + 1], chars[i]];
+    variantes.add(chars.join(""));
+  }
+
+  return Array.from(variantes).filter((v) => v.length >= 2);
+}
+
 // ── Highlight de palabras clave ───────────────────────────────────────────────
 
 function highlightText(text: string, query: string): React.ReactNode {
   if (!query.trim()) return text;
 
-  // Escapamos caracteres especiales de regex
-  const escaped = query.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const regex = new RegExp(`(${escaped})`, "gi");
+  // Separamos en tokens, escapamos regex, y los unimos con OR
+  const tokens = query
+    .trim()
+    .split(/\s+/)
+    .filter((t) => t.length >= 2)
+    .map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+
+  if (tokens.length === 0) return text;
+
+  const regex = new RegExp(`(${tokens.join("|")})`, "gi");
   const parts = text.split(regex);
 
   return parts.map((part, i) =>
@@ -677,9 +703,15 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, canInteract, sear
             ) : (
               <>
                 {post.titulo && (
-                  <h3 className="text-foreground mb-2">{post.titulo}</h3>
+                  <h3 className="text-foreground mb-2">
+                    {searchQuery ? highlightText(post.titulo, searchQuery) : post.titulo}
+                  </h3>
                 )}
-                <p className="text-foreground leading-relaxed mb-3">{post.contenido}</p>
+                <p className="text-foreground leading-relaxed mb-3">
+                  {searchQuery && post.contenido
+                    ? highlightText(post.contenido, searchQuery)
+                    : post.contenido}
+                </p>
               </>
             )}
 
@@ -1185,9 +1217,15 @@ export function ForumBoardView() {
       try {
         setBuscando(true);
         setErrorBusqueda(null);
-        const results = await foroService.buscarPosts(tableroId, trimmed);
+
+        // Expandimos cada token con sus variantes para tolerar typos
+        const tokensOriginales = trimmed.toLowerCase().split(/\s+/).filter(Boolean);
+        const tokensExpandidos = tokensOriginales.flatMap(expandirToken);
+        const queryExpandida = [...new Set(tokensExpandidos)].join(" ");
+
+        const results = await foroService.buscarPosts(tableroId, queryExpandida);
         setSearchResults(results);
-        setSearchQuery(trimmed);
+        setSearchQuery(trimmed); // Para el highlight usamos la query original, no la expandida
       } catch {
         setErrorBusqueda("No se pudo realizar la búsqueda.");
       } finally {
