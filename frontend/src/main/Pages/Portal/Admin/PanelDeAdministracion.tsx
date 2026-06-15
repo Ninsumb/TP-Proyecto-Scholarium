@@ -8,6 +8,7 @@ import { authService } from "../../../services/AuthService";
 import { usePortalContext } from "../../../Hooks/usePortalContext";
 import { useToast } from "../../../hooks/useToast";
 import { Toast } from "../../../Components/common/Toast";
+import type { AccionAdminResponse, PageAccionAdminResponse } from "../../../types/Admin/Admin";
 
 import type {
   MiembroResponse,
@@ -340,6 +341,60 @@ function parseMetadatosLegible(tipo: string, metadatos: string | null): string |
   }
 }
 
+// ─── Helpers de display del historial ────────────────────────────────────────
+
+const ACCION_CONFIG: Record<string, {
+  label: string;
+  icon: string;
+  colorClass: string;
+}> = {
+  SOLICITUD_APROBADA:           { label: "Solicitud aprobada",         icon: "✅", colorClass: "text-green-600 bg-green-600/10 border-green-600/20" },
+  SOLICITUD_RECHAZADA:          { label: "Solicitud rechazada",        icon: "❌", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
+  MATERIAL_APROBADO:            { label: "Material aprobado",          icon: "✅", colorClass: "text-green-600 bg-green-600/10 border-green-600/20" },
+  MATERIAL_RECHAZADO:           { label: "Material rechazado",         icon: "❌", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
+  MATERIAL_ELIMINADO:           { label: "Material eliminado",         icon: "🗑️", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
+  MIEMBRO_ASCENDIDO:            { label: "Miembro ascendido",          icon: "⬆️", colorClass: "text-primary bg-primary/10 border-primary/20" },
+  MIEMBRO_DEGRADADO:            { label: "Admin degradado",            icon: "⬇️", colorClass: "text-yellow-600 bg-yellow-600/10 border-yellow-600/20" },
+  MIEMBRO_EXPULSADO:            { label: "Miembro expulsado",          icon: "🚪", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
+  MIEMBRO_BLOQUEADO:            { label: "Miembro bloqueado",          icon: "🚫", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
+  BLOQUEO_LEVANTADO:            { label: "Bloqueo levantado",          icon: "🔓", colorClass: "text-green-600 bg-green-600/10 border-green-600/20" },
+  PORTAL_ACTUALIZADO:           { label: "Portal actualizado",         icon: "⚙️", colorClass: "text-primary bg-primary/10 border-primary/20" },
+  PORTAL_TIPO_ACCESO_CAMBIADO:  { label: "Tipo de acceso cambiado",   icon: "🔒", colorClass: "text-yellow-600 bg-yellow-600/10 border-yellow-600/20" },
+  PORTAL_UNIVERSIDAD_CAMBIADA:  { label: "Universidad cambiada",       icon: "🏫", colorClass: "text-primary bg-primary/10 border-primary/20" },
+  PORTAL_CARRERA_CAMBIADA:      { label: "Carrera cambiada",           icon: "📚", colorClass: "text-primary bg-primary/10 border-primary/20" },
+  PORTAL_ARCHIVADO:             { label: "Portal archivado",           icon: "📦", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
+  PLANTILLA_SOLICITUD_ACTUALIZADA: { label: "Plantilla actualizada",  icon: "📋", colorClass: "text-primary bg-primary/10 border-primary/20" },
+  CARPETA_CREADA:               { label: "Carpeta creada",             icon: "📁", colorClass: "text-green-600 bg-green-600/10 border-green-600/20" },
+  CARPETA_RENOMBRADA:           { label: "Carpeta renombrada",         icon: "✏️", colorClass: "text-primary bg-primary/10 border-primary/20" },
+  MATERIA_CREADA:               { label: "Materia creada",             icon: "📘", colorClass: "text-green-600 bg-green-600/10 border-green-600/20" },
+  MATERIA_ACTUALIZADA:          { label: "Materia actualizada",        icon: "✏️", colorClass: "text-primary bg-primary/10 border-primary/20" },
+  MATERIA_MOVIDA:               { label: "Materia movida",             icon: "↔️", colorClass: "text-primary bg-primary/10 border-primary/20" },
+  MATERIA_ELIMINADA:            { label: "Materia eliminada",          icon: "🗑️", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
+  TABLERO_CREADO:               { label: "Tablero creado",             icon: "📋", colorClass: "text-green-600 bg-green-600/10 border-green-600/20" },
+  TABLERO_ELIMINADO:            { label: "Tablero eliminado",          icon: "🗑️", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
+  POST_ELIMINADO:               { label: "Post eliminado",             icon: "🗑️", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
+  VOTACION_CREADA:              { label: "Votación creada",            icon: "🗳️", colorClass: "text-primary bg-primary/10 border-primary/20" },
+  VOTACION_APROBADA:            { label: "Votación aprobada",          icon: "✅", colorClass: "text-green-600 bg-green-600/10 border-green-600/20" },
+  VOTACION_RECHAZADA:           { label: "Votación rechazada",         icon: "❌", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
+  HOME_ACTUALIZADA:             { label: "Página de inicio actualizada", icon: "🏠", colorClass: "text-primary bg-primary/10 border-primary/20" },
+};
+
+function formatRelativeTime(isoString: string): string {
+  const now  = new Date();
+  const date = new Date(isoString);
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60_000);
+  const hours   = Math.floor(diff / 3_600_000);
+  const days    = Math.floor(diff / 86_400_000);
+
+  if (minutes < 1)  return "hace un momento";
+  if (minutes < 60) return `hace ${minutes} min`;
+  if (hours < 24)   return `hace ${hours} h`;
+  if (days < 7)     return `hace ${days} día${days > 1 ? "s" : ""}`;
+
+  return date.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
+}
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export function AdminPanel() {
@@ -361,6 +416,12 @@ export function AdminPanel() {
   const [votesError, setVotesError]     = useState<string | null>(null);
   const [showClosedVotes, setShowClosedVotes] = useState(false);
   const [loadingClosedVotes, setLoadingClosedVotes] = useState(false);
+
+  const [historialAcciones, setHistorialAcciones] = useState<AccionAdminResponse[]>([]);
+  const [loadingHistorial, setLoadingHistorial]   = useState(false);
+  const [historialError, setHistorialError]       = useState<string | null>(null);
+  const [historialPage, setHistorialPage]         = useState(0);
+  const [historialTotalPages, setHistorialTotalPages] = useState(0);
 
   // Loading al votar u operar sobre un miembro
   const [votingId, setVotingId] = useState<number | null>(null);
@@ -413,6 +474,32 @@ export function AdminPanel() {
   useEffect(() => {
     if (activeTab === "members") fetchMembers();
   }, [activeTab, fetchMembers]);
+
+  // ── Carga de historial ────────────────────────────────────────────────────────
+
+  const fetchHistorial = useCallback(async (page = 0) => {
+    if (!portalId) return;
+    setLoadingHistorial(true);
+    setHistorialError(null);
+    try {
+      const data = await adminService.getHistorialAcciones(portalId, page, 30);
+      if (page === 0) {
+        setHistorialAcciones(data.content);
+      } else {
+        setHistorialAcciones(prev => [...prev, ...data.content]);
+      }
+      setHistorialPage(data.number);
+      setHistorialTotalPages(data.totalPages);
+    } catch {
+      setHistorialError("No se pudo cargar el historial de acciones.");
+    } finally {
+      setLoadingHistorial(false);
+    }
+  }, [portalId]);
+
+  useEffect(() => {
+    if (activeTab === "history") fetchHistorial(0);
+  }, [activeTab, fetchHistorial]);
 
   // ── Carga de votaciones abiertas ──────────────────────────────────────────
 
@@ -740,17 +827,118 @@ export function AdminPanel() {
 
       {/* ── Tab: Historial ── */}
       {activeTab === "history" && (
-        <div className="text-center py-16">
-          <div
-            className="w-16 h-16 bg-surface-container-low mx-auto mb-4 flex items-center justify-center"
-            style={{ borderRadius: "var(--radius)" }}
-          >
-            <History className="w-8 h-8 text-on-surface-variant" />
-          </div>
-          <h3 className="text-foreground mb-2">Historial de acciones</h3>
-          <p className="text-on-surface-variant text-sm max-w-md mx-auto">
-            El registro de acciones administrativas estará disponible próximamente.
-          </p>
+        <div>
+          {loadingHistorial && historialAcciones.length === 0 ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-7 h-7 animate-spin text-primary" />
+            </div>
+          ) : historialError ? (
+            <div className="text-center py-12 text-destructive text-sm">{historialError}</div>
+          ) : historialAcciones.length === 0 ? (
+            <div className="text-center py-16">
+              <div
+                className="w-16 h-16 bg-surface-container-low mx-auto mb-4 flex items-center justify-center"
+                style={{ borderRadius: "var(--radius)" }}
+              >
+                <History className="w-8 h-8 text-on-surface-variant" />
+              </div>
+              <h3 className="text-foreground mb-2">Sin acciones registradas</h3>
+              <p className="text-on-surface-variant text-sm max-w-md mx-auto">
+                Las acciones administrativas aparecerán aquí a medida que se realicen.
+              </p>
+            </div>
+          ) : (
+            <div>
+              {/* Timeline */}
+              <div className="relative">
+                {/* Línea vertical */}
+                <div className="absolute left-6 top-0 bottom-0 w-px bg-border" />
+
+                <div className="space-y-1">
+                  {historialAcciones.map((accion) => {
+                    const config = ACCION_CONFIG[accion.tipo] ?? {
+                      label: accion.tipo,
+                      icon: "🔹",
+                      colorClass: "text-foreground bg-surface-container border-border",
+                    };
+
+                    return (
+                      <div key={accion.id} className="relative flex gap-4 pl-14 py-3">
+                        {/* Ícono en la línea */}
+                        <div
+                          className={`absolute left-3 w-6 h-6 flex items-center justify-center text-sm border ${config.colorClass}`}
+                          style={{ borderRadius: "var(--radius)", top: "0.875rem" }}
+                        >
+                          {config.icon}
+                        </div>
+
+                        {/* Card de la acción */}
+                        <div
+                          className="flex-1 bg-surface-container-lowest p-4 shadow-sm"
+                          style={{ borderRadius: "var(--radius)" }}
+                        >
+                          <div className="flex items-start justify-between gap-3 flex-wrap">
+                            <div className="flex-1 min-w-0">
+                              {/* Tipo de acción */}
+                              <span
+                                className={`inline-block px-2 py-0.5 text-xs font-medium border mb-2 ${config.colorClass}`}
+                                style={{ borderRadius: "var(--radius)" }}
+                              >
+                                {config.label}
+                              </span>
+
+                              {/* Admin que la ejecutó */}
+                              <p className="text-sm text-foreground font-medium truncate">
+                                {accion.adminNombre}
+                              </p>
+
+                              {/* Entidad afectada */}
+                              {accion.entidadDescripcion && (
+                                <p className="text-sm text-on-surface-variant mt-0.5 truncate">
+                                  {accion.entidadDescripcion}
+                                </p>
+                              )}
+
+                              {/* Motivo */}
+                              {accion.motivo && (
+                                <p className="text-xs text-on-surface-variant mt-1 line-clamp-2">
+                                  <span className="font-medium">Motivo:</span> {accion.motivo}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Timestamp relativo */}
+                            <time
+                              className="text-xs text-on-surface-variant whitespace-nowrap shrink-0 mt-0.5"
+                              dateTime={accion.createdAt}
+                              title={new Date(accion.createdAt).toLocaleString("es-ES")}
+                            >
+                              {formatRelativeTime(accion.createdAt)}
+                            </time>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Cargar más */}
+              {historialPage + 1 < historialTotalPages && (
+                <div className="flex justify-center mt-6">
+                  <button
+                    onClick={() => fetchHistorial(historialPage + 1)}
+                    disabled={loadingHistorial}
+                    className="px-6 py-2.5 border border-border hover:bg-accent transition-colors text-sm text-foreground flex items-center gap-2 disabled:opacity-50"
+                    style={{ borderRadius: "var(--radius)" }}
+                  >
+                    {loadingHistorial && <Loader2 className="w-4 h-4 animate-spin" />}
+                    Cargar más
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

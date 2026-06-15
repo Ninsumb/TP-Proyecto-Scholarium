@@ -13,6 +13,7 @@ import type {
   MaterialPendienteDTO,
   RechazarMaterialRequest,
   ActualizarPortalRequest,
+  PageAccionAdminResponse,
 } from '../types/Admin/Admin';
 import type { EstadoVotacion } from '../types/Admin/Admin';
 
@@ -259,6 +260,24 @@ class AdminService {
   async bloquearMiembro(portalId: number, usuarioId: number): Promise<void> {
     await apiClient.delete(`/portales/${portalId}/bloqueos/${usuarioId}`);
   }
+
+  // Agregar en AdminService.ts:
+
+/**
+ * Trae el historial paginado de acciones de admins en el portal.
+ * GET /api/portales/{portalId}/historial?page=0&size=30
+ */
+async getHistorialAcciones(
+  portalId: number,
+  page = 0,
+  size = 30,
+): Promise<PageAccionAdminResponse> {
+  const response = await apiClient.get<PageAccionAdminResponse>(
+    `/portales/${portalId}/historial`,
+    { params: { page, size } },
+  );
+  return response.data;
+}
 
 
 

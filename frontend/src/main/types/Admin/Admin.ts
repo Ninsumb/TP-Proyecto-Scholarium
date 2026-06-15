@@ -1,5 +1,57 @@
 // src/types/Admin/Admin.ts
-// Mapeo 1:1 de los DTOs del back relevantes a las 3 vistas de administración.
+
+
+
+
+export type TipoAccionAdmin =
+  | 'SOLICITUD_APROBADA'
+  | 'SOLICITUD_RECHAZADA'
+  | 'MATERIAL_APROBADO'
+  | 'MATERIAL_RECHAZADO'
+  | 'MATERIAL_ELIMINADO'
+  | 'MIEMBRO_ASCENDIDO'
+  | 'MIEMBRO_DEGRADADO'
+  | 'MIEMBRO_EXPULSADO'
+  | 'MIEMBRO_BLOQUEADO'
+  | 'BLOQUEO_LEVANTADO'
+  | 'PORTAL_ACTUALIZADO'
+  | 'PORTAL_TIPO_ACCESO_CAMBIADO'
+  | 'PORTAL_UNIVERSIDAD_CAMBIADA'
+  | 'PORTAL_CARRERA_CAMBIADA'
+  | 'PORTAL_ARCHIVADO'
+  | 'PLANTILLA_SOLICITUD_ACTUALIZADA'
+  | 'CARPETA_CREADA'
+  | 'CARPETA_RENOMBRADA'
+  | 'MATERIA_CREADA'
+  | 'MATERIA_ACTUALIZADA'
+  | 'MATERIA_MOVIDA'
+  | 'MATERIA_ELIMINADA'
+  | 'TABLERO_CREADO'
+  | 'TABLERO_ELIMINADO'
+  | 'POST_ELIMINADO'
+  | 'VOTACION_CREADA'
+  | 'VOTACION_APROBADA'
+  | 'VOTACION_RECHAZADA'
+  | 'HOME_ACTUALIZADA';
+
+export interface AccionAdminResponse {
+  id: number;
+  tipo: TipoAccionAdmin;
+  adminId: number;
+  adminNombre: string;
+  entidadId: string | null;
+  entidadDescripcion: string | null;
+  motivo: string | null;
+  createdAt: string; // ISO 8601
+}
+
+export interface PageAccionAdminResponse {
+  content: AccionAdminResponse[];
+  number: number;        // página actual (0-indexed)
+  totalPages: number;
+  totalElements: number;
+  last: boolean;
+}
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
