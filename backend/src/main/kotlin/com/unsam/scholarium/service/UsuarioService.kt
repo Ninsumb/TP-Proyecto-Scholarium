@@ -24,7 +24,6 @@ class UsuarioService(
 ) {
 
     fun getMisPortales(email: String): List<UsuarioPortalResponse> {
-
         val usuario = usuarioRepository.findByEmail(email)
             ?: throw ElementDoesNotExistException("Usuario no encontrado")
 

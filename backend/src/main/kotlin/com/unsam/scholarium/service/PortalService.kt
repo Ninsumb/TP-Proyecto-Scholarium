@@ -32,11 +32,14 @@ import com.unsam.scholarium.repository.UsuarioRepository
 import com.unsam.scholarium.dto.MiembroResponse
 import com.unsam.scholarium.dto.ActualizarPortalRequest
 import com.unsam.scholarium.dto.CambiarTipoAccesoRequest
+import com.unsam.scholarium.dto.SolicitudAprobadaEvent
+import com.unsam.scholarium.dto.UsuarioExpulsadoEvent
 import com.unsam.scholarium.dto.VotacionResponse
 import com.unsam.scholarium.model.TipoAcceso
 import com.unsam.scholarium.model.TipoVotacion
 import com.unsam.scholarium.repository.PortalBloqueoRepository
 import jakarta.transaction.Transactional
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import java.util.UUID
@@ -53,7 +56,8 @@ class PortalService(
     private val etiquetaRepository: EtiquetaRepository,
     private val plantillaSolicitudRepository: PlantillaSolicitudRepository,
     private val votacionAdminService: VotacionAdminService,
-    private val portalBloqueoRepository: PortalBloqueoRepository
+    private val portalBloqueoRepository: PortalBloqueoRepository,
+    private val applicationEventPublisher: ApplicationEventPublisher,
 ) {
     fun getDetalleById(id: Long, email: String): Triple<Portal, RolMembresia?, List<Int>> {
         val portal = portalRepository.findById(id).getOrNull()
@@ -352,6 +356,14 @@ class PortalService(
             ?: throw ElementDoesNotExistException("El usuario no es miembro de este portal")
 
         membresiaRepository.delete(membresiaObjetivo)
+
+        applicationEventPublisher.publishEvent(
+            UsuarioExpulsadoEvent(
+                usuario = usuarioObjetivo,
+                portal = membresiaObjetivo.portal!!,
+                motivo = "" //Hardcodeado, agregar luego que se pueda poner motivo
+            )
+        )
     }
 
     fun promoverAdmin(portalId: Long, usuarioObjetivoId: Long, emailAdmin: String): MembresiaResponse  {

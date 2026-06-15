@@ -21,7 +21,10 @@ import com.unsam.scholarium.repository.SolicitudRepository
 import com.unsam.scholarium.repository.UsuarioRepository
 import com.unsam.scholarium.dto.ActualizarPlantillaRequest
 import com.unsam.scholarium.dto.PuedeSolicitarResponse
+import com.unsam.scholarium.dto.SolicitudAprobadaEvent
+import com.unsam.scholarium.dto.SolicitudRechazadaEvent
 import jakarta.transaction.Transactional
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import kotlin.jvm.optionals.getOrNull
 
@@ -33,6 +36,7 @@ class SolicitudService(
     val portalRepository: PortalRepository,
     val plantillaSolicitudRepository: PlantillaSolicitudRepository,
     val portalBloqueoRepository: PortalBloqueoRepository,
+    val applicationEventPublisher: ApplicationEventPublisher,
 ) {
 
     // ── Helpers privados ───────────────────────────────────────────────────
@@ -133,6 +137,10 @@ class SolicitudService(
         }
 
         solicitudRepository.save(solicitud)
+
+        applicationEventPublisher.publishEvent(
+            SolicitudAprobadaEvent(solicitud = solicitud, portal = solicitud.portal)
+        )
     }
 
     // ── Rechazar solicitud ─────────────────────────────────────────────────
@@ -158,6 +166,14 @@ class SolicitudService(
         solicitud.motivoRechazo = request.motivoRechazo.trim()
 
         solicitudRepository.save(solicitud)
+
+        applicationEventPublisher.publishEvent(
+            SolicitudRechazadaEvent(
+                solicitud = solicitud,
+                portal = solicitud.portal,
+                motivo = solicitud.motivoRechazo!!
+            )
+        )
     }
 
     // ── Consultas ──────────────────────────────────────────────────────────

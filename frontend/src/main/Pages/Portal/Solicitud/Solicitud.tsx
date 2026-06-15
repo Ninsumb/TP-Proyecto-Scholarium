@@ -13,7 +13,7 @@ import {
 import { solicitudService } from "../../../services/SolicitudService";
 import type { PlantillaSolicitudResponse } from "../../../services/SolicitudService";
 import { MainContext } from "../../../types/MainContext";
-import { usePortalContext } from "../../../Hooks/usePortalContext";
+import { usePortalContext } from "../../../hooks/usePortalContext";
 
 type PreCheckState =
   | "loading"

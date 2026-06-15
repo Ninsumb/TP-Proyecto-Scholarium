@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Avatar } from "../../../Components/Avatar";
 import { Link, useParams } from "react-router";
-import { usePortalContext } from "../../../Hooks/usePortalContext";
+import { usePortalContext } from "../../../hooks/usePortalContext";
 import {
   ChevronRight,
   Plus,

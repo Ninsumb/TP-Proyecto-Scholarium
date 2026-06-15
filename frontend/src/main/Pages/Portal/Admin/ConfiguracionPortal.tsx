@@ -5,7 +5,7 @@ import { Settings, Lock, Upload, Palette, AlertTriangle, Archive, Loader2, Searc
   type LucideIcon
 } from "lucide-react";
 import { adminService } from "../../../services/AdminService";
-import { usePortalContext } from "../../../Hooks/usePortalContext";
+import { usePortalContext } from "../../../hooks/usePortalContext";
 import type { TipoAcceso } from '../../../types/Portal/Portal';
 import type {
   PlantillaSolicitudResponse,
