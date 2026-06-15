@@ -1,14 +1,15 @@
 package com.unsam.scholarium.service
 
 import com.unsam.scholarium.dto.CrearTableroRequest
-import com.unsam.scholarium.dto.TableroResponse
 import com.unsam.scholarium.dto.EtiquetaSimpleResponse
+import com.unsam.scholarium.dto.TableroResponse
 import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.NotAdminException
 import com.unsam.scholarium.exception.UnauthorizedException
 import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.model.Tablero
 import com.unsam.scholarium.model.TipoAcceso
+import com.unsam.scholarium.model.TipoAccionAdmin
 import com.unsam.scholarium.repository.EtiquetaRepository
 import com.unsam.scholarium.repository.ForoRepository
 import com.unsam.scholarium.repository.MembresiaRepository
@@ -16,6 +17,7 @@ import com.unsam.scholarium.repository.PortalRepository
 import com.unsam.scholarium.repository.UsuarioRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 import kotlin.jvm.optionals.getOrNull
 
 @Service
@@ -24,7 +26,8 @@ class ForoService(
     private val portalRepository: PortalRepository,
     private val usuarioRepository: UsuarioRepository,
     private val membresiaRepository: MembresiaRepository,
-    private val etiquetaRepository: EtiquetaRepository
+    private val etiquetaRepository: EtiquetaRepository,
+    private val accionAdminService: AccionAdminService,
 ) {
 
     // ── Helpers de autorización ───────────────────────────────────────────────
@@ -86,6 +89,14 @@ class ForoService(
             )
         )
 
+        accionAdminService.registrar(
+            portal             = portal,
+            admin              = usuario,
+            tipo               = TipoAccionAdmin.TABLERO_CREADO,
+            entidadId          = tablero.id.toString(),
+            entidadDescripcion = tablero.nombre,
+        )
+
         return toTableroResponse(tablero)
     }
 
@@ -113,17 +124,16 @@ class ForoService(
             ?: throw ElementDoesNotExistException("Tablero no encontrado")
         tablero.activo = false
         foroRepository.save(tablero)
+        // El admin se registra desde VotacionAdminService.ejecutarAccion() cuando hay votación.
+        // Si hay un endpoint directo de borrado, registralo ahí con el email del admin.
     }
 
     private fun toTableroResponse(tablero: Tablero) = TableroResponse(
-        id = tablero.id!!,
-        nombre = tablero.nombre,
+        id          = tablero.id!!,
+        nombre      = tablero.nombre,
         descripcion = tablero.descripcion,
-        etiqueta = EtiquetaSimpleResponse(
-            id = tablero.etiqueta.id!!,
-            nombre = tablero.etiqueta.nombre
-        ),
-        createdAt = tablero.createdAt!!.toInstant(),
-        updatedAt = tablero.updatedAt?.toInstant()
+        etiqueta    = EtiquetaSimpleResponse(id = tablero.etiqueta.id!!, nombre = tablero.etiqueta.nombre),
+        createdAt   = tablero.createdAt!!.toInstant(),
+        updatedAt   = tablero.updatedAt?.toInstant()
     )
 }

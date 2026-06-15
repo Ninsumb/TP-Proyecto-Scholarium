@@ -2,23 +2,29 @@ package com.unsam.scholarium.service
 
 import com.unsam.scholarium.dto.ActualizarMateriaRequest
 import com.unsam.scholarium.dto.CrearMateriaRequest
+import com.unsam.scholarium.dto.MateriaResponse
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.NotAdminException
 import com.unsam.scholarium.exception.UnauthorizedException
 import com.unsam.scholarium.model.Etiqueta
-import com.unsam.scholarium.model.Tablero
 import com.unsam.scholarium.model.Materia
 import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.model.RolMembresia
+import com.unsam.scholarium.model.Tablero
+import com.unsam.scholarium.model.TipoAcceso
+import com.unsam.scholarium.model.TipoAccionAdmin
 import com.unsam.scholarium.model.Usuario
-import com.unsam.scholarium.repository.*
+import com.unsam.scholarium.repository.CarpetaRepository
+import com.unsam.scholarium.repository.EtiquetaRepository
+import com.unsam.scholarium.repository.ForoRepository
+import com.unsam.scholarium.repository.MateriaRepository
+import com.unsam.scholarium.repository.MembresiaRepository
+import com.unsam.scholarium.repository.UsuarioRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 import kotlin.jvm.optionals.getOrNull
-import com.unsam.scholarium.dto.MateriaResponse
-import com.unsam.scholarium.model.TipoAcceso
 
 @Service
 class MateriaService(
@@ -27,15 +33,13 @@ class MateriaService(
     private val membresiaRepository: MembresiaRepository,
     private val carpetaRepository: CarpetaRepository,
     private val etiquetaRepository: EtiquetaRepository,
-    private val foroRepository: ForoRepository
+    private val foroRepository: ForoRepository,
+    private val accionAdminService: AccionAdminService,
 ) {
 
-    fun validarAdmin(usuario: Usuario, portal: Portal){
-        val esAdmin = membresiaRepository
-            .existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
-        if (!esAdmin) {
-            throw NotAdminException("No tenés permisos para editar esta materia")
-        }
+    fun validarAdmin(usuario: Usuario, portal: Portal) {
+        val esAdmin = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+        if (!esAdmin) throw NotAdminException("No tenés permisos para editar esta materia")
     }
 
     @Transactional
@@ -48,96 +52,74 @@ class MateriaService(
 
         val portal = carpeta.portal
 
-        val esAdmin = membresiaRepository
-            .existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
-        if (!esAdmin) {
-            throw NotAdminException("No tenés permisos para crear materias en este portal")
-        }
+        val esAdmin = membresiaRepository.existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+        if (!esAdmin) throw NotAdminException("No tenés permisos para crear materias en este portal")
 
         validarEtiqueta(request.etiqueta)
 
         val materiasEnCarpeta = materiaRepository.findByCarpetaId(carpetaId)
         val nuevoOrden = (materiasEnCarpeta.maxOfOrNull { it.orden } ?: -1) + 1
 
-        val nuevaMateria = Materia(
-            nombre = request.nombre,
-            carpeta = carpeta,
-            orden = nuevoOrden
-        )
-
+        val nuevaMateria = Materia(nombre = request.nombre, carpeta = carpeta, orden = nuevoOrden)
         val materiaSaved = materiaRepository.save(nuevaMateria)
 
         val etiqueta = etiquetaRepository.findByNombreAndPortal(request.etiqueta.uppercase(), portal)
-            ?: etiquetaRepository.save(
-                Etiqueta(
-                    nombre = request.etiqueta.uppercase(),
-                    portal = portal
-                )
-            )
+            ?: etiquetaRepository.save(Etiqueta(nombre = request.etiqueta.uppercase(), portal = portal))
 
-        val nuevoTablero = Tablero(
-            nombre = request.nombre,
-            etiqueta = etiqueta,
-            portal = portal
-        )
-
+        val nuevoTablero = Tablero(nombre = request.nombre, etiqueta = etiqueta, portal = portal)
         foroRepository.save(nuevoTablero)
+
+        accionAdminService.registrar(
+            portal             = portal,
+            admin              = usuario,
+            tipo               = TipoAccionAdmin.MATERIA_CREADA,
+            entidadId          = materiaSaved.id.toString(),
+            entidadDescripcion = materiaSaved.nombre,
+        )
 
         return materiaSaved
     }
 
     private fun validarEtiqueta(etiqueta: String) {
-        if (etiqueta.isBlank()) {
-            throw BusinessException("La etiqueta es obligatoria")
-        }
-        if (etiqueta.length > 30) {
-            throw BusinessException("La etiqueta no puede tener más de 30 caracteres")
-        }
-
-        if (!etiqueta.matches(Regex("^[A-Za-z0-9\\-]+$"))) {
+        if (etiqueta.isBlank()) throw BusinessException("La etiqueta es obligatoria")
+        if (etiqueta.length > 30) throw BusinessException("La etiqueta no puede tener más de 30 caracteres")
+        if (!etiqueta.matches(Regex("^[A-Za-z0-9\\-]+$")))
             throw BusinessException("La etiqueta solo puede contener letras, números y guiones")
-        }
     }
 
-    @Transactional(readOnly = true)
-    fun actualizarNombreMateria(
-        materiaId: UUID,
-        request: ActualizarMateriaRequest,
-        email: String
-    ): Materia {
-
+    @Transactional
+    fun actualizarNombreMateria(materiaId: UUID, request: ActualizarMateriaRequest, email: String): Materia {
         val materia = materiaRepository.findById(materiaId)
             .orElseThrow { ElementDoesNotExistException("Materia no encontrada") }
 
-        if (request.nombre.isBlank()) {
-            throw BusinessException("El nombre no puede estar vacío")
-        }
-
-        if (request.nombre.length > 150) {
-            throw BusinessException("El nombre no puede superar los 150 caracteres")
-        }
+        if (request.nombre.isBlank()) throw BusinessException("El nombre no puede estar vacío")
+        if (request.nombre.length > 150) throw BusinessException("El nombre no puede superar los 150 caracteres")
 
         val usuario = usuarioRepository.findByEmail(email)
             ?: throw ElementDoesNotExistException("Usuario no encontrado")
 
         val portal = materia.carpeta.portal
-
         validarAdmin(usuario, portal)
 
-
+        val nombreAnterior = materia.nombre
         materia.nombre = request.nombre
         request.descripcion?.let { materia.descripcion = it }
+        val guardada = materiaRepository.save(materia)
 
-        return materiaRepository.save(materia)
+        accionAdminService.registrar(
+            portal             = portal,
+            admin              = usuario,
+            tipo               = TipoAccionAdmin.MATERIA_ACTUALIZADA,
+            entidadId          = materiaId.toString(),
+            entidadDescripcion = request.nombre,
+            motivo             = "Nombre anterior: $nombreAnterior",
+        )
+
+        return guardada
     }
 
-    //Mueve la materia a una carpeta
-    @Transactional(readOnly = true)
-    fun moverMateria(
-        materiaId: UUID,
-        nuevaCarpetaId: UUID,
-        email: String
-    ): Materia {
+    @Transactional
+    fun moverMateria(materiaId: UUID, nuevaCarpetaId: UUID, email: String): Materia {
         val materia = materiaRepository.findById(materiaId)
             .orElseThrow { ElementDoesNotExistException("Materia no encontrada") }
 
@@ -153,19 +135,28 @@ class MateriaService(
 
         validarAdmin(usuario, portal)
 
-        if (materia.carpeta.id == nuevaCarpetaId) {
+        if (materia.carpeta.id == nuevaCarpetaId)
             throw BusinessException("La materia ya se encuentra en esa carpeta")
-        }
 
-        //nuevo orden
+        val carpetaAnteriorNombre = materia.carpeta.nombre
         val materiasEnCarpeta = materiaRepository.findByCarpetaId(nuevaCarpetaId)
         val nuevoOrden = (materiasEnCarpeta.maxOfOrNull { it.orden } ?: -1) + 1
         materia.orden = nuevoOrden
 
         //Ahora si mete la carpeta
         materia.carpeta = carpeta
+        val guardada = materiaRepository.save(materia)
 
-        return materiaRepository.save(materia)
+        accionAdminService.registrar(
+            portal             = portal,
+            admin              = usuario,
+            tipo               = TipoAccionAdmin.MATERIA_MOVIDA,
+            entidadId          = materiaId.toString(),
+            entidadDescripcion = materia.nombre,
+            motivo             = "Desde: $carpetaAnteriorNombre → Hasta: ${carpeta.nombre}",
+        )
+
+        return guardada
     }
 
     @Transactional(readOnly = true)
@@ -177,7 +168,6 @@ class MateriaService(
             ?: throw ElementDoesNotExistException("Usuario no encontrado")
 
         val portal = materia.carpeta.portal
-
         val esMiembro = membresiaRepository.existsByUsuarioIdAndPortalIdAndRol(usuario.id!!, portal.id!!, RolMembresia.MIEMBRO)
         val esAdmin   = membresiaRepository.existsByUsuarioIdAndPortalIdAndRol(usuario.id!!, portal.id!!, RolMembresia.ADMIN)
 
@@ -189,12 +179,12 @@ class MateriaService(
         }
 
         return MateriaResponse(
-            id = materia.id!!,
-            nombre = materia.nombre,
+            id          = materia.id!!,
+            nombre      = materia.nombre,
             descripcion = materia.descripcion,
-            carpetaId = materia.carpeta.id!!,
-            orden = materia.orden,
-            updatedAt = materia.updatedAt!!.toInstant()
+            carpetaId   = materia.carpeta.id!!,
+            orden       = materia.orden,
+            updatedAt   = materia.updatedAt!!.toInstant()
         )
     }
 }

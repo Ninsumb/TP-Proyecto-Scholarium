@@ -6,6 +6,7 @@ import com.unsam.scholarium.exception.NotAdminException
 import com.unsam.scholarium.exception.UnauthorizedException
 import com.unsam.scholarium.model.EstadoVotacion
 import com.unsam.scholarium.model.RolMembresia
+import com.unsam.scholarium.model.TipoAccionAdmin
 import com.unsam.scholarium.model.TipoVotacion
 import com.unsam.scholarium.model.VotacionAdmin
 import com.unsam.scholarium.model.VotoAdmin
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 import kotlin.jvm.optionals.getOrNull
 import org.springframework.context.annotation.Lazy
+import java.util.UUID
 
 @Service
 class VotacionAdminService(
@@ -33,6 +35,7 @@ class VotacionAdminService(
     @Lazy private val materiaService: MateriaService,
     @Lazy private val foroService: ForoService,
     private val objectMapper: com.fasterxml.jackson.databind.ObjectMapper,
+    private val accionAdminService: AccionAdminService,
 ) {
 
     companion object {
@@ -236,23 +239,24 @@ class VotacionAdminService(
                 val usuarioId = votacion.entidadId?.toLongOrNull()
                     ?: throw BusinessException("entidadId inválido para DEGRADAR_ADMIN")
                 portalService.degradarAdmin(
-                    portalId = votacion.portal.id!!,
+                    portalId          = votacion.portal.id!!,
                     usuarioObjetivoId = usuarioId,
-                    emailAdmin = emailProponente,
+                    emailAdmin        = emailProponente,
                 )
+                // degradarAdmin ya registra la acción internamente.
             }
 
             TipoVotacion.EXPULSION_MIEMBRO -> {
                 val usuarioId = votacion.entidadId?.toLongOrNull()
                     ?: throw BusinessException("entidadId inválido para EXPULSION_MIEMBRO")
                 portalService.removerMiembro(
-                    portalId = votacion.portal.id!!,
+                    portalId          = votacion.portal.id!!,
                     usuarioObjetivoId = usuarioId,
-                    emailAdmin = emailProponente,
+                    emailAdmin        = emailProponente,
                 )
+                // removerMiembro ya registra la acción internamente.
             }
 
-            //TODO CUANDO ESTE IMPLEMENTADO EL ENDPOINT
             TipoVotacion.BLOQUEO_MIEMBRO -> { /* TODO */ }
 
             TipoVotacion.CAMBIO_TIPO_ACCESO -> {
@@ -262,9 +266,14 @@ class VotacionAdminService(
                     .get("nuevoTipoAcceso")?.asText()
                     ?: throw BusinessException("Campo nuevoTipoAcceso ausente en metadatos")
                 val nuevoTipo = com.unsam.scholarium.model.TipoAcceso.valueOf(nuevoTipoStr)
-                portalService.cambiarTipoAcceso(
-                    portalId = votacion.portal.id!!,
-                    nuevoTipo = nuevoTipo,
+                portalService.cambiarTipoAcceso(portalId = votacion.portal.id!!, nuevoTipo = nuevoTipo)
+
+                accionAdminService.registrar(
+                    portal             = votacion.portal,
+                    admin              = votacion.proponente,
+                    tipo               = TipoAccionAdmin.PORTAL_TIPO_ACCESO_CAMBIADO,
+                    entidadDescripcion = nuevoTipoStr,
+                    motivo             = votacion.motivo,
                 )
             }
 
@@ -274,9 +283,14 @@ class VotacionAdminService(
                 val nuevoValor = objectMapper.readTree(metadatosJson)
                     .get("nuevoValor")?.asText()
                     ?: throw BusinessException("Campo nuevoValor ausente en metadatos")
-                portalService.cambiarUniversidad(
-                    portalId = votacion.portal.id!!,
-                    nuevaUniversidad = nuevoValor,
+                portalService.cambiarUniversidad(portalId = votacion.portal.id!!, nuevaUniversidad = nuevoValor)
+
+                accionAdminService.registrar(
+                    portal             = votacion.portal,
+                    admin              = votacion.proponente,
+                    tipo               = TipoAccionAdmin.PORTAL_UNIVERSIDAD_CAMBIADA,
+                    entidadDescripcion = nuevoValor,
+                    motivo             = votacion.motivo,
                 )
             }
 
@@ -286,9 +300,14 @@ class VotacionAdminService(
                 val nuevoValor = objectMapper.readTree(metadatosJson)
                     .get("nuevoValor")?.asText()
                     ?: throw BusinessException("Campo nuevoValor ausente en metadatos")
-                portalService.cambiarCarrera(
-                    portalId = votacion.portal.id!!,
-                    nuevaCarrera = nuevoValor,
+                portalService.cambiarCarrera(portalId = votacion.portal.id!!, nuevaCarrera = nuevoValor)
+
+                accionAdminService.registrar(
+                    portal             = votacion.portal,
+                    admin              = votacion.proponente,
+                    tipo               = TipoAccionAdmin.PORTAL_CARRERA_CAMBIADA,
+                    entidadDescripcion = nuevoValor,
+                    motivo             = votacion.motivo,
                 )
             }
 
@@ -305,10 +324,25 @@ class VotacionAdminService(
                     runCatching { java.util.UUID.fromString(it) }.getOrNull()
                 } ?: throw BusinessException("entidadId inválido para ELIMINAR_TABLERO")
                 foroService.eliminarTablero(tableroId)
+
+                accionAdminService.registrar(
+                    portal    = votacion.portal,
+                    admin     = votacion.proponente,
+                    tipo      = TipoAccionAdmin.TABLERO_ELIMINADO,
+                    entidadId = tableroId.toString(),
+                    motivo    = votacion.motivo,
+                )
             }
 
             TipoVotacion.ARCHIVAR_PORTAL -> {
                 portalService.archivarPortal(votacion.portal.id!!)
+
+                accionAdminService.registrar(
+                    portal = votacion.portal,
+                    admin  = votacion.proponente,
+                    tipo   = TipoAccionAdmin.PORTAL_ARCHIVADO,
+                    motivo = votacion.motivo,
+                )
             }
         }
     }
