@@ -50,6 +50,9 @@ enum class TipoAccionAdmin {
 
     // Home
     HOME_ACTUALIZADA,
+
+    // Agregar en TipoAccionAdmin:
+    SOLICITUDES_ESTADO_CAMBIADO,   // reemplaza el uso ambiguo de PLANTILLA_SOLICITUD_ACTUALIZADA para el toggle abierta/cerrada
 }
 
 @Entity

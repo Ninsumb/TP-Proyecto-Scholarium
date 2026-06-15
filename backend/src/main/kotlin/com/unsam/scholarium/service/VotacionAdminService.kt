@@ -40,6 +40,19 @@ class VotacionAdminService(
 
     companion object {
         private const val DURACION_HORAS = 72L
+
+        // Dentro del companion object de VotacionAdminService:
+        private val TipoVotacion_LABEL = mapOf(
+            TipoVotacion.DEGRADAR_ADMIN      to "Degradar administrador",
+            TipoVotacion.EXPULSION_MIEMBRO   to "Expulsión de miembro",
+            TipoVotacion.BLOQUEO_MIEMBRO     to "Bloqueo de miembro",
+            TipoVotacion.CAMBIO_TIPO_ACCESO  to "Cambio de tipo de acceso",
+            TipoVotacion.CAMBIO_UNIVERSIDAD  to "Cambio de universidad",
+            TipoVotacion.CAMBIO_CARRERA      to "Cambio de carrera",
+            TipoVotacion.ELIMINAR_MATERIA    to "Eliminación de materia",
+            TipoVotacion.ELIMINAR_TABLERO    to "Eliminación de tablero",
+            TipoVotacion.ARCHIVAR_PORTAL     to "Archivar portal",
+        )
     }
 
     /**
@@ -93,6 +106,16 @@ class VotacionAdminService(
 
         // Si era el único admin, ya hay mayoría 1/1 → resolver + ejecutar en el acto.
         evaluarYResolver(guardada)
+
+        // En crearVotacion(), después de evaluarYResolver(guardada) y antes del return:
+        accionAdminService.registrar(
+            portal             = portal,
+            admin              = proponente,
+            tipo               = TipoAccionAdmin.VOTACION_CREADA,
+            entidadId          = guardada.id.toString(),
+            entidadDescripcion = TipoVotacion_LABEL[tipo] ?: tipo.name,
+            motivo             = motivo,
+        )
 
         return guardada
     }
@@ -213,13 +236,28 @@ class VotacionAdminService(
             aFavor > umbral -> {
                 votacion.resolver(EstadoVotacion.APROBADA)
                 votacionRepository.save(votacion)
+                accionAdminService.registrar(
+                    portal             = votacion.portal,
+                    admin              = votacion.proponente,
+                    tipo               = TipoAccionAdmin.VOTACION_APROBADA,
+                    entidadId          = votacion.id.toString(),
+                    entidadDescripcion = TipoVotacion_LABEL[votacion.tipo] ?: votacion.tipo.name,
+                    motivo             = votacion.motivo,
+                )
                 ejecutarAccion(votacion)
             }
             enContra > umbral -> {
                 votacion.resolver(EstadoVotacion.RECHAZADA)
                 votacionRepository.save(votacion)
+                accionAdminService.registrar(
+                    portal             = votacion.portal,
+                    admin              = votacion.proponente,
+                    tipo               = TipoAccionAdmin.VOTACION_RECHAZADA,
+                    entidadId          = votacion.id.toString(),
+                    entidadDescripcion = TipoVotacion_LABEL[votacion.tipo] ?: votacion.tipo.name,
+                    motivo             = votacion.motivo,
+                )
             }
-            // Sin mayoría todavía → queda ABIERTA.
         }
     }
 
@@ -266,13 +304,21 @@ class VotacionAdminService(
                     .get("nuevoTipoAcceso")?.asText()
                     ?: throw BusinessException("Campo nuevoTipoAcceso ausente en metadatos")
                 val nuevoTipo = com.unsam.scholarium.model.TipoAcceso.valueOf(nuevoTipoStr)
+
+                // Capturar antes de mutar
+                val portalActual = portalRepository.findById(votacion.portal.id!!).getOrNull()
+                val tipoAnterior = portalActual?.tipoAcceso?.name ?: "—"
+
                 portalService.cambiarTipoAcceso(portalId = votacion.portal.id!!, nuevoTipo = nuevoTipo)
+
+                val labelAnterior = if (tipoAnterior == "ABIERTO") "Abierto" else "Cerrado"
+                val labelNuevo    = if (nuevoTipoStr == "ABIERTO") "Abierto" else "Cerrado"
 
                 accionAdminService.registrar(
                     portal             = votacion.portal,
                     admin              = votacion.proponente,
                     tipo               = TipoAccionAdmin.PORTAL_TIPO_ACCESO_CAMBIADO,
-                    entidadDescripcion = nuevoTipoStr,
+                    entidadDescripcion = "$labelAnterior → $labelNuevo",
                     motivo             = votacion.motivo,
                 )
             }
@@ -283,13 +329,17 @@ class VotacionAdminService(
                 val nuevoValor = objectMapper.readTree(metadatosJson)
                     .get("nuevoValor")?.asText()
                     ?: throw BusinessException("Campo nuevoValor ausente en metadatos")
+
+                val portalActual = portalRepository.findById(votacion.portal.id!!).getOrNull()
+                val valorAnterior = portalActual?.universidad ?: "—"
+
                 portalService.cambiarUniversidad(portalId = votacion.portal.id!!, nuevaUniversidad = nuevoValor)
 
                 accionAdminService.registrar(
                     portal             = votacion.portal,
                     admin              = votacion.proponente,
                     tipo               = TipoAccionAdmin.PORTAL_UNIVERSIDAD_CAMBIADA,
-                    entidadDescripcion = nuevoValor,
+                    entidadDescripcion = "\"$valorAnterior\" → \"$nuevoValor\"",
                     motivo             = votacion.motivo,
                 )
             }
@@ -300,13 +350,17 @@ class VotacionAdminService(
                 val nuevoValor = objectMapper.readTree(metadatosJson)
                     .get("nuevoValor")?.asText()
                     ?: throw BusinessException("Campo nuevoValor ausente en metadatos")
+
+                val portalActual = portalRepository.findById(votacion.portal.id!!).getOrNull()
+                val valorAnterior = portalActual?.carrera ?: "—"
+
                 portalService.cambiarCarrera(portalId = votacion.portal.id!!, nuevaCarrera = nuevoValor)
 
                 accionAdminService.registrar(
                     portal             = votacion.portal,
                     admin              = votacion.proponente,
                     tipo               = TipoAccionAdmin.PORTAL_CARRERA_CAMBIADA,
-                    entidadDescripcion = nuevoValor,
+                    entidadDescripcion = "\"$valorAnterior\" → \"$nuevoValor\"",
                     motivo             = votacion.motivo,
                 )
             }

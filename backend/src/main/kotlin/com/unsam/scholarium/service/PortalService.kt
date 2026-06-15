@@ -276,15 +276,27 @@ class PortalService(
         if (requisitos.isBlank()) throw BusinessException("Los requisitos no pueden estar vacíos")
         if (requisitos.length > 1000) throw BusinessException("Los requisitos son demasiado largos")
 
+        val abiertaAnterior = plantilla.abierta
         plantilla.requisitos = requisitos
         plantilla.abierta = request.abierta
         plantillaSolicitudRepository.save(plantilla)
 
+        // Acción de estado (abierta/cerrada) — solo si cambió
+        if (plantilla.abierta != abiertaAnterior) {
+            accionAdminService.registrar(
+                portal             = portal,
+                admin              = usuario,
+                tipo               = TipoAccionAdmin.SOLICITUDES_ESTADO_CAMBIADO,
+                entidadDescripcion = if (plantilla.abierta) "Portal abierto a nuevas solicitudes" else "Portal cerrado a nuevas solicitudes",
+            )
+        }
+
+        // Acción de requisitos — siempre que se guarde (el endpoint lo hace explícitamente)
         accionAdminService.registrar(
             portal             = portal,
             admin              = usuario,
             tipo               = TipoAccionAdmin.PLANTILLA_SOLICITUD_ACTUALIZADA,
-            entidadDescripcion = if (plantilla.abierta) "Abierta" else "Cerrada",
+            entidadDescripcion = "Texto de requisitos de solicitud actualizado",
         )
     }
 
@@ -434,19 +446,54 @@ class PortalService(
         val usuario = validarUsuario(email)
         validarMembresiaUsuario(usuario, portalId, RolMembresia.ADMIN)
 
-        request.unidadAcademica?.let { portal.unidadAcademica = it.trim().takeIf { v -> v.isNotBlank() } }
-        request.descripcion?.let    { portal.descripcion      = it.trim().takeIf { v -> v.isNotBlank() } }
-        request.iconoPortal?.let    { portal.iconoPortal      = it.trim().takeIf { v -> v.isNotBlank() } }
-        request.colorPortal?.let    { portal.colorPortal      = it.trim().takeIf { v -> v.isNotBlank() } }
-        request.logoUrl?.let        { portal.logoUrl          = it.trim().takeIf { v -> v.isNotBlank() } }
+        val cambios = mutableListOf<String>()
+
+        request.unidadAcademica?.let {
+            val nuevo = it.trim().takeIf { v -> v.isNotBlank() }
+            if (portal.unidadAcademica != nuevo) {
+                cambios.add("Unidad académica: \"${portal.unidadAcademica ?: "—"}\" → \"${nuevo ?: "—"}\"")
+                portal.unidadAcademica = nuevo
+            }
+        }
+        request.descripcion?.let {
+            val nuevo = it.trim().takeIf { v -> v.isNotBlank() }
+            if (portal.descripcion != nuevo) {
+                cambios.add("Descripción actualizada")
+                portal.descripcion = nuevo
+            }
+        }
+        request.iconoPortal?.let {
+            val nuevo = it.trim().takeIf { v -> v.isNotBlank() }
+            if (portal.iconoPortal != nuevo) {
+                cambios.add("Ícono: \"${portal.iconoPortal ?: "—"}\" → \"${nuevo ?: "—"}\"")
+                portal.iconoPortal = nuevo
+            }
+        }
+        request.colorPortal?.let {
+            val nuevo = it.trim().takeIf { v -> v.isNotBlank() }
+            if (portal.colorPortal != nuevo) {
+                cambios.add("Color: \"${portal.colorPortal ?: "—"}\" → \"${nuevo ?: "—"}\"")
+                portal.colorPortal = nuevo
+            }
+        }
+        request.logoUrl?.let {
+            val nuevo = it.trim().takeIf { v -> v.isNotBlank() }
+            if (portal.logoUrl != nuevo) {
+                cambios.add("Logo actualizado")
+                portal.logoUrl = nuevo
+            }
+        }
 
         val guardado = portalRepository.save(portal)
 
-        accionAdminService.registrar(
-            portal = portal,
-            admin  = usuario,
-            tipo   = TipoAccionAdmin.PORTAL_ACTUALIZADO,
-        )
+        if (cambios.isNotEmpty()) {
+            accionAdminService.registrar(
+                portal             = portal,
+                admin              = usuario,
+                tipo               = TipoAccionAdmin.PORTAL_ACTUALIZADO,
+                entidadDescripcion = cambios.joinToString(" · "),
+            )
+        }
 
         return guardado
     }
