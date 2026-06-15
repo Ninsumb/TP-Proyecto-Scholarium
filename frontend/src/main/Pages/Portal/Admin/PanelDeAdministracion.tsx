@@ -343,56 +343,80 @@ function parseMetadatosLegible(tipo: string, metadatos: string | null): string |
 
 // ─── Helpers de display del historial ────────────────────────────────────────
 
-const ACCION_CONFIG: Record<string, {
+// ─── Configuración del historial ──────────────────────────────────────────────
+
+const ACCION_CFG: Record<string, {
   label: string;
+  pillClass: string;
   icon: string;
-  colorClass: string;
+  grupo: 'solicitudes' | 'material' | 'miembros' | 'portal' | 'votaciones';
 }> = {
-  SOLICITUD_APROBADA:           { label: "Solicitud aprobada",         icon: "✅", colorClass: "text-green-600 bg-green-600/10 border-green-600/20" },
-  SOLICITUD_RECHAZADA:          { label: "Solicitud rechazada",        icon: "❌", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
-  MATERIAL_APROBADO:            { label: "Material aprobado",          icon: "✅", colorClass: "text-green-600 bg-green-600/10 border-green-600/20" },
-  MATERIAL_RECHAZADO:           { label: "Material rechazado",         icon: "❌", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
-  MATERIAL_ELIMINADO:           { label: "Material eliminado",         icon: "🗑️", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
-  MIEMBRO_ASCENDIDO:            { label: "Miembro ascendido",          icon: "⬆️", colorClass: "text-primary bg-primary/10 border-primary/20" },
-  MIEMBRO_DEGRADADO:            { label: "Admin degradado",            icon: "⬇️", colorClass: "text-yellow-600 bg-yellow-600/10 border-yellow-600/20" },
-  MIEMBRO_EXPULSADO:            { label: "Miembro expulsado",          icon: "🚪", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
-  MIEMBRO_BLOQUEADO:            { label: "Miembro bloqueado",          icon: "🚫", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
-  BLOQUEO_LEVANTADO:            { label: "Bloqueo levantado",          icon: "🔓", colorClass: "text-green-600 bg-green-600/10 border-green-600/20" },
-  PORTAL_ACTUALIZADO:           { label: "Portal actualizado",         icon: "⚙️", colorClass: "text-primary bg-primary/10 border-primary/20" },
-  PORTAL_TIPO_ACCESO_CAMBIADO:  { label: "Tipo de acceso cambiado",   icon: "🔒", colorClass: "text-yellow-600 bg-yellow-600/10 border-yellow-600/20" },
-  PORTAL_UNIVERSIDAD_CAMBIADA:  { label: "Universidad cambiada",       icon: "🏫", colorClass: "text-primary bg-primary/10 border-primary/20" },
-  PORTAL_CARRERA_CAMBIADA:      { label: "Carrera cambiada",           icon: "📚", colorClass: "text-primary bg-primary/10 border-primary/20" },
-  PORTAL_ARCHIVADO:             { label: "Portal archivado",           icon: "📦", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
-  PLANTILLA_SOLICITUD_ACTUALIZADA: { label: "Plantilla actualizada",  icon: "📋", colorClass: "text-primary bg-primary/10 border-primary/20" },
-  CARPETA_CREADA:               { label: "Carpeta creada",             icon: "📁", colorClass: "text-green-600 bg-green-600/10 border-green-600/20" },
-  CARPETA_RENOMBRADA:           { label: "Carpeta renombrada",         icon: "✏️", colorClass: "text-primary bg-primary/10 border-primary/20" },
-  MATERIA_CREADA:               { label: "Materia creada",             icon: "📘", colorClass: "text-green-600 bg-green-600/10 border-green-600/20" },
-  MATERIA_ACTUALIZADA:          { label: "Materia actualizada",        icon: "✏️", colorClass: "text-primary bg-primary/10 border-primary/20" },
-  MATERIA_MOVIDA:               { label: "Materia movida",             icon: "↔️", colorClass: "text-primary bg-primary/10 border-primary/20" },
-  MATERIA_ELIMINADA:            { label: "Materia eliminada",          icon: "🗑️", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
-  TABLERO_CREADO:               { label: "Tablero creado",             icon: "📋", colorClass: "text-green-600 bg-green-600/10 border-green-600/20" },
-  TABLERO_ELIMINADO:            { label: "Tablero eliminado",          icon: "🗑️", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
-  POST_ELIMINADO:               { label: "Post eliminado",             icon: "🗑️", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
-  VOTACION_CREADA:              { label: "Votación creada",            icon: "🗳️", colorClass: "text-primary bg-primary/10 border-primary/20" },
-  VOTACION_APROBADA:            { label: "Votación aprobada",          icon: "✅", colorClass: "text-green-600 bg-green-600/10 border-green-600/20" },
-  VOTACION_RECHAZADA:           { label: "Votación rechazada",         icon: "❌", colorClass: "text-destructive bg-destructive/10 border-destructive/20" },
-  HOME_ACTUALIZADA:             { label: "Página de inicio actualizada", icon: "🏠", colorClass: "text-primary bg-primary/10 border-primary/20" },
+  SOLICITUD_APROBADA:              { label: 'Solicitud aprobada',            pillClass: 'success', icon: 'user-check',     grupo: 'solicitudes'  },
+  SOLICITUD_RECHAZADA:             { label: 'Solicitud rechazada',           pillClass: 'danger',  icon: 'user-x',         grupo: 'solicitudes'  },
+  SOLICITUDES_ESTADO_CAMBIADO:     { label: 'Solicitudes: estado cambiado',  pillClass: 'warning', icon: 'toggle-right',   grupo: 'solicitudes'  },
+  PLANTILLA_SOLICITUD_ACTUALIZADA: { label: 'Plantilla de solicitudes',      pillClass: 'info',    icon: 'file-pencil',    grupo: 'solicitudes'  },
+  MATERIAL_APROBADO:               { label: 'Material aprobado',             pillClass: 'success', icon: 'file-check',     grupo: 'material'     },
+  MATERIAL_RECHAZADO:              { label: 'Material rechazado',            pillClass: 'danger',  icon: 'file-x',         grupo: 'material'     },
+  MATERIAL_ELIMINADO:              { label: 'Material eliminado',            pillClass: 'danger',  icon: 'trash',          grupo: 'material'     },
+  MIEMBRO_ASCENDIDO:               { label: 'Miembro ascendido',             pillClass: 'info',    icon: 'arrow-up',       grupo: 'miembros'     },
+  MIEMBRO_DEGRADADO:               { label: 'Admin degradado',               pillClass: 'warning', icon: 'arrow-down',     grupo: 'miembros'     },
+  MIEMBRO_EXPULSADO:               { label: 'Miembro expulsado',             pillClass: 'danger',  icon: 'user-minus',     grupo: 'miembros'     },
+  MIEMBRO_BLOQUEADO:               { label: 'Miembro bloqueado',             pillClass: 'danger',  icon: 'ban',            grupo: 'miembros'     },
+  BLOQUEO_LEVANTADO:               { label: 'Bloqueo levantado',             pillClass: 'success', icon: 'lock-open',      grupo: 'miembros'     },
+  PORTAL_ACTUALIZADO:              { label: 'Portal actualizado',            pillClass: 'info',    icon: 'settings',       grupo: 'portal'       },
+  PORTAL_TIPO_ACCESO_CAMBIADO:     { label: 'Tipo de acceso',                pillClass: 'warning', icon: 'lock',           grupo: 'portal'       },
+  PORTAL_UNIVERSIDAD_CAMBIADA:     { label: 'Universidad cambiada',          pillClass: 'info',    icon: 'building',       grupo: 'portal'       },
+  PORTAL_CARRERA_CAMBIADA:         { label: 'Carrera cambiada',              pillClass: 'info',    icon: 'book',           grupo: 'portal'       },
+  PORTAL_ARCHIVADO:                { label: 'Portal archivado',              pillClass: 'danger',  icon: 'archive',        grupo: 'portal'       },
+  CARPETA_CREADA:                  { label: 'Carpeta creada',                pillClass: 'success', icon: 'folder-plus',    grupo: 'portal'       },
+  CARPETA_RENOMBRADA:              { label: 'Carpeta renombrada',            pillClass: 'info',    icon: 'folder',         grupo: 'portal'       },
+  MATERIA_CREADA:                  { label: 'Materia creada',                pillClass: 'success', icon: 'book-2',         grupo: 'portal'       },
+  MATERIA_ACTUALIZADA:             { label: 'Materia actualizada',           pillClass: 'info',    icon: 'pencil',         grupo: 'portal'       },
+  MATERIA_MOVIDA:                  { label: 'Materia movida',                pillClass: 'info',    icon: 'arrows-move',    grupo: 'portal'       },
+  MATERIA_ELIMINADA:               { label: 'Materia eliminada',             pillClass: 'danger',  icon: 'trash',          grupo: 'portal'       },
+  TABLERO_CREADO:                  { label: 'Tablero creado',                pillClass: 'success', icon: 'layout-board',   grupo: 'portal'       },
+  TABLERO_ELIMINADO:               { label: 'Tablero eliminado',             pillClass: 'danger',  icon: 'trash',          grupo: 'portal'       },
+  POST_ELIMINADO:                  { label: 'Post eliminado',                pillClass: 'danger',  icon: 'message-off',    grupo: 'portal'       },
+  HOME_ACTUALIZADA:                { label: 'Inicio actualizado',            pillClass: 'info',    icon: 'home-edit',      grupo: 'portal'       },
+  VOTACION_CREADA:                 { label: 'Votación abierta',              pillClass: 'neutral', icon: 'vote',           grupo: 'votaciones'   },
+  VOTACION_APROBADA:               { label: 'Votación aprobada',             pillClass: 'success', icon: 'circle-check',   grupo: 'votaciones'   },
+  VOTACION_RECHAZADA:              { label: 'Votación rechazada',            pillClass: 'danger',  icon: 'circle-x',       grupo: 'votaciones'   },
 };
 
-function formatRelativeTime(isoString: string): string {
-  const now  = new Date();
-  const date = new Date(isoString);
-  const diff = now.getTime() - date.getTime();
-  const minutes = Math.floor(diff / 60_000);
-  const hours   = Math.floor(diff / 3_600_000);
-  const days    = Math.floor(diff / 86_400_000);
+const PILL_STYLES: Record<string, string> = {
+  success: 'bg-green-600/10 text-green-700 border border-green-600/25 dark:text-green-400',
+  danger:  'bg-destructive/10 text-destructive border border-destructive/25',
+  warning: 'bg-yellow-500/10 text-yellow-700 border border-yellow-500/25 dark:text-yellow-400',
+  info:    'bg-primary/10 text-primary border border-primary/25',
+  neutral: 'bg-surface-container text-on-surface-variant border border-border',
+};
 
-  if (minutes < 1)  return "hace un momento";
-  if (minutes < 60) return `hace ${minutes} min`;
-  if (hours < 24)   return `hace ${hours} h`;
-  if (days < 7)     return `hace ${days} día${days > 1 ? "s" : ""}`;
+const ACCION_GRUPOS = [
+  { key: 'all',        label: 'Todas'       },
+  { key: 'miembros',   label: 'Miembros'    },
+  { key: 'material',   label: 'Material'    },
+  { key: 'solicitudes',label: 'Solicitudes' },
+  { key: 'portal',     label: 'Portal'      },
+  { key: 'votaciones', label: 'Votaciones'  },
+] as const;
 
-  return date.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
+function relTime(isoString: string): string {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const m = Math.floor(diff / 60_000);
+  const h = Math.floor(diff / 3_600_000);
+  const d = Math.floor(diff / 86_400_000);
+  if (m < 1)  return 'ahora';
+  if (m < 60) return `${m} min`;
+  if (h < 24) return `${h} h`;
+  if (d < 7)  return `${d}d`;
+  return new Date(isoString).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+}
+
+function absTime(isoString: string): string {
+  return new Date(isoString).toLocaleString('es-ES', {
+    day: '2-digit', month: '2-digit', year: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  });
 }
 
 // ─── Componente principal ─────────────────────────────────────────────────────
@@ -422,6 +446,7 @@ export function AdminPanel() {
   const [historialError, setHistorialError]       = useState<string | null>(null);
   const [historialPage, setHistorialPage]         = useState(0);
   const [historialTotalPages, setHistorialTotalPages] = useState(0);
+  const [historialFiltro, setHistorialFiltro] = useState<string>('all');
 
   // Loading al votar u operar sobre un miembro
   const [votingId, setVotingId] = useState<number | null>(null);
@@ -827,120 +852,145 @@ export function AdminPanel() {
 
       {/* ── Tab: Historial ── */}
       {activeTab === "history" && (
-        <div>
-          {loadingHistorial && historialAcciones.length === 0 ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="w-7 h-7 animate-spin text-primary" />
-            </div>
-          ) : historialError ? (
-            <div className="text-center py-12 text-destructive text-sm">{historialError}</div>
-          ) : historialAcciones.length === 0 ? (
-            <div className="text-center py-16">
-              <div
-                className="w-16 h-16 bg-surface-container-low mx-auto mb-4 flex items-center justify-center"
-                style={{ borderRadius: "var(--radius)" }}
+      <div>
+        {/* Filtros por categoría */}
+        <div className="flex items-center gap-2 flex-wrap mb-5">
+          {ACCION_GRUPOS.map(({ key, label }) => {
+            const count = key === 'all'
+              ? historialAcciones.length
+              : historialAcciones.filter(a => ACCION_CFG[a.tipo]?.grupo === key).length;
+            return (
+              <button
+                key={key}
+                onClick={() => setHistorialFiltro(key)}
+                className={`text-xs px-3 py-1.5 transition-colors ${
+                  historialFiltro === key
+                    ? 'bg-surface-container text-foreground border border-border font-medium'
+                    : 'text-on-surface-variant hover:text-foreground border border-transparent'
+                }`}
+                style={{ borderRadius: 'var(--radius)' }}
               >
-                <History className="w-8 h-8 text-on-surface-variant" />
-              </div>
-              <h3 className="text-foreground mb-2">Sin acciones registradas</h3>
-              <p className="text-on-surface-variant text-sm max-w-md mx-auto">
-                Las acciones administrativas aparecerán aquí a medida que se realicen.
+                {label}
+                {count > 0 && (
+                  <span className={`ml-1.5 text-xs tabular-nums ${historialFiltro === key ? 'text-foreground' : 'text-on-surface-variant'}`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+          <span className="ml-auto text-xs text-on-surface-variant tabular-nums">
+            {(() => {
+              const total = historialFiltro === 'all'
+                ? historialAcciones.length
+                : historialAcciones.filter(a => ACCION_CFG[a.tipo]?.grupo === historialFiltro).length;
+              return `${total} acción${total !== 1 ? 'es' : ''}`;
+            })()}
+          </span>
+        </div>
+
+        {/* Contenido */}
+        {loadingHistorial && historialAcciones.length === 0 ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : historialError ? (
+          <p className="text-center py-10 text-destructive text-sm">{historialError}</p>
+        ) : (() => {
+          const filtered = historialFiltro === 'all'
+            ? historialAcciones
+            : historialAcciones.filter(a => ACCION_CFG[a.tipo]?.grupo === historialFiltro);
+
+          if (filtered.length === 0) return (
+            <div className="text-center py-14">
+              <History className="w-7 h-7 text-on-surface-variant mx-auto mb-3" />
+              <p className="text-sm text-on-surface-variant">
+                {historialAcciones.length === 0
+                  ? 'Las acciones administrativas aparecerán aquí a medida que se realicen.'
+                  : 'Sin acciones en esta categoría.'}
               </p>
             </div>
-          ) : (
-            <div>
-              {/* Timeline */}
-              <div className="relative">
-                {/* Línea vertical */}
-                <div className="absolute left-6 top-0 bottom-0 w-px bg-border" />
+          );
 
-                <div className="space-y-1">
-                  {historialAcciones.map((accion) => {
-                    const config = ACCION_CONFIG[accion.tipo] ?? {
-                      label: accion.tipo,
-                      icon: "🔹",
-                      colorClass: "text-foreground bg-surface-container border-border",
-                    };
+          return (
+            <div
+              className="bg-surface-container-lowest border border-border"
+              style={{ borderRadius: 'var(--radius)' }}
+            >
+              {filtered.map((accion, idx) => {
+                const cfg = ACCION_CFG[accion.tipo] ?? {
+                  label: accion.tipo, pillClass: 'neutral', icon: 'dots', grupo: 'portal' as const,
+                };
+                const pillCls = PILL_STYLES[cfg.pillClass] ?? PILL_STYLES.neutral;
+                const isLast = idx === filtered.length - 1;
 
-                    return (
-                      <div key={accion.id} className="relative flex gap-4 pl-14 py-3">
-                        {/* Ícono en la línea */}
-                        <div
-                          className={`absolute left-3 w-6 h-6 flex items-center justify-center text-sm border ${config.colorClass}`}
-                          style={{ borderRadius: "var(--radius)", top: "0.875rem" }}
-                        >
-                          {config.icon}
-                        </div>
-
-                        {/* Card de la acción */}
-                        <div
-                          className="flex-1 bg-surface-container-lowest p-4 shadow-sm"
-                          style={{ borderRadius: "var(--radius)" }}
-                        >
-                          <div className="flex items-start justify-between gap-3 flex-wrap">
-                            <div className="flex-1 min-w-0">
-                              {/* Tipo de acción */}
-                              <span
-                                className={`inline-block px-2 py-0.5 text-xs font-medium border mb-2 ${config.colorClass}`}
-                                style={{ borderRadius: "var(--radius)" }}
-                              >
-                                {config.label}
-                              </span>
-
-                              {/* Admin que la ejecutó */}
-                              <p className="text-sm text-foreground font-medium truncate">
-                                {accion.adminNombre}
-                              </p>
-
-                              {/* Entidad afectada */}
-                              {accion.entidadDescripcion && (
-                                <p className="text-sm text-on-surface-variant mt-0.5 truncate">
-                                  {accion.entidadDescripcion}
-                                </p>
-                              )}
-
-                              {/* Motivo */}
-                              {accion.motivo && (
-                                <p className="text-xs text-on-surface-variant mt-1 line-clamp-2">
-                                  <span className="font-medium">Motivo:</span> {accion.motivo}
-                                </p>
-                              )}
-                            </div>
-
-                            {/* Timestamp relativo */}
-                            <time
-                              className="text-xs text-on-surface-variant whitespace-nowrap shrink-0 mt-0.5"
-                              dateTime={accion.createdAt}
-                              title={new Date(accion.createdAt).toLocaleString("es-ES")}
-                            >
-                              {formatRelativeTime(accion.createdAt)}
-                            </time>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Cargar más */}
-              {historialPage + 1 < historialTotalPages && (
-                <div className="flex justify-center mt-6">
-                  <button
-                    onClick={() => fetchHistorial(historialPage + 1)}
-                    disabled={loadingHistorial}
-                    className="px-6 py-2.5 border border-border hover:bg-accent transition-colors text-sm text-foreground flex items-center gap-2 disabled:opacity-50"
-                    style={{ borderRadius: "var(--radius)" }}
+                return (
+                  <div
+                    key={accion.id}
+                    className={`grid gap-x-4 gap-y-0.5 px-4 py-3 ${!isLast ? 'border-b border-border' : ''}`}
+                    style={{ gridTemplateColumns: 'auto 1fr auto', alignItems: 'start' }}
                   >
-                    {loadingHistorial && <Loader2 className="w-4 h-4 animate-spin" />}
-                    Cargar más
-                  </button>
-                </div>
-              )}
+                    {/* Pill de tipo */}
+                    <div className="pt-0.5">
+                      <span
+                        className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 whitespace-nowrap ${pillCls}`}
+                        style={{ borderRadius: 'var(--radius)' }}
+                      >
+                        {cfg.label}
+                      </span>
+                    </div>
+
+                    {/* Descripción y admin */}
+                    <div className="min-w-0">
+                      {accion.entidadDescripcion && (
+                        <p className="text-sm text-foreground leading-snug truncate">
+                          {accion.entidadDescripcion}
+                        </p>
+                      )}
+                      {accion.motivo && (
+                        <p className="text-xs text-on-surface-variant mt-0.5 line-clamp-1">
+                          Motivo: {accion.motivo}
+                        </p>
+                      )}
+                      <p className="text-xs text-on-surface-variant mt-0.5">
+                        {accion.adminNombre}
+                      </p>
+                    </div>
+
+                    {/* Timestamp */}
+                    <time
+                      className="text-xs text-on-surface-variant pt-0.5 whitespace-nowrap text-right tabular-nums"
+                      dateTime={accion.createdAt}
+                      title={absTime(accion.createdAt)}
+                    >
+                      {relTime(accion.createdAt)}
+                    </time>
+                  </div>
+                );
+              })}
             </div>
-          )}
-        </div>
-      )}
+          );
+        })()}
+
+        {/* Cargar más */}
+        {historialPage + 1 < historialTotalPages && (
+          <div className="flex justify-center mt-4">
+            <button
+              onClick={() => fetchHistorial(historialPage + 1)}
+              disabled={loadingHistorial}
+              className="px-5 py-2 border border-border text-sm text-on-surface-variant hover:text-foreground hover:bg-accent transition-colors flex items-center gap-2 disabled:opacity-50"
+              style={{ borderRadius: 'var(--radius)' }}
+            >
+              {loadingHistorial
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <ChevronDown className="w-3.5 h-3.5" />
+              }
+              Cargar más
+            </button>
+          </div>
+        )}
+      </div>
+    )}
 
       {/* ── Tab: Votaciones ── */}
       {activeTab === "votes" && (
