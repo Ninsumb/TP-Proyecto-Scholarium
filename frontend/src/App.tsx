@@ -20,6 +20,8 @@ import { RequestsAndMaterial } from './main/Pages/Portal/Admin/SolicitudesYMater
 import { AdminPanel } from './main/Pages/Portal/Admin/PanelDeAdministracion'
 import { PortalConfig } from './main/Pages/Portal/Admin/ConfiguracionPortal'
 import { Notifications } from './main/Pages/Perfil/Notificaciones'
+import ForgotPassword from './main/Pages/Auth/ForgotPassword'
+import ResetPassword from './main/Pages/Auth/ResetPassword'
 
 
 function App() {
@@ -32,6 +34,8 @@ function App() {
         {/* Rutas de autenticación */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route element={
           <ProtectedRoute> 

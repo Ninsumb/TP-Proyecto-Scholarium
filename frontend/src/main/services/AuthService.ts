@@ -37,6 +37,16 @@ export interface GoogleLoginRequest {
   idToken: string;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  passwordNueva: string;
+  confirmacionPassword: string;
+}
+
 class AuthService {
   private api = axios.create({
     baseURL: `${API_URL}/auth`,
@@ -51,6 +61,14 @@ class AuthService {
   async login(request: LoginRequest): Promise<LoginResponse> {
     const response = await this.api.post<LoginResponse>('/login', request);
     return response.data;
+  }
+  
+  async forgotPassword(email: string): Promise<void> {
+    await this.api.post('/forgot-password', { email });
+  }
+
+  async resetPassword(request: ResetPasswordRequest): Promise<void> {
+    await this.api.post('/reset-password', request);
   }
 
   async loginWithGoogle(request: GoogleLoginRequest): Promise<LoginResponse> {
