@@ -3,6 +3,7 @@ package com.unsam.scholarium.service
 import com.unsam.scholarium.dto.SolicitudRechazadaEvent
 import com.unsam.scholarium.dto.VotacionAbiertaEvent
 import com.unsam.scholarium.dto.VotacionAprobadaEvent
+import com.unsam.scholarium.dto.VotacionEmpatadaEvent
 import com.unsam.scholarium.dto.VotacionRechazadaEvent
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
@@ -10,6 +11,7 @@ import com.unsam.scholarium.exception.NotAdminException
 import com.unsam.scholarium.exception.UnauthorizedException
 import com.unsam.scholarium.model.EstadoVotacion
 import com.unsam.scholarium.model.RolMembresia
+import com.unsam.scholarium.model.TipoAccionAdmin
 import com.unsam.scholarium.model.TipoVotacion
 import com.unsam.scholarium.model.VotacionAdmin
 import com.unsam.scholarium.model.VotoAdmin
@@ -26,6 +28,7 @@ import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 import kotlin.jvm.optionals.getOrNull
 import org.springframework.context.annotation.Lazy
+import java.util.UUID
 
 @Service
 class VotacionAdminService(
@@ -39,10 +42,25 @@ class VotacionAdminService(
     @Lazy private val foroService: ForoService,
     private val objectMapper: com.fasterxml.jackson.databind.ObjectMapper,
     private val applicationEventPublisher: ApplicationEventPublisher,
+    private val accionAdminService: AccionAdminService,
 ) {
 
     companion object {
         private const val DURACION_HORAS = 72L
+
+        // Dentro del companion object de VotacionAdminService:
+        private val TipoVotacion_LABEL = mapOf(
+            TipoVotacion.DEGRADAR_ADMIN      to "Degradar administrador",
+            TipoVotacion.EXPULSION_MIEMBRO   to "Expulsión de miembro",
+            TipoVotacion.BLOQUEO_MIEMBRO     to "Bloqueo de miembro",
+            TipoVotacion.CAMBIO_TIPO_ACCESO  to "Cambio de tipo de acceso",
+            TipoVotacion.CAMBIO_UNIVERSIDAD  to "Cambio de universidad",
+            TipoVotacion.CAMBIO_CARRERA      to "Cambio de carrera",
+            TipoVotacion.ELIMINAR_MATERIA    to "Eliminación de materia",
+            TipoVotacion.ELIMINAR_TABLERO    to "Eliminación de tablero",
+            TipoVotacion.ARCHIVAR_PORTAL     to "Archivar portal",
+            TipoVotacion.ACTIVAR_PORTAL to "Activar portal",
+        )
     }
 
     /**
@@ -100,6 +118,16 @@ class VotacionAdminService(
         //Notificacion de votacion creada
         applicationEventPublisher.publishEvent(
             VotacionAbiertaEvent(votacion, portal, proponente)
+        )
+        
+        // En crearVotacion(), después de evaluarYResolver(guardada) y antes del return:
+        accionAdminService.registrar(
+            portal             = portal,
+            admin              = proponente,
+            tipo               = TipoAccionAdmin.VOTACION_CREADA,
+            entidadId          = guardada.id.toString(),
+            entidadDescripcion = TipoVotacion_LABEL[tipo] ?: tipo.name,
+            motivo             = motivo,
         )
 
         return guardada
@@ -190,11 +218,15 @@ class VotacionAdminService(
      * Se expone como público para que el controller pueda serializar tanto los
      * resultados de las acciones (crear/votar) como los listados.
      */
-    fun toResponse(votacion: VotacionAdmin): com.unsam.scholarium.dto.VotacionResponse {
+    fun toResponse(votacion: VotacionAdmin, email: String): com.unsam.scholarium.dto.VotacionResponse {
+        val admin = usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        val yaVoto = votoRepository.existsByVotacionAndAdmin(votacion, admin)
         val aFavor = votoRepository.countByVotacionAndAprueba(votacion, true)
         val enContra = votoRepository.countByVotacionAndAprueba(votacion, false)
         val totalAdmins = membresiaRepository.countByPortalAndRol(votacion.portal, RolMembresia.ADMIN)
-        return com.unsam.scholarium.dto.VotacionResponse.fromEntity(votacion, aFavor, enContra, totalAdmins)
+        return com.unsam.scholarium.dto.VotacionResponse.fromEntity(votacion, aFavor, enContra, totalAdmins, yaVoto)
     }
 
     // Internals
@@ -217,10 +249,21 @@ class VotacionAdminService(
         // funciona tanto para totales pares como impares.
         val umbral = totalAdmins / 2
 
+        val totalVotos = aFavor + enContra
+        val hayEmpate = aFavor == enContra && totalVotos > 0
+
         when {
             aFavor > umbral -> {
                 votacion.resolver(EstadoVotacion.APROBADA)
                 votacionRepository.save(votacion)
+                accionAdminService.registrar(
+                    portal             = votacion.portal,
+                    admin              = votacion.proponente,
+                    tipo               = TipoAccionAdmin.VOTACION_APROBADA,
+                    entidadId          = votacion.id.toString(),
+                    entidadDescripcion = TipoVotacion_LABEL[votacion.tipo] ?: votacion.tipo.name,
+                    motivo             = votacion.motivo,
+                )
                 ejecutarAccion(votacion)
 
                 //Notificacion de votacion aprobada
@@ -234,10 +277,31 @@ class VotacionAdminService(
 
                 //Notificacion de votacion rechazada
                 applicationEventPublisher.publishEvent(
-                    VotacionRechazadaEvent(votacion, votacion.portal, votacion.proponente)
+                    VotacionEmpatadaEvent(votacion, votacion.portal, votacion.proponente)
+                )
+
+                accionAdminService.registrar(
+                    portal             = votacion.portal,
+                    admin              = votacion.proponente,
+                    tipo               = TipoAccionAdmin.VOTACION_RECHAZADA,
+                    entidadId          = votacion.id.toString(),
+                    entidadDescripcion = TipoVotacion_LABEL[votacion.tipo] ?: votacion.tipo.name,
+                    motivo             = votacion.motivo,
                 )
             }
-            // Sin mayoría todavía → queda ABIERTA.
+            hayEmpate -> {
+                votacion.resolver(EstadoVotacion.EXPIRADA)
+                votacionRepository.save(votacion)
+                accionAdminService.registrar(
+                    portal             = votacion.portal,
+                    admin              = votacion.proponente,
+                    tipo               = TipoAccionAdmin.VOTACION_CERRADA,
+                    entidadId          = votacion.id.toString(),
+                    entidadDescripcion = TipoVotacion_LABEL[votacion.tipo] ?: votacion.tipo.name,
+                    motivo             = votacion.motivo,
+
+                )
+            }
         }
     }
 
@@ -257,23 +321,24 @@ class VotacionAdminService(
                 val usuarioId = votacion.entidadId?.toLongOrNull()
                     ?: throw BusinessException("entidadId inválido para DEGRADAR_ADMIN")
                 portalService.degradarAdmin(
-                    portalId = votacion.portal.id!!,
+                    portalId          = votacion.portal.id!!,
                     usuarioObjetivoId = usuarioId,
-                    emailAdmin = emailProponente,
+                    emailAdmin        = emailProponente,
                 )
+                // degradarAdmin ya registra la acción internamente.
             }
 
             TipoVotacion.EXPULSION_MIEMBRO -> {
                 val usuarioId = votacion.entidadId?.toLongOrNull()
                     ?: throw BusinessException("entidadId inválido para EXPULSION_MIEMBRO")
                 portalService.removerMiembro(
-                    portalId = votacion.portal.id!!,
+                    portalId          = votacion.portal.id!!,
                     usuarioObjetivoId = usuarioId,
-                    emailAdmin = emailProponente,
+                    emailAdmin        = emailProponente,
                 )
+                // removerMiembro ya registra la acción internamente.
             }
 
-            //TODO CUANDO ESTE IMPLEMENTADO EL ENDPOINT
             TipoVotacion.BLOQUEO_MIEMBRO -> { /* TODO */ }
 
             TipoVotacion.CAMBIO_TIPO_ACCESO -> {
@@ -283,9 +348,22 @@ class VotacionAdminService(
                     .get("nuevoTipoAcceso")?.asText()
                     ?: throw BusinessException("Campo nuevoTipoAcceso ausente en metadatos")
                 val nuevoTipo = com.unsam.scholarium.model.TipoAcceso.valueOf(nuevoTipoStr)
-                portalService.cambiarTipoAcceso(
-                    portalId = votacion.portal.id!!,
-                    nuevoTipo = nuevoTipo,
+
+                // Capturar antes de mutar
+                val portalActual = portalRepository.findById(votacion.portal.id!!).getOrNull()
+                val tipoAnterior = portalActual?.tipoAcceso?.name ?: "—"
+
+                portalService.cambiarTipoAcceso(portalId = votacion.portal.id!!, nuevoTipo = nuevoTipo)
+
+                val labelAnterior = if (tipoAnterior == "ABIERTO") "Abierto" else "Cerrado"
+                val labelNuevo    = if (nuevoTipoStr == "ABIERTO") "Abierto" else "Cerrado"
+
+                accionAdminService.registrar(
+                    portal             = votacion.portal,
+                    admin              = votacion.proponente,
+                    tipo               = TipoAccionAdmin.PORTAL_TIPO_ACCESO_CAMBIADO,
+                    entidadDescripcion = "$labelAnterior → $labelNuevo",
+                    motivo             = votacion.motivo,
                 )
             }
 
@@ -295,9 +373,18 @@ class VotacionAdminService(
                 val nuevoValor = objectMapper.readTree(metadatosJson)
                     .get("nuevoValor")?.asText()
                     ?: throw BusinessException("Campo nuevoValor ausente en metadatos")
-                portalService.cambiarUniversidad(
-                    portalId = votacion.portal.id!!,
-                    nuevaUniversidad = nuevoValor,
+
+                val portalActual = portalRepository.findById(votacion.portal.id!!).getOrNull()
+                val valorAnterior = portalActual?.universidad ?: "—"
+
+                portalService.cambiarUniversidad(portalId = votacion.portal.id!!, nuevaUniversidad = nuevoValor)
+
+                accionAdminService.registrar(
+                    portal             = votacion.portal,
+                    admin              = votacion.proponente,
+                    tipo               = TipoAccionAdmin.PORTAL_UNIVERSIDAD_CAMBIADA,
+                    entidadDescripcion = "\"$valorAnterior\" → \"$nuevoValor\"",
+                    motivo             = votacion.motivo,
                 )
             }
 
@@ -307,9 +394,18 @@ class VotacionAdminService(
                 val nuevoValor = objectMapper.readTree(metadatosJson)
                     .get("nuevoValor")?.asText()
                     ?: throw BusinessException("Campo nuevoValor ausente en metadatos")
-                portalService.cambiarCarrera(
-                    portalId = votacion.portal.id!!,
-                    nuevaCarrera = nuevoValor,
+
+                val portalActual = portalRepository.findById(votacion.portal.id!!).getOrNull()
+                val valorAnterior = portalActual?.carrera ?: "—"
+
+                portalService.cambiarCarrera(portalId = votacion.portal.id!!, nuevaCarrera = nuevoValor)
+
+                accionAdminService.registrar(
+                    portal             = votacion.portal,
+                    admin              = votacion.proponente,
+                    tipo               = TipoAccionAdmin.PORTAL_CARRERA_CAMBIADA,
+                    entidadDescripcion = "\"$valorAnterior\" → \"$nuevoValor\"",
+                    motivo             = votacion.motivo,
                 )
             }
 
@@ -326,10 +422,36 @@ class VotacionAdminService(
                     runCatching { java.util.UUID.fromString(it) }.getOrNull()
                 } ?: throw BusinessException("entidadId inválido para ELIMINAR_TABLERO")
                 foroService.eliminarTablero(tableroId)
+
+                accionAdminService.registrar(
+                    portal    = votacion.portal,
+                    admin     = votacion.proponente,
+                    tipo      = TipoAccionAdmin.TABLERO_ELIMINADO,
+                    entidadId = tableroId.toString(),
+                    motivo    = votacion.motivo,
+                )
             }
 
             TipoVotacion.ARCHIVAR_PORTAL -> {
                 portalService.archivarPortal(votacion.portal.id!!)
+
+                accionAdminService.registrar(
+                    portal = votacion.portal,
+                    admin  = votacion.proponente,
+                    tipo   = TipoAccionAdmin.PORTAL_ARCHIVADO,
+                    motivo = votacion.motivo,
+                )
+            }
+
+            TipoVotacion.ACTIVAR_PORTAL -> {
+                portalService.activarPortal(votacion.portal.id!!)
+
+                accionAdminService.registrar(
+                    portal = votacion.portal,
+                    admin  = votacion.proponente,
+                    tipo   = TipoAccionAdmin.PORTAL_ACTIVADO,
+                    motivo = votacion.motivo,
+                )
             }
         }
     }

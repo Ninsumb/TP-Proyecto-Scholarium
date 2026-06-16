@@ -58,6 +58,17 @@ class PostController(private val postService: PostService) {
         return ResponseEntity.ok(respuestas)
     }
 
+    @GetMapping("/foros/{tableroId}/posts/buscar")
+    fun buscarPosts(
+        @PathVariable tableroId: UUID,
+        @RequestParam q: String,
+        authentication: Authentication
+    ): ResponseEntity<List<PostResponse>> {
+        val email = authentication.name
+        val posts = postService.buscarPostsEnTablero(tableroId, email, q)
+        return ResponseEntity.ok(posts)
+    }
+
     @PutMapping("/posts/{postId}")
     fun editarPost(
         @PathVariable postId: UUID,

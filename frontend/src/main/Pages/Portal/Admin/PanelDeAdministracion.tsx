@@ -8,6 +8,7 @@ import { authService } from "../../../services/AuthService";
 import { usePortalContext } from "../../../hooks/usePortalContext";
 import { useToast } from "../../../hooks/useToast";
 import { Toast } from "../../../Components/common/Toast";
+import type { AccionAdminResponse, PageAccionAdminResponse } from "../../../types/Admin/Admin";
 
 import type {
   MiembroResponse,
@@ -340,6 +341,360 @@ function parseMetadatosLegible(tipo: string, metadatos: string | null): string |
   }
 }
 
+// ─── Helpers de display del historial ────────────────────────────────────────
+
+// ─── Configuración del historial ──────────────────────────────────────────────
+
+// ─── AuditIcon ────────────────────────────────────────────────────────────────
+// Íconos Lucide outline en SVG inline, 16x16, currentColor.
+
+function AuditIcon({ tipo }: { tipo: string }) {
+  const icons: Record<string, string> = {
+    SOLICITUD_APROBADA:              'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM16 11l2 2 4-4',
+    SOLICITUD_RECHAZADA:             'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM18 8l4 4M22 8l-4 4',
+    SOLICITUDES_ESTADO_CAMBIADO:     'M5 12H3a9 9 0 1 0 9-9',
+    PLANTILLA_SOLICITUD_ACTUALIZADA: 'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z',
+    MATERIAL_APROBADO:               'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8ZM14 2v6h6M9 15l2 2 4-4',
+    MATERIAL_RECHAZADO:              'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8ZM14 2v6h6M9.5 12.5 15 18M15 12.5l-5.5 5.5',
+    MATERIAL_ELIMINADO:              'M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2',
+    MIEMBRO_ASCENDIDO:               'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM12 16v6M9 19l3-3 3 3',
+    MIEMBRO_DEGRADADO:               'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM12 16v6M9 22l3-3 3 3',
+    MIEMBRO_EXPULSADO:               'M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM23 11l-4 4M19 11l4 4',
+    MIEMBRO_BLOQUEADO:               'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10ZM4.93 4.93l14.14 14.14',
+    BLOQUEO_LEVANTADO:               'M8 11V7a4 4 0 0 1 8 0v1M5 11h14a1 1 0 0 1 1 1v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7a1 1 0 0 1 1-1Z',
+    PORTAL_ACTUALIZADO:              'M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41',
+    PORTAL_TIPO_ACCESO_CAMBIADO:     'M19 11H5m14 0a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2m14 0V9a2 2 0 0 0-2-2M5 11V9a2 2 0 0 1 2-2m0 0V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2M7 7h10',
+    PORTAL_UNIVERSIDAD_CAMBIADA:     'M3 21h18M3 7v1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7H3l2-4h14l2 4ZM5 21V10.85M19 21V10.85M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4',
+    PORTAL_CARRERA_CAMBIADA:         'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15Z',
+    PORTAL_ARCHIVADO:                'M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16ZM12 22V12M3.27 6.96 12 12.01l8.73-5.05',
+    CARPETA_CREADA:                  'M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2ZM12 11v6M9 14h6',
+    CARPETA_RENOMBRADA:              'M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2ZM16 13l-3.5 3.5L11 18l.5-1.5L15 13l1 1ZM15 12l1.5 1.5',
+    MATERIA_CREADA:                  'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM12 8v8M8 12h8',
+    MATERIA_ACTUALIZADA:             'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z',
+    MATERIA_MOVIDA:                  'M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20',
+    MATERIA_ELIMINADA:               'M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6',
+    TABLERO_CREADO:                  'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3zM12 8v8M8 12h8',
+    TABLERO_ELIMINADO:               'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3zM10 10 14 14M10 14 14 10',
+    POST_ELIMINADO:                  'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2ZM9.5 7.5 14.5 12.5M9.5 12.5 14.5 7.5',
+    HOME_ACTUALIZADA:                'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2ZM9 22V12h6v10M16 13l-3.5 3.5L11 18l.5-1.5 3.5-3.5 1 1Z',
+    VOTACION_CREADA:                 'M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3Z',
+    VOTACION_APROBADA:               'M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3',
+    VOTACION_RECHAZADA:              'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10ZM15 9l-6 6M9 9l6 6',
+  };
+
+  const d = icons[tipo] ?? 'M12 5v14M5 12h14';
+
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {d.split('M').filter(Boolean).map((seg, i) => (
+        <path key={i} d={'M' + seg} />
+      ))}
+    </svg>
+  );
+}
+
+const ACCION_CFG: Record<string, {
+  label: string;
+  pillClass: string;
+  icon: string;
+  grupo: 'solicitudes' | 'material' | 'miembros' | 'portal' | 'votaciones';
+}> = {
+  SOLICITUD_APROBADA:              { label: 'Solicitud aprobada',            pillClass: 'success', icon: 'user-check',     grupo: 'solicitudes'  },
+  SOLICITUD_RECHAZADA:             { label: 'Solicitud rechazada',           pillClass: 'danger',  icon: 'user-x',         grupo: 'solicitudes'  },
+  SOLICITUDES_ESTADO_CAMBIADO:     { label: 'Solicitudes: estado cambiado',  pillClass: 'warning', icon: 'toggle-right',   grupo: 'solicitudes'  },
+  PLANTILLA_SOLICITUD_ACTUALIZADA: { label: 'Plantilla de solicitudes',      pillClass: 'info',    icon: 'file-pencil',    grupo: 'solicitudes'  },
+  MATERIAL_APROBADO:               { label: 'Material aprobado',             pillClass: 'success', icon: 'file-check',     grupo: 'material'     },
+  MATERIAL_RECHAZADO:              { label: 'Material rechazado',            pillClass: 'danger',  icon: 'file-x',         grupo: 'material'     },
+  MATERIAL_ELIMINADO:              { label: 'Material eliminado',            pillClass: 'danger',  icon: 'trash',          grupo: 'material'     },
+  MIEMBRO_ASCENDIDO:               { label: 'Miembro ascendido',             pillClass: 'info',    icon: 'arrow-up',       grupo: 'miembros'     },
+  MIEMBRO_DEGRADADO:               { label: 'Admin degradado',               pillClass: 'warning', icon: 'arrow-down',     grupo: 'miembros'     },
+  MIEMBRO_EXPULSADO:               { label: 'Miembro expulsado',             pillClass: 'danger',  icon: 'user-minus',     grupo: 'miembros'     },
+  MIEMBRO_BLOQUEADO:               { label: 'Miembro bloqueado',             pillClass: 'danger',  icon: 'ban',            grupo: 'miembros'     },
+  BLOQUEO_LEVANTADO:               { label: 'Bloqueo levantado',             pillClass: 'success', icon: 'lock-open',      grupo: 'miembros'     },
+  PORTAL_ACTUALIZADO:              { label: 'Portal actualizado',            pillClass: 'info',    icon: 'settings',       grupo: 'portal'       },
+  PORTAL_TIPO_ACCESO_CAMBIADO:     { label: 'Tipo de acceso',                pillClass: 'warning', icon: 'lock',           grupo: 'portal'       },
+  PORTAL_UNIVERSIDAD_CAMBIADA:     { label: 'Universidad cambiada',          pillClass: 'info',    icon: 'building',       grupo: 'portal'       },
+  PORTAL_CARRERA_CAMBIADA:         { label: 'Carrera cambiada',              pillClass: 'info',    icon: 'book',           grupo: 'portal'       },
+  PORTAL_ARCHIVADO:                { label: 'Portal archivado',              pillClass: 'danger',  icon: 'archive',        grupo: 'portal'       },
+  CARPETA_CREADA:                  { label: 'Carpeta creada',                pillClass: 'success', icon: 'folder-plus',    grupo: 'portal'       },
+  CARPETA_RENOMBRADA:              { label: 'Carpeta renombrada',            pillClass: 'info',    icon: 'folder',         grupo: 'portal'       },
+  MATERIA_CREADA:                  { label: 'Materia creada',                pillClass: 'success', icon: 'book-2',         grupo: 'portal'       },
+  MATERIA_ACTUALIZADA:             { label: 'Materia actualizada',           pillClass: 'info',    icon: 'pencil',         grupo: 'portal'       },
+  MATERIA_MOVIDA:                  { label: 'Materia movida',                pillClass: 'info',    icon: 'arrows-move',    grupo: 'portal'       },
+  MATERIA_ELIMINADA:               { label: 'Materia eliminada',             pillClass: 'danger',  icon: 'trash',          grupo: 'portal'       },
+  TABLERO_CREADO:                  { label: 'Tablero creado',                pillClass: 'success', icon: 'layout-board',   grupo: 'portal'       },
+  TABLERO_ELIMINADO:               { label: 'Tablero eliminado',             pillClass: 'danger',  icon: 'trash',          grupo: 'portal'       },
+  POST_ELIMINADO:                  { label: 'Post eliminado',                pillClass: 'danger',  icon: 'message-off',    grupo: 'portal'       },
+  HOME_ACTUALIZADA:                { label: 'Inicio actualizado',            pillClass: 'info',    icon: 'home-edit',      grupo: 'portal'       },
+  VOTACION_CREADA:                 { label: 'Votación abierta',              pillClass: 'neutral', icon: 'vote',           grupo: 'votaciones'   },
+  VOTACION_APROBADA:               { label: 'Votación aprobada',             pillClass: 'success', icon: 'circle-check',   grupo: 'votaciones'   },
+  VOTACION_RECHAZADA:              { label: 'Votación rechazada',            pillClass: 'danger',  icon: 'circle-x',       grupo: 'votaciones'   },
+  VOTACION_CERRADA:                { label: 'Votación cerrada',              pillClass: 'neutral', icon: 'neutral',        grupo: 'votaciones'   }
+};
+
+const PILL_STYLES: Record<string, string> = {
+  success: 'bg-green-600/10 text-green-700 border border-green-600/25 dark:text-green-400',
+  danger:  'bg-destructive/10 text-destructive border border-destructive/25',
+  warning: 'bg-yellow-500/10 text-yellow-700 border border-yellow-500/25 dark:text-yellow-400',
+  info:    'bg-primary/10 text-primary border border-primary/25',
+  neutral: 'bg-surface-container text-on-surface-variant border border-border',
+};
+
+const ACCION_GRUPOS = [
+  { key: 'all',        label: 'Todas'       },
+  { key: 'miembros',   label: 'Miembros'    },
+  { key: 'material',   label: 'Material'    },
+  { key: 'solicitudes',label: 'Solicitudes' },
+  { key: 'portal',     label: 'Portal'      },
+  { key: 'votaciones', label: 'Votaciones'  },
+] as const;
+
+function relTime(isoString: string): string {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const m = Math.floor(diff / 60_000);
+  const h = Math.floor(diff / 3_600_000);
+  const d = Math.floor(diff / 86_400_000);
+  if (m < 1)  return 'ahora';
+  if (m < 60) return `${m} min`;
+  if (h < 24) return `${h} h`;
+  if (d < 7)  return `${d}d`;
+  return new Date(isoString).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+}
+
+function absTime(isoString: string): string {
+  return new Date(isoString).toLocaleString('es-ES', {
+    day: '2-digit', month: '2-digit', year: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+// ─── AccionCard ───────────────────────────────────────────────────────────────
+
+interface AccionCardProps {
+  accion: AccionAdminResponse;
+  cfg: { label: string; pillClass: string; icon?: string; grupo: string };
+  pillCls: string;
+  initials: string;
+}
+
+// Mapa de ícono de Lucide por tipo de acción — usamos los que ya importaste + algunos nuevos
+const ACCION_ICON_MAP: Record<string, React.ReactNode> = {
+  // Para no agregar 30 imports, usamos un SVG inline pequeño como fallback
+  // y los iconos de Lucide que ya están en scope para los casos comunes.
+};
+
+function absTimeStr(isoString: string): string {
+  return new Date(isoString).toLocaleString('es-ES', {
+    day: '2-digit', month: '2-digit', year: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+// Color del icono container según pillClass
+const ICON_CONTAINER_CLS: Record<string, string> = {
+  success: 'bg-green-600/10 text-green-700 dark:text-green-400',
+  danger:  'bg-destructive/10 text-destructive',
+  warning: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400',
+  info:    'bg-primary/10 text-primary',
+  neutral: 'bg-surface-container text-on-surface-variant',
+};
+
+function AccionCard({ accion, cfg, pillCls, initials }: AccionCardProps) {
+  const [open, setOpen] = useState(false);
+  const iconContainerCls = ICON_CONTAINER_CLS[cfg.pillClass] ?? ICON_CONTAINER_CLS.neutral;
+ 
+  // Detectar hex de color en entidadDescripcion (para cambios de color de portal)
+  const hexColors = accion.entidadDescripcion
+    ? extractHexColors(accion.entidadDescripcion)
+    : [];
+ 
+  return (
+    <div
+      className="border border-border bg-card overflow-hidden transition-colors"
+      style={{ borderRadius: "var(--radius)" }}
+    >
+      {/* Header — siempre visible, clickeable */}
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center gap-3 px-3.5 py-3 text-left hover:bg-accent transition-colors"
+      >
+        {/* Ícono de acción */}
+        <div
+          className={`w-8 h-8 flex items-center justify-center shrink-0 ${iconContainerCls}`}
+          style={{ borderRadius: "var(--radius)" }}
+        >
+          <AuditIcon tipo={accion.tipo} />
+        </div>
+ 
+        {/* Texto principal */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-foreground leading-tight truncate">
+            {cfg.label}
+          </p>
+          <p className="text-xs text-on-surface-variant mt-0.5 truncate">
+            {accion.entidadDescripcion ?? "—"}
+          </p>
+        </div>
+ 
+        {/* Timestamp + chevron */}
+        <div className="flex items-center gap-2 shrink-0">
+          <time
+            className="text-xs text-on-surface-variant tabular-nums"
+            dateTime={accion.createdAt}
+            title={absTimeStr(accion.createdAt)}
+          >
+            {relTime(accion.createdAt)}
+          </time>
+          <ChevronDown
+            className={`w-3.5 h-3.5 text-on-surface-variant transition-transform duration-150 ${
+              open ? "rotate-180" : ""
+            }`}
+          />
+        </div>
+      </button>
+ 
+      {/* Cuerpo expandible */}
+      {open && (
+        <div className="border-t border-border px-3.5 py-3 space-y-2.5">
+ 
+          {/* ── Detalle ── */}
+          {accion.entidadDescripcion && (
+            <div className="flex items-start gap-2 text-xs">
+              {/* Label con ancho fijo para alinear columna de valor */}
+              <span className="text-on-surface-variant shrink-0 w-14 pt-px">Detalle</span>
+              <span className="text-foreground flex items-center gap-1.5 flex-wrap">
+                {accion.entidadDescripcion}
+                <ColorDots colors={hexColors} />
+              </span>
+            </div>
+          )}
+ 
+          {/* ── Motivo (destacado) ── */}
+          {accion.motivo && (
+            <div className="flex items-start gap-2 text-xs">
+              <span className="text-on-surface-variant shrink-0 w-14 pt-px">Motivo</span>
+              {/* Recuadro destacado para el motivo */}
+              <div
+                className="flex-1 px-2.5 py-1.5 bg-surface-container border border-border text-foreground italic leading-relaxed"
+                style={{ borderRadius: "var(--radius)" }}
+              >
+                {accion.motivo}
+              </div>
+            </div>
+          )}
+ 
+          {/* ── Admin que ejecutó la acción ── */}
+          <div className="flex items-center gap-2 pt-0.5">
+            {/* Avatar con foto o iniciales */}
+            <AdminAvatar
+              nombre={accion.adminNombre}
+              fotoPerfil={accion.adminFotoPerfil}
+              initials={initials}
+              size="sm"
+            />
+            {/* Fallback oculto inicialmente — se activa por JS si la img falla */}
+            {accion.adminFotoPerfil && (
+              <div
+                className="w-6 h-6 bg-primary/10 text-primary items-center justify-center text-[10px] font-medium shrink-0 hidden"
+                style={{ borderRadius: "50%" }}
+              >
+                {initials}
+              </div>
+            )}
+            <span className="text-xs text-on-surface-variant">{accion.adminNombre}</span>
+            <span className="text-xs text-on-surface-variant ml-auto tabular-nums">
+              {absTimeStr(accion.createdAt)}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Helper: detectar hex color en un string ─────────────────────────────────
+// Retorna el primer #RRGGBB o #RGB que encuentre, o null si no hay ninguno.
+// ─── Helper: detectar hex colors en un string ────────────────────────────────
+// Retorna todos los #RRGGBB / #RGB encontrados en orden de aparición.
+function extractHexColors(text: string): string[] {
+  return [...text.matchAll(/#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/g)].map((m) => m[0]);
+}
+
+// ─── ColorDots ────────────────────────────────────────────────────────────────
+// Muestra uno o dos dots de color inline. Si hay dos, los separa con una flecha.
+
+function ColorDots({ colors }: { colors: string[] }) {
+  if (colors.length === 0) return null;
+
+  return (
+    <span className="inline-flex items-center gap-1 shrink-0">
+      {colors.length === 1 ? (
+        <span
+          className="inline-block w-2.5 h-2.5 rounded-full border border-black/10"
+          style={{ backgroundColor: colors[0] }}
+          title={colors[0]}
+        />
+      ) : (
+        <>
+          <span
+            className="inline-block w-2.5 h-2.5 rounded-full border border-black/10"
+            style={{ backgroundColor: colors[0] }}
+            title={colors[0]}
+          />
+          <span className="text-on-surface-variant">→</span>
+          <span
+            className="inline-block w-2.5 h-2.5 rounded-full border border-black/10"
+            style={{ backgroundColor: colors[1] }}
+            title={colors[1]}
+          />
+        </>
+      )}
+    </span>
+  );
+}
+ 
+// ─── AdminAvatar ─────────────────────────────────────────────────────────────
+// Muestra la foto de perfil del admin si existe, o sus iniciales como fallback.
+ 
+interface AdminAvatarProps {
+  nombre: string;
+  fotoPerfil: string | null;
+  initials: string;
+  size?: "sm" | "md";
+}
+ 
+function AdminAvatar({ nombre, fotoPerfil, initials, size = "sm" }: AdminAvatarProps) {
+  const dims = size === "sm" ? "w-6 h-6 text-[10px]" : "w-8 h-8 text-xs";
+ 
+  if (fotoPerfil) {
+    return (
+      <img
+        src={fotoPerfil}
+        alt={nombre}
+        className={`${dims} rounded-full object-cover shrink-0`}
+        onError={(e) => {
+          // Si la imagen falla, ocultamos y mostramos fallback
+          (e.currentTarget as HTMLImageElement).style.display = "none";
+          (e.currentTarget.nextElementSibling as HTMLElement | null)?.style.setProperty("display", "flex");
+        }}
+      />
+    );
+  }
+ 
+  return (
+    <div
+      className={`${dims} bg-primary/10 text-primary flex items-center justify-center font-medium shrink-0`}
+      style={{ borderRadius: "50%" }}
+    >
+      {initials}
+    </div>
+  );
+}
+
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export function AdminPanel() {
@@ -361,6 +716,13 @@ export function AdminPanel() {
   const [votesError, setVotesError]     = useState<string | null>(null);
   const [showClosedVotes, setShowClosedVotes] = useState(false);
   const [loadingClosedVotes, setLoadingClosedVotes] = useState(false);
+
+  const [historialAcciones, setHistorialAcciones] = useState<AccionAdminResponse[]>([]);
+  const [loadingHistorial, setLoadingHistorial]   = useState(false);
+  const [historialError, setHistorialError]       = useState<string | null>(null);
+  const [historialPage, setHistorialPage]         = useState(0);
+  const [historialTotalPages, setHistorialTotalPages] = useState(0);
+  const [historialFiltro, setHistorialFiltro] = useState<string>('all');
 
   // Loading al votar u operar sobre un miembro
   const [votingId, setVotingId] = useState<number | null>(null);
@@ -413,6 +775,32 @@ export function AdminPanel() {
   useEffect(() => {
     if (activeTab === "members") fetchMembers();
   }, [activeTab, fetchMembers]);
+
+  // ── Carga de historial ────────────────────────────────────────────────────────
+
+  const fetchHistorial = useCallback(async (page = 0) => {
+    if (!portalId) return;
+    setLoadingHistorial(true);
+    setHistorialError(null);
+    try {
+      const data = await adminService.getHistorialAcciones(portalId, page, 30);
+      if (page === 0) {
+        setHistorialAcciones(data.content);
+      } else {
+        setHistorialAcciones(prev => [...prev, ...data.content]);
+      }
+      setHistorialPage(data.number);
+      setHistorialTotalPages(data.totalPages);
+    } catch {
+      setHistorialError("No se pudo cargar el historial de acciones.");
+    } finally {
+      setLoadingHistorial(false);
+    }
+  }, [portalId]);
+
+  useEffect(() => {
+    if (activeTab === "history") fetchHistorial(0);
+  }, [activeTab, fetchHistorial]);
 
   // ── Carga de votaciones abiertas ──────────────────────────────────────────
 
@@ -586,7 +974,9 @@ export function AdminPanel() {
         showSuccess(
           updated.estado === "APROBADA"
             ? "¡Voto registrado! La votación alcanzó la mayoría y se ejecutó la acción."
-            : "Voto registrado. La propuesta fue rechazada.",
+            : updated.votosAFavor === updated.votosEnContra
+              ? "Voto registrado. La votación terminó en empate."
+              : "Voto registrado. La propuesta fue rechazada."
         );
       } else {
         setVotes((prev) =>
@@ -740,19 +1130,116 @@ export function AdminPanel() {
 
       {/* ── Tab: Historial ── */}
       {activeTab === "history" && (
-        <div className="text-center py-16">
-          <div
-            className="w-16 h-16 bg-surface-container-low mx-auto mb-4 flex items-center justify-center"
-            style={{ borderRadius: "var(--radius)" }}
+  <div>
+    {/* Filtros */}
+    <div className="flex items-center gap-2 flex-wrap mb-5">
+      {ACCION_GRUPOS.map(({ key, label }) => {
+        const count = key === 'all'
+          ? historialAcciones.length
+          : historialAcciones.filter(a => ACCION_CFG[a.tipo]?.grupo === key).length;
+        return (
+          <button
+            key={key}
+            onClick={() => setHistorialFiltro(key)}
+            className={`text-xs px-3 py-1.5 transition-colors ${
+              historialFiltro === key
+                ? 'bg-surface-container text-foreground border border-border font-medium'
+                : 'text-on-surface-variant hover:text-foreground border border-transparent'
+            }`}
+            style={{ borderRadius: 'var(--radius)' }}
           >
-            <History className="w-8 h-8 text-on-surface-variant" />
-          </div>
-          <h3 className="text-foreground mb-2">Historial de acciones</h3>
-          <p className="text-on-surface-variant text-sm max-w-md mx-auto">
-            El registro de acciones administrativas estará disponible próximamente.
+            {label}
+            {count > 0 && (
+              <span className={`ml-1.5 tabular-nums ${
+                historialFiltro === key ? 'text-foreground' : 'text-on-surface-variant'
+              }`}>
+                {count}
+              </span>
+            )}
+          </button>
+        );
+      })}
+      <span className="ml-auto text-xs text-on-surface-variant tabular-nums">
+        {(() => {
+          const t = historialFiltro === 'all'
+            ? historialAcciones.length
+            : historialAcciones.filter(a => ACCION_CFG[a.tipo]?.grupo === historialFiltro).length;
+          return `${t} acción${t !== 1 ? 'es' : ''}`;
+        })()}
+      </span>
+    </div>
+
+    {/* Contenido */}
+    {loadingHistorial && historialAcciones.length === 0 ? (
+      <div className="flex justify-center py-12">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    ) : historialError ? (
+      <p className="text-center py-10 text-destructive text-sm">{historialError}</p>
+    ) : (() => {
+      const filtered = historialFiltro === 'all'
+        ? historialAcciones
+        : historialAcciones.filter(a => ACCION_CFG[a.tipo]?.grupo === historialFiltro);
+
+      if (filtered.length === 0) return (
+        <div className="flex flex-col items-center py-14 gap-2">
+          <History className="w-7 h-7 text-on-surface-variant" />
+          <p className="text-sm text-on-surface-variant">
+            {historialAcciones.length === 0
+              ? 'Las acciones administrativas aparecerán aquí a medida que se realicen.'
+              : 'Sin acciones en esta categoría.'}
           </p>
         </div>
-      )}
+      );
+
+      return (
+        <div className="flex flex-col gap-1.5">
+          {filtered.map((accion) => {
+            const cfg = ACCION_CFG[accion.tipo] ?? {
+              label: accion.tipo,
+              pillClass: 'neutral',
+              icon: 'dots',
+              grupo: 'portal' as const,
+            };
+            const pillCls = PILL_STYLES[cfg.pillClass] ?? PILL_STYLES.neutral;
+            const initials = accion.adminNombre
+              .split(' ')
+              .slice(0, 2)
+              .map((n: string) => n[0]?.toUpperCase() ?? '')
+              .join('');
+
+            return (
+              <AccionCard
+                key={accion.id}
+                accion={accion}
+                cfg={cfg}
+                pillCls={pillCls}
+                initials={initials}
+              />
+            );
+          })}
+        </div>
+      );
+    })()}
+    {/* Cargar más */}
+        {historialPage + 1 < historialTotalPages && (
+          <div className="flex justify-center mt-4">
+            <button
+              onClick={() => fetchHistorial(historialPage + 1)}
+              disabled={loadingHistorial}
+              className="px-5 py-2 border border-border text-sm text-on-surface-variant hover:text-foreground hover:bg-accent transition-colors flex items-center gap-2 disabled:opacity-50"
+              style={{ borderRadius: 'var(--radius)' }}
+            >
+              {loadingHistorial
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <ChevronDown className="w-3.5 h-3.5" />
+              }
+              Cargar más
+            </button>
+          </div>
+        )}
+  </div>
+)}
 
       {/* ── Tab: Votaciones ── */}
       {activeTab === "votes" && (
@@ -783,6 +1270,7 @@ export function AdminPanel() {
               <div className="space-y-4">
                 {votes.map((vote) => {
                   const isVoting = votingId === vote.id;
+                  const hasVoted = vote.usuarioYaVoto;
 
                   return (
                     <div
@@ -860,35 +1348,40 @@ export function AdminPanel() {
                         </div>
                       </div>
 
-                      {/* Botones de votación */}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleVote(vote.id, "approve")}
-                          disabled={isVoting}
-                          className="flex-1 px-4 py-2.5 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                          style={{ borderRadius: "var(--radius)" }}
-                        >
-                          {isVoting ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Check className="w-4 h-4" />
-                          )}
-                          <span>Aprobar</span>
-                        </button>
-                        <button
-                          onClick={() => handleVote(vote.id, "reject")}
-                          disabled={isVoting}
-                          className="flex-1 px-4 py-2.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                          style={{ borderRadius: "var(--radius)" }}
-                        >
-                          {isVoting ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <X className="w-4 h-4" />
-                          )}
-                          <span>Rechazar</span>
-                        </button>
+                      {hasVoted ? (
+                        <div className="text-sm text-on-surface-variant text-center py-2">
+                          Ya votaste
                       </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleVote(vote.id, "approve")}
+                            disabled={isVoting}
+                            className="flex-1 px-4 py-2.5 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                            style={{ borderRadius: "var(--radius)" }}
+                          >
+                            {isVoting ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Check className="w-4 h-4" />
+                            )}
+                            <span>Aprobar</span>
+                          </button>
+                          <button
+                            onClick={() => handleVote(vote.id, "reject")}
+                            disabled={isVoting}
+                            className="flex-1 px-4 py-2.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                            style={{ borderRadius: "var(--radius)" }}
+                          >
+                            {isVoting ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <X className="w-4 h-4" />
+                            )}
+                            <span>Rechazar</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

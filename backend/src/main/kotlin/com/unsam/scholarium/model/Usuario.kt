@@ -14,7 +14,7 @@ class Usuario(
     var nombre: String,
 
     @Column(unique = true, nullable = false, length = 255)
-    val email: String,
+    var email: String,  // era val
 
     @Column(nullable = true)  // ← Ahora puede ser NULL si es login de Google
     var password: String? = null,
@@ -31,10 +31,7 @@ class Usuario(
     @Column(nullable = false)
     val activo: Boolean = true,
 
-    @Column(nullable=true, length = 300)
-    var bio: String? = null,
-
-    @Column(nullable=true, name = "foto_perfil", length = 512)
+    @Column(nullable = true, name = "foto_perfil", length = 512)
     var fotoPerfil: String? = null
 ) {
     fun addMembresia(membresia: Membresia) {

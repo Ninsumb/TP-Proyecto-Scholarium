@@ -47,7 +47,7 @@ class VotacionAdminController(
             emailProponente = authentication.name,
         )
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(votacionAdminService.toResponse(votacion))
+            .body(votacionAdminService.toResponse(votacion, authentication.name))
     }
 
     /** Registra el voto de un admin. Si se alcanza mayoría, ejecuta la acción asociada. */
@@ -62,7 +62,7 @@ class VotacionAdminController(
             aprueba = request.aprueba!!,
             emailAdmin = authentication.name,
         )
-        return ResponseEntity.ok(votacionAdminService.toResponse(votacion))
+        return ResponseEntity.ok(votacionAdminService.toResponse(votacion, authentication.name))
     }
 
     /**
@@ -80,7 +80,7 @@ class VotacionAdminController(
             estado = estado,
             emailUsuario = authentication.name,
         )
-        return ResponseEntity.ok(votaciones.map { votacionAdminService.toResponse(it) })
+        return ResponseEntity.ok(votaciones.map { votacionAdminService.toResponse(it, authentication.name) })
     }
 
     /** Historial paginado de votaciones cerradas del portal. */
@@ -95,6 +95,6 @@ class VotacionAdminController(
             pageable = pageable,
             emailUsuario = authentication.name,
         )
-        return ResponseEntity.ok(page.map { votacionAdminService.toResponse(it) })
+        return ResponseEntity.ok(page.map { votacionAdminService.toResponse(it, authentication.name) })
     }
 }

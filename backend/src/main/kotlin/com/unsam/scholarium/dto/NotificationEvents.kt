@@ -37,6 +37,12 @@ data class VotacionRechazadaEvent(
     val proponente: Usuario
 )
 
+data class VotacionEmpatadaEvent(
+    val votacion: VotacionAdmin,
+    val portal: Portal,
+    val proponente: Usuario
+)
+
 data class MaterialAceptadoEvent(
     val material: Material,
     val portal: Portal

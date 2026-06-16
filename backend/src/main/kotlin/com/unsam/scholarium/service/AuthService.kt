@@ -190,17 +190,16 @@ class AuthService(
         usuarioRepository.save(usuario)
     }
 
-    //TODO: Ver qué hacemos con el email
-/*    fun changeEmail(email: String, request: ChangeEmailRequest): String {
+    fun changeEmail(email: String, request: ChangeEmailRequest): LoginResponse {
         val usuario = usuarioRepository.findByEmail(email)
             ?: throw UnauthorizedException("Usuario no encontrado")
 
-        // Verificar que sea un usuario de email/password (NO de Google)
+        // Solo usuarios email/password pueden cambiar el email
         if (usuario.password == null) {
-            throw UnauthorizedException("Esta cuenta fue creada con Google. No se puede cambiar email.")
+            throw UnauthorizedException("Esta cuenta fue creada con Google. No se puede cambiar el email.")
         }
 
-        // Verificar contraseña
+        // Verificar contraseña actual
         val passwordCorrecta = passwordEncoder.matches(request.password, usuario.password)
         if (!passwordCorrecta) {
             throw UnauthorizedException("Contraseña incorrecta")
@@ -215,6 +214,15 @@ class AuthService(
         usuario.email = request.newEmail
         usuarioRepository.save(usuario)
 
-        return request.newEmail
-    }*/
+        // Generar tokens frescos con el nuevo email
+        // (el JWT viejo tiene el email anterior — si no renovamos, todos los endpoints fallan)
+        val newToken = jwtService.generateToken(
+            userId = usuario.id!!,
+            email = usuario.email,
+            nombre = usuario.nombre
+        )
+        val newRefreshToken = jwtService.generateRefreshToken(email = usuario.email)
+
+        return LoginResponse(token = newToken, refreshToken = newRefreshToken)
+    }
 }

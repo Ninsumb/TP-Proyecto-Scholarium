@@ -6,7 +6,6 @@ data class UsuarioMeResponse(
     val id: Long,
     val nombre: String,
     val email: String,
-    val bio: String?,
     val fotoPerfil: String?,
     val createdAt: LocalDateTime,
     val cantidadPortales: Int,

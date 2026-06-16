@@ -13,6 +13,7 @@ import com.unsam.scholarium.model.EstadoMaterial
 import com.unsam.scholarium.model.Material
 import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.model.TipoAcceso
+import com.unsam.scholarium.model.TipoAccionAdmin
 import com.unsam.scholarium.model.TipoMaterial
 import com.unsam.scholarium.repository.MateriaRepository
 import com.unsam.scholarium.repository.MaterialRepository
@@ -26,7 +27,6 @@ import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.util.UUID
 import kotlin.jvm.optionals.getOrNull
- 
 
 @Service
 class MaterialService(
@@ -36,8 +36,10 @@ class MaterialService(
     private val usuarioRepository: UsuarioRepository,
     private val membresiaRepository: MembresiaRepository,
     private val portalRepository: PortalRepository,
-    private val applicationEventPublisher: ApplicationEventPublisher
+    private val applicationEventPublisher: ApplicationEventPublisher,
+    private val accionAdminService: AccionAdminService,
 ) {
+
     fun getMaterialPendiente(portalId: Long, email: String): List<MaterialPendienteDTO> {
         val portal = portalRepository.findById(portalId)
             .orElseThrow { ElementDoesNotExistException("Portal no encontrado") }
@@ -73,17 +75,24 @@ class MaterialService(
         val esAdmin = membresiaRepository
             .existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
 
-        if (!esAdmin) {
-            throw NotAdminException("No tenés permisos para aprobar material")
-        }
+        if (!esAdmin) throw NotAdminException("No tenés permisos para aprobar material")
 
         material.estado = EstadoMaterial.PUBLICADO
+        val guardado = materialRepository.save(material)
 
         applicationEventPublisher.publishEvent(
             MaterialAceptadoEvent(material, portal)
         )
 
-        return materialRepository.save(material)
+        accionAdminService.registrar(
+            portal             = portal,
+            admin              = usuario,
+            tipo               = TipoAccionAdmin.MATERIAL_APROBADO,
+            entidadId          = materialId.toString(),
+            entidadDescripcion = material.nombre,
+        )
+
+        return guardado
     }
 
     @Transactional
@@ -95,7 +104,7 @@ class MaterialService(
         tipo: String,
         email: String,
     ): MaterialResponse {
-        val tipo = try {
+        val tipoMaterial = try {
             TipoMaterial.valueOf(tipo)
         } catch (e: IllegalArgumentException) {
             throw BusinessException("El tipo de material no está permitido")
@@ -121,7 +130,7 @@ class MaterialService(
         val material = Material(
             nombre = nombre,
             descripcion = descripcion ?: "",
-            tipo = tipo,
+            tipo = tipoMaterial,
             estado = EstadoMaterial.PENDIENTE,
             url = archivoSubido.url,
             publicId = archivoSubido.publicId,
@@ -147,25 +156,33 @@ class MaterialService(
         }
 
         val usuario = usuarioRepository.findByEmail(email)
-        ?: throw ElementDoesNotExistException("Usuario no encontrado")
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
 
         val portal = material.materia.carpeta.portal
 
         val esAdmin = membresiaRepository
             .existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
 
-        if (!esAdmin) {
-            throw NotAdminException("No tenés permisos para rechazar material")
-        }
+        if (!esAdmin) throw NotAdminException("No tenés permisos para rechazar material")
 
         material.estado = EstadoMaterial.RECHAZADO
         material.motivoRechazo = motivo
+        val guardado = materialRepository.save(material)
 
         applicationEventPublisher.publishEvent(
             MaterialRechazadoEvent(material, portal, motivo)
         )
+        
+        accionAdminService.registrar(
+            portal             = portal,
+            admin              = usuario,
+            tipo               = TipoAccionAdmin.MATERIAL_RECHAZADO,
+            entidadId          = materialId.toString(),
+            entidadDescripcion = material.nombre,
+            motivo             = motivo,
+        )
 
-        return materialRepository.save(material)
+        return guardado
     }
 
     @Transactional(readOnly = true)
@@ -253,12 +270,17 @@ class MaterialService(
         val esAdmin = membresiaRepository
             .existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
 
-        if (!esAdmin) {
-            throw NotAdminException("No sos ADMIN del portal del material.")
-        }
+        if (!esAdmin) throw NotAdminException("No sos ADMIN del portal del material.")
 
         material.activo = false
-
         materialRepository.save(material)
+
+        accionAdminService.registrar(
+            portal             = portal,
+            admin              = usuario,
+            tipo               = TipoAccionAdmin.MATERIAL_ELIMINADO,
+            entidadId          = materialId.toString(),
+            entidadDescripcion = material.nombre,
+        )
     }
 }

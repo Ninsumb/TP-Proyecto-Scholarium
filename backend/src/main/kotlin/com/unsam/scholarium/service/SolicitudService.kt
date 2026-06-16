@@ -13,6 +13,7 @@ import com.unsam.scholarium.model.Membresia
 import com.unsam.scholarium.model.PlantillaSolicitud
 import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.model.Solicitud
+import com.unsam.scholarium.model.TipoAccionAdmin
 import com.unsam.scholarium.repository.MembresiaRepository
 import com.unsam.scholarium.repository.PlantillaSolicitudRepository
 import com.unsam.scholarium.repository.PortalBloqueoRepository
@@ -37,6 +38,7 @@ class SolicitudService(
     val plantillaSolicitudRepository: PlantillaSolicitudRepository,
     val portalBloqueoRepository: PortalBloqueoRepository,
     val applicationEventPublisher: ApplicationEventPublisher,
+    private val accionAdminService: AccionAdminService,
 ) {
 
     // ── Helpers privados ───────────────────────────────────────────────────
@@ -114,7 +116,13 @@ class SolicitudService(
     @Transactional
     fun aprobarSolicitud(solicitudId: Long, emailAdmin: String) {
         val solicitud = validarSolicitud(solicitudId)
-        validarAdmin(solicitud, emailAdmin)
+        val admin = usuarioRepository.findByEmail(emailAdmin)
+            ?: throw ElementDoesNotExistException("El usuario no existe")
+
+        val esAdmin = membresiaRepository.existsByUsuarioIdAndPortalIdAndRol(
+            admin.id!!, solicitud.portal.id!!, RolMembresia.ADMIN
+        )
+        if (!esAdmin) throw NotAdminException("No tenés permisos para gestionar esta solicitud")
 
         if (solicitud.estado != Estado.PENDIENTE) {
             throw BusinessException("Solo se pueden aprobar solicitudes en estado PENDIENTE")
@@ -139,7 +147,15 @@ class SolicitudService(
         solicitudRepository.save(solicitud)
 
         applicationEventPublisher.publishEvent(
-            SolicitudAprobadaEvent(solicitud = solicitud, portal = solicitud.portal)
+          SolicitudAprobadaEvent(solicitud = solicitud, portal = solicitud.portal)
+        )
+        
+        accionAdminService.registrar(
+            portal              = solicitud.portal,
+            admin               = admin,
+            tipo                = TipoAccionAdmin.SOLICITUD_APROBADA,
+            entidadId           = solicitudId.toString(),
+            entidadDescripcion  = solicitud.usuario.nombre,
         )
     }
 
@@ -156,7 +172,13 @@ class SolicitudService(
         }
 
         val solicitud = validarSolicitud(solicitudId)
-        validarAdmin(solicitud, emailAdmin)
+        val admin = usuarioRepository.findByEmail(emailAdmin)
+            ?: throw ElementDoesNotExistException("El usuario no existe")
+
+        val esAdmin = membresiaRepository.existsByUsuarioIdAndPortalIdAndRol(
+            admin.id!!, solicitud.portal.id!!, RolMembresia.ADMIN
+        )
+        if (!esAdmin) throw NotAdminException("No tenés permisos para gestionar esta solicitud")
 
         if (solicitud.estado != Estado.PENDIENTE) {
             throw BusinessException("Solo se pueden rechazar solicitudes en estado PENDIENTE")
@@ -173,6 +195,15 @@ class SolicitudService(
                 portal = solicitud.portal,
                 motivo = solicitud.motivoRechazo!!
             )
+        )
+        
+        accionAdminService.registrar(
+            portal              = solicitud.portal,
+            admin               = admin,
+            tipo                = TipoAccionAdmin.SOLICITUD_RECHAZADA,
+            entidadId           = solicitudId.toString(),
+            entidadDescripcion  = solicitud.usuario.nombre,
+            motivo              = solicitud.motivoRechazo,
         )
     }
 
@@ -262,11 +293,6 @@ class SolicitudService(
         )
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-// AGREGAR ESTE MÉTODO AL SolicitudService EXISTENTE
-
-// ─────────────────────────────────────────────────────────────────────────────
-
     /**
      * Actualiza la PlantillaSolicitud del portal.
      * Solo admins pueden cambiar los requisitos o abrir/cerrar el portal a solicitudes.
@@ -275,7 +301,7 @@ class SolicitudService(
      */
     @Transactional
     fun actualizarPlantilla(idPortal: Long, email: String, request: ActualizarPlantillaRequest): PlantillaSolicitudResponse {
-        portalRepository.findById(idPortal).getOrNull()
+        val portal = portalRepository.findById(idPortal).getOrNull()
             ?: throw ElementDoesNotExistException("Portal no encontrado")
 
         val usuario = usuarioRepository.findByEmail(email)
@@ -294,6 +320,13 @@ class SolicitudService(
         request.abierta?.let    { plantilla.abierta    = it }
 
         plantillaSolicitudRepository.save(plantilla)
+
+        accionAdminService.registrar(
+            portal             = portal,
+            admin              = usuario,
+            tipo               = TipoAccionAdmin.PLANTILLA_SOLICITUD_ACTUALIZADA,
+            entidadDescripcion = if (plantilla.abierta) "Abierta" else "Cerrada",
+        )
 
         return PlantillaSolicitudResponse(
             requisitos = plantilla.requisitos?.takeIf { it.isNotBlank() } ?: PlantillaSolicitud.REQUISITOS_DEFAULT,
@@ -345,5 +378,4 @@ class SolicitudService(
         fechaSolicitud = fechaSolicitud.toString(),
         motivoRechazo = motivoRechazo,
     )
-
 }
