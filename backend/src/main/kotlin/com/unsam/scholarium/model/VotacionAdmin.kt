@@ -14,6 +14,7 @@ enum class TipoVotacion {
     ELIMINAR_MATERIA,
     ELIMINAR_TABLERO,
     ARCHIVAR_PORTAL,
+    ACTIVAR_PORTAL,
 }
 
 enum class EstadoVotacion {
