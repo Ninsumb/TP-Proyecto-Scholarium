@@ -18,10 +18,13 @@ import com.unsam.scholarium.dto.CambiarTipoAccesoRequest
 import com.unsam.scholarium.dto.VotacionResponse
 import com.unsam.scholarium.mapper.PortalMapper
 import com.unsam.scholarium.model.Portal
+import com.unsam.scholarium.model.RolMembresia
+import com.unsam.scholarium.service.CloudinaryFileStorageService
 import com.unsam.scholarium.service.MaterialService
 import com.unsam.scholarium.service.PortalService
 import org.springframework.security.core.Authentication
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -33,14 +36,17 @@ import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.multipart.MultipartFile
 
 @RestController
 @RequestMapping("/api/portales")
 @CrossOrigin(origins = ["http://localhost:5173"])
 class PortalController(
     private val portalService: PortalService,
-    private val materialService: MaterialService
+    private val materialService: MaterialService,
+    private val cloudinaryService: CloudinaryFileStorageService
 ) {
     @GetMapping("/{id}")
     fun obtenerPortal(
@@ -246,5 +252,21 @@ class PortalController(
         portalService.levantarBloqueo(id, userId, email)
 
         return ResponseEntity.noContent().build()
+    }
+
+    @PatchMapping(
+        "/{portalId}/imagen",
+        consumes = [MediaType.MULTIPART_FORM_DATA_VALUE]
+    )
+    fun subirImagenPortal(
+        @PathVariable portalId: Long,
+        @RequestPart("imagen") imagen: MultipartFile,
+        authentication: Authentication
+    ): ResponseEntity<Map<String, String>> {
+        val email = authentication.name
+        val usuario = portalService.validarUsuario(email)
+        portalService.validarMembresiaUsuario(usuario, portalId, RolMembresia.ADMIN)
+        val url = cloudinaryService.uploadImagenPortal(imagen, portalId)
+        return ResponseEntity.ok(mapOf("logoUrl" to url))
     }
 }

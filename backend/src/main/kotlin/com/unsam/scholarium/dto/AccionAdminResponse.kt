@@ -10,6 +10,7 @@ data class AccionAdminResponse(
     val tipo: TipoAccionAdmin,
     val adminId: Long,
     val adminNombre: String,
+    val adminFotoPerfil: String?,      // ← NUEVO
     val entidadId: String?,
     val entidadDescripcion: String?,
     val motivo: String?,
@@ -21,6 +22,7 @@ data class AccionAdminResponse(
             tipo                = a.tipo,
             adminId             = a.admin.id!!,
             adminNombre         = a.admin.nombre,
+            adminFotoPerfil     = a.admin.fotoPerfil,   // ← NUEVO
             entidadId           = a.entidadId,
             entidadDescripcion  = a.entidadDescripcion,
             motivo              = a.motivo,
