@@ -1,6 +1,7 @@
 package com.unsam.scholarium.model
 
 import jakarta.persistence.*
+import org.hibernate.annotations.CreationTimestamp
 import java.time.LocalDateTime
 import java.util.*
 
@@ -8,12 +9,14 @@ enum class TipoNotificacion {
     COMENTARIO_POST,
     SOLICITUD_APROBADA,
     SOLICITUD_RECHAZADA,
-    MEMBRESIA_APROBADA,
-    MEMBRESIA_RECHAZADA,
     EXPULSION,
     VOTACION_ABIERTA,
     VOTACION_APROBADA,
-    POST_OCULTADO
+    VOTACION_RECHAZADA,
+    VOTACION_EMPATADA,
+    POST_OCULTADO,
+    MATERIAL_APROBADO,
+    MATERIAL_RECHAZADO,
 }
 
 @Entity
@@ -48,10 +51,11 @@ class Notificacion(
     var leida: Boolean = false,
 
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
+    @CreationTimestamp
     val fechaCreacion: LocalDateTime = LocalDateTime.now(),
 
     @Column(name = "entidad_id")
-    val entidadId: UUID? = null, // ID de la entidad relacionada (material, post, solicitud, etc.)
+    val entidadId: Long? = null, // ID de la entidad relacionada (material, post, solicitud, etc.)
 
     @Column(name = "entidad_tipo")
     val entidadTipo: String? = null, // "POST", "SOLICITUD", "MEMBRESIA", "VOTACION"

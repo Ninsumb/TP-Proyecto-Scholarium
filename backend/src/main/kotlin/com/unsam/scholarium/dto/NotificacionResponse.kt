@@ -12,5 +12,5 @@ data class NotificacionResponse(
     val portalNombre: String?,
     val leida: Boolean,
     val fechaCreacion: LocalDateTime,
-    val entidadId: UUID?,
+    val entidadId: Long?,
 )

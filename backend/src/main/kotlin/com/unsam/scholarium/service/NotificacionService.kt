@@ -2,6 +2,8 @@ package com.unsam.scholarium.service
 
 import com.unsam.scholarium.dto.NotificacionResponse
 import com.unsam.scholarium.model.Notificacion
+import com.unsam.scholarium.model.Portal
+import com.unsam.scholarium.model.TipoNotificacion
 import com.unsam.scholarium.model.Usuario
 import com.unsam.scholarium.repository.NotificacionRepository
 import com.unsam.scholarium.repository.UsuarioRepository
@@ -14,6 +16,31 @@ class NotificacionService(
     private val notificacionRepository: NotificacionRepository,
     private val usuarioRepository: UsuarioRepository
 ) {
+
+    fun crearNotificacion(
+        usuario: Usuario,
+        tipo: TipoNotificacion,
+        titulo: String,
+        descripcion: String,
+        portal: Portal? = null,
+        motivo: String? = null,
+        entidadId: Long? = null,
+        entidadTipo: String? = null
+    ) {
+        val notificacion = Notificacion(
+            usuario = usuario,
+            tipo = tipo,
+            titulo = titulo,
+            descripcion = descripcion,
+            portal = portal,
+            motivo = motivo,
+            entidadId = entidadId,
+            entidadTipo = entidadTipo
+        )
+
+        notificacionRepository.save(notificacion)
+        notificacionRepository.flush()
+    }
 
     fun getNotificaciones(email: String): List<NotificacionResponse> {
         val usuario = usuarioRepository.findByEmail(email)

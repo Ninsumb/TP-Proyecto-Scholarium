@@ -1,5 +1,10 @@
 package com.unsam.scholarium.service
 
+import com.unsam.scholarium.dto.SolicitudRechazadaEvent
+import com.unsam.scholarium.dto.VotacionAbiertaEvent
+import com.unsam.scholarium.dto.VotacionAprobadaEvent
+import com.unsam.scholarium.dto.VotacionEmpatadaEvent
+import com.unsam.scholarium.dto.VotacionRechazadaEvent
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.NotAdminException
@@ -16,6 +21,7 @@ import com.unsam.scholarium.repository.UsuarioRepository
 import com.unsam.scholarium.repository.VotacionAdminRepository
 import com.unsam.scholarium.repository.VotoAdminRepository
 import jakarta.transaction.Transactional
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -35,6 +41,7 @@ class VotacionAdminService(
     @Lazy private val materiaService: MateriaService,
     @Lazy private val foroService: ForoService,
     private val objectMapper: com.fasterxml.jackson.databind.ObjectMapper,
+    private val applicationEventPublisher: ApplicationEventPublisher,
     private val accionAdminService: AccionAdminService,
 ) {
 
@@ -108,6 +115,11 @@ class VotacionAdminService(
         // Si era el único admin, ya hay mayoría 1/1 → resolver + ejecutar en el acto.
         evaluarYResolver(guardada)
 
+        //Notificacion de votacion creada
+        applicationEventPublisher.publishEvent(
+            VotacionAbiertaEvent(votacion, portal, proponente)
+        )
+        
         // En crearVotacion(), después de evaluarYResolver(guardada) y antes del return:
         accionAdminService.registrar(
             portal             = portal,
@@ -253,10 +265,21 @@ class VotacionAdminService(
                     motivo             = votacion.motivo,
                 )
                 ejecutarAccion(votacion)
+
+                //Notificacion de votacion aprobada
+                applicationEventPublisher.publishEvent(
+                    VotacionAprobadaEvent(votacion, votacion.portal, votacion.proponente)
+                )
             }
             enContra > umbral -> {
                 votacion.resolver(EstadoVotacion.RECHAZADA)
                 votacionRepository.save(votacion)
+
+                //Notificacion de votacion rechazada
+                applicationEventPublisher.publishEvent(
+                    VotacionEmpatadaEvent(votacion, votacion.portal, votacion.proponente)
+                )
+
                 accionAdminService.registrar(
                     portal             = votacion.portal,
                     admin              = votacion.proponente,
@@ -276,6 +299,7 @@ class VotacionAdminService(
                     entidadId          = votacion.id.toString(),
                     entidadDescripcion = TipoVotacion_LABEL[votacion.tipo] ?: votacion.tipo.name,
                     motivo             = votacion.motivo,
+
                 )
             }
         }

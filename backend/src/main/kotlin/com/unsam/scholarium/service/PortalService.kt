@@ -33,11 +33,14 @@ import com.unsam.scholarium.repository.UsuarioRepository
 import com.unsam.scholarium.dto.MiembroResponse
 import com.unsam.scholarium.dto.ActualizarPortalRequest
 import com.unsam.scholarium.dto.CambiarTipoAccesoRequest
+import com.unsam.scholarium.dto.SolicitudAprobadaEvent
+import com.unsam.scholarium.dto.UsuarioExpulsadoEvent
 import com.unsam.scholarium.dto.VotacionResponse
 import com.unsam.scholarium.model.TipoAcceso
 import com.unsam.scholarium.model.TipoVotacion
 import com.unsam.scholarium.repository.PortalBloqueoRepository
 import jakarta.transaction.Transactional
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import java.util.UUID
@@ -55,6 +58,7 @@ class PortalService(
     private val plantillaSolicitudRepository: PlantillaSolicitudRepository,
     private val votacionAdminService: VotacionAdminService,
     private val portalBloqueoRepository: PortalBloqueoRepository,
+    private val applicationEventPublisher: ApplicationEventPublisher,
     private val accionAdminService: AccionAdminService,
 ) {
 
@@ -335,6 +339,14 @@ class PortalService(
         val portal = membresiaObjetivo.portal!! //xD
         membresiaRepository.delete(membresiaObjetivo)
 
+        applicationEventPublisher.publishEvent(
+            UsuarioExpulsadoEvent(
+                usuario = usuarioObjetivo,
+                portal = membresiaObjetivo.portal!!,
+                motivo = "" //Hardcodeado, agregar luego que se pueda poner motivo
+            )
+        )
+        
         accionAdminService.registrar(
             portal             = portal,
             admin              = admin,

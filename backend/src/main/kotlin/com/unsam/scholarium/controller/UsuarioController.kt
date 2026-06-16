@@ -3,10 +3,12 @@ package com.unsam.scholarium.controller
 import com.unsam.scholarium.dto.ActualizarPerfilRequest
 import com.unsam.scholarium.dto.ChangeEmailRequest
 import com.unsam.scholarium.dto.ChangePasswordRequest
+import com.unsam.scholarium.dto.NotificacionResponse
 import com.unsam.scholarium.dto.LoginResponse
 import com.unsam.scholarium.dto.UsuarioMeResponse
 import com.unsam.scholarium.dto.UsuarioPortalResponse
 import com.unsam.scholarium.service.AuthService
+import com.unsam.scholarium.service.NotificacionService
 import com.unsam.scholarium.service.UsuarioService
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -26,7 +28,8 @@ import org.springframework.web.multipart.MultipartFile
 @RequestMapping("/api/usuarios")
 class UsuarioController (
     private val usuarioService: UsuarioService,
-    private val authService: AuthService
+    private val authService: AuthService,
+    private val notificacionService: NotificacionService
 ){
     @GetMapping("/me/portales")
     fun getMisPortales(authentication: Authentication): ResponseEntity<List<UsuarioPortalResponse>> {
@@ -93,5 +96,11 @@ class UsuarioController (
         val email = authentication.name
         usuarioService.eliminarCuenta(email)
         return ResponseEntity.noContent().build()
+    }
+
+    @GetMapping("/me/notificaciones")
+    fun obtenerNotificaciones(authentication: Authentication): ResponseEntity<List<NotificacionResponse>> {
+        val email = authentication.name
+        return ResponseEntity.ok(notificacionService.getNotificaciones(email))
     }
 }
