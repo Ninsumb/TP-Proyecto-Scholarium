@@ -506,9 +506,9 @@ function AccionCard({ accion, cfg, pillCls, initials }: AccionCardProps) {
   const iconContainerCls = ICON_CONTAINER_CLS[cfg.pillClass] ?? ICON_CONTAINER_CLS.neutral;
  
   // Detectar hex de color en entidadDescripcion (para cambios de color de portal)
-  const hexColor = accion.entidadDescripcion
-    ? extractHexColor(accion.entidadDescripcion)
-    : null;
+  const hexColors = accion.entidadDescripcion
+    ? extractHexColors(accion.entidadDescripcion)
+    : [];
  
   return (
     <div
@@ -566,14 +566,7 @@ function AccionCard({ accion, cfg, pillCls, initials }: AccionCardProps) {
               <span className="text-on-surface-variant shrink-0 w-14 pt-px">Detalle</span>
               <span className="text-foreground flex items-center gap-1.5 flex-wrap">
                 {accion.entidadDescripcion}
-                {/* Dot de color si hay un hex en la descripción */}
-                {hexColor && (
-                  <span
-                    className="inline-block w-2.5 h-2.5 rounded-full shrink-0 border border-black/10"
-                    style={{ backgroundColor: hexColor }}
-                    title={hexColor}
-                  />
-                )}
+                <ColorDots colors={hexColors} />
               </span>
             </div>
           )}
@@ -623,9 +616,43 @@ function AccionCard({ accion, cfg, pillCls, initials }: AccionCardProps) {
 
 // ─── Helper: detectar hex color en un string ─────────────────────────────────
 // Retorna el primer #RRGGBB o #RGB que encuentre, o null si no hay ninguno.
-function extractHexColor(text: string): string | null {
-  const match = text.match(/#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/);
-  return match ? match[0] : null;
+// ─── Helper: detectar hex colors en un string ────────────────────────────────
+// Retorna todos los #RRGGBB / #RGB encontrados en orden de aparición.
+function extractHexColors(text: string): string[] {
+  return [...text.matchAll(/#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/g)].map((m) => m[0]);
+}
+
+// ─── ColorDots ────────────────────────────────────────────────────────────────
+// Muestra uno o dos dots de color inline. Si hay dos, los separa con una flecha.
+
+function ColorDots({ colors }: { colors: string[] }) {
+  if (colors.length === 0) return null;
+
+  return (
+    <span className="inline-flex items-center gap-1 shrink-0">
+      {colors.length === 1 ? (
+        <span
+          className="inline-block w-2.5 h-2.5 rounded-full border border-black/10"
+          style={{ backgroundColor: colors[0] }}
+          title={colors[0]}
+        />
+      ) : (
+        <>
+          <span
+            className="inline-block w-2.5 h-2.5 rounded-full border border-black/10"
+            style={{ backgroundColor: colors[0] }}
+            title={colors[0]}
+          />
+          <span className="text-on-surface-variant">→</span>
+          <span
+            className="inline-block w-2.5 h-2.5 rounded-full border border-black/10"
+            style={{ backgroundColor: colors[1] }}
+            title={colors[1]}
+          />
+        </>
+      )}
+    </span>
+  );
 }
  
 // ─── AdminAvatar ─────────────────────────────────────────────────────────────
