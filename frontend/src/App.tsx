@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import Login from './main/Pages/Auth/Login'
 import Register from './main/Pages/Auth/Register'
 import './App.css'
@@ -24,13 +25,20 @@ import { AdminRoute } from './main/Components/common/AdminRoute'
 import ForgotPassword from './main/Pages/Auth/ForgotPassword'
 import ResetPassword from './main/Pages/Auth/ResetPassword'
 
+function LandingRedirect() {
+  useEffect(() => {
+    window.location.href = '/landing.html'
+  }, [])
+  return null
+}
+
 
 function App() {
   return (
     <Router>
       <Routes>
         {/* Redirige la raíz al login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<LandingRedirect />} />
         
         {/* Rutas de autenticación */}
         <Route path="/login" element={<Login />} />
