@@ -1,8 +1,4 @@
 // src/types/Admin/Admin.ts
-
-
-
-
 export type TipoAccionAdmin =
   | 'SOLICITUD_APROBADA'
   | 'SOLICITUD_RECHAZADA'
@@ -32,6 +28,7 @@ export type TipoAccionAdmin =
   | 'VOTACION_CREADA'
   | 'VOTACION_APROBADA'
   | 'VOTACION_RECHAZADA'
+  | 'VOTACION_CERRADA'
   | 'HOME_ACTUALIZADA';
 
 export interface AccionAdminResponse {
@@ -106,6 +103,7 @@ export interface VotacionResponse {
   votosAFavor: number;
   votosEnContra: number;
   totalAdmins: number;
+  usuarioYaVoto: Boolean;
 }
 
 /** POST /api/portales/{portalId}/votaciones */

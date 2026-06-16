@@ -205,11 +205,15 @@ class VotacionAdminService(
      * Se expone como público para que el controller pueda serializar tanto los
      * resultados de las acciones (crear/votar) como los listados.
      */
-    fun toResponse(votacion: VotacionAdmin): com.unsam.scholarium.dto.VotacionResponse {
+    fun toResponse(votacion: VotacionAdmin, email: String): com.unsam.scholarium.dto.VotacionResponse {
+        val admin = usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        val yaVoto = votoRepository.existsByVotacionAndAdmin(votacion, admin)
         val aFavor = votoRepository.countByVotacionAndAprueba(votacion, true)
         val enContra = votoRepository.countByVotacionAndAprueba(votacion, false)
         val totalAdmins = membresiaRepository.countByPortalAndRol(votacion.portal, RolMembresia.ADMIN)
-        return com.unsam.scholarium.dto.VotacionResponse.fromEntity(votacion, aFavor, enContra, totalAdmins)
+        return com.unsam.scholarium.dto.VotacionResponse.fromEntity(votacion, aFavor, enContra, totalAdmins, yaVoto)
     }
 
     // Internals
@@ -232,6 +236,9 @@ class VotacionAdminService(
         // funciona tanto para totales pares como impares.
         val umbral = totalAdmins / 2
 
+        val totalVotos = aFavor + enContra
+        val hayEmpate = aFavor == enContra && totalVotos > 0
+
         when {
             aFavor > umbral -> {
                 votacion.resolver(EstadoVotacion.APROBADA)
@@ -253,6 +260,18 @@ class VotacionAdminService(
                     portal             = votacion.portal,
                     admin              = votacion.proponente,
                     tipo               = TipoAccionAdmin.VOTACION_RECHAZADA,
+                    entidadId          = votacion.id.toString(),
+                    entidadDescripcion = TipoVotacion_LABEL[votacion.tipo] ?: votacion.tipo.name,
+                    motivo             = votacion.motivo,
+                )
+            }
+            hayEmpate -> {
+                votacion.resolver(EstadoVotacion.EXPIRADA)
+                votacionRepository.save(votacion)
+                accionAdminService.registrar(
+                    portal             = votacion.portal,
+                    admin              = votacion.proponente,
+                    tipo               = TipoAccionAdmin.VOTACION_CERRADA,
                     entidadId          = votacion.id.toString(),
                     entidadDescripcion = TipoVotacion_LABEL[votacion.tipo] ?: votacion.tipo.name,
                     motivo             = votacion.motivo,

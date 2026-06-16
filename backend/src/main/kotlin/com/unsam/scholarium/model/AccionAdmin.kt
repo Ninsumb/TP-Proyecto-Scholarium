@@ -47,6 +47,7 @@ enum class TipoAccionAdmin {
     VOTACION_CREADA,
     VOTACION_APROBADA,
     VOTACION_RECHAZADA,
+    VOTACION_CERRADA,
 
     // Home
     HOME_ACTUALIZADA,

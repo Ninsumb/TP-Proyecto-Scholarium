@@ -381,6 +381,7 @@ const ACCION_CFG: Record<string, {
   VOTACION_CREADA:                 { label: 'Votación abierta',              pillClass: 'neutral', icon: 'vote',           grupo: 'votaciones'   },
   VOTACION_APROBADA:               { label: 'Votación aprobada',             pillClass: 'success', icon: 'circle-check',   grupo: 'votaciones'   },
   VOTACION_RECHAZADA:              { label: 'Votación rechazada',            pillClass: 'danger',  icon: 'circle-x',       grupo: 'votaciones'   },
+  VOTACION_CERRADA:                { label: 'Votación cerrada',              pillClass: 'neutral', icon: 'neutral',        grupo: 'votaciones'   }
 };
 
 const PILL_STYLES: Record<string, string> = {
@@ -698,7 +699,9 @@ export function AdminPanel() {
         showSuccess(
           updated.estado === "APROBADA"
             ? "¡Voto registrado! La votación alcanzó la mayoría y se ejecutó la acción."
-            : "Voto registrado. La propuesta fue rechazada.",
+            : updated.votosAFavor === updated.votosEnContra
+              ? "Voto registrado. La votación terminó en empate."
+              : "Voto registrado. La propuesta fue rechazada."
         );
       } else {
         setVotes((prev) =>
@@ -1021,6 +1024,7 @@ export function AdminPanel() {
               <div className="space-y-4">
                 {votes.map((vote) => {
                   const isVoting = votingId === vote.id;
+                  const hasVoted = vote.usuarioYaVoto;
 
                   return (
                     <div
@@ -1098,35 +1102,40 @@ export function AdminPanel() {
                         </div>
                       </div>
 
-                      {/* Botones de votación */}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleVote(vote.id, "approve")}
-                          disabled={isVoting}
-                          className="flex-1 px-4 py-2.5 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                          style={{ borderRadius: "var(--radius)" }}
-                        >
-                          {isVoting ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Check className="w-4 h-4" />
-                          )}
-                          <span>Aprobar</span>
-                        </button>
-                        <button
-                          onClick={() => handleVote(vote.id, "reject")}
-                          disabled={isVoting}
-                          className="flex-1 px-4 py-2.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                          style={{ borderRadius: "var(--radius)" }}
-                        >
-                          {isVoting ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <X className="w-4 h-4" />
-                          )}
-                          <span>Rechazar</span>
-                        </button>
+                      {hasVoted ? (
+                        <div className="text-sm text-on-surface-variant text-center py-2">
+                          Ya votaste
                       </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleVote(vote.id, "approve")}
+                            disabled={isVoting}
+                            className="flex-1 px-4 py-2.5 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                            style={{ borderRadius: "var(--radius)" }}
+                          >
+                            {isVoting ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Check className="w-4 h-4" />
+                            )}
+                            <span>Aprobar</span>
+                          </button>
+                          <button
+                            onClick={() => handleVote(vote.id, "reject")}
+                            disabled={isVoting}
+                            className="flex-1 px-4 py-2.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                            style={{ borderRadius: "var(--radius)" }}
+                          >
+                            {isVoting ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <X className="w-4 h-4" />
+                            )}
+                            <span>Rechazar</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
