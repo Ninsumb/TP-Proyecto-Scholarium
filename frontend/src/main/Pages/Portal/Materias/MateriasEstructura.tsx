@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { carpetaService } from "../../../services/Portal/CarpetaService";
 import type { CarpetaArbol } from "../../../types/Portal/Carpeta";
+import { materiaService } from "../../../services/Portal/MateriaService";
+import apiClient from "../../../services/apiClient";
 
 // ─── Tipos de modal ────────────────────────────────────────────────────────────
 type ModalType =
@@ -35,30 +37,31 @@ interface FolderOption {
 }
 
 function AccesoDenegado({ portalId }: { portalId: string | undefined }) {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
-      <div className="max-w-md">
-        <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center mx-auto mb-6">
-          <Lock className="w-8 h-8 text-muted-foreground" />
+    return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+            <div className="max-w-md">
+                <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center mx-auto mb-6">
+                    <Lock className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h2 className="text-2xl font-semibold text-foreground mb-3">
+                    Portal privado
+                </h2>
+                <p className="text-on-surface-variant mb-8">
+                    Este portal es privado. Solo sus miembros pueden acceder a
+                    esta sección. Si querés ver el contenido, enviá una
+                    solicitud para unirte.
+                </p>
+                <Link
+                    to={`/portal/${portalId}/solicitud`}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors"
+                    style={{ borderRadius: "var(--radius)" }}
+                >
+                    <UserPlus className="w-5 h-5" />
+                    Enviar Solicitud
+                </Link>
+            </div>
         </div>
-        <h2 className="text-2xl font-semibold text-foreground mb-3">
-          Portal privado
-        </h2>
-        <p className="text-on-surface-variant mb-8">
-          Este portal es privado. Solo sus miembros pueden acceder a esta sección.
-          Si querés ver el contenido, enviá una solicitud para unirte.
-        </p>
-        <Link
-          to={`/portal/${portalId}/solicitud`}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors"
-          style={{ borderRadius: "var(--radius)" }}
-        >
-          <UserPlus className="w-5 h-5" />
-          Enviar Solicitud
-        </Link>
-      </div>
-    </div>
-  );
+    );
 }
 
 // ─── Helper: aplanar el árbol en una lista con profundidad ─────────────────────
@@ -80,7 +83,12 @@ function flattenFolders(
 
 // ─── Componente de menú contextual "..." ──────────────────────────────────────
 interface ContextMenuProps {
-    items: { label: string; icon: React.ReactNode; onClick: () => void; danger?: boolean }[];
+    items: {
+        label: string;
+        icon: React.ReactNode;
+        onClick: () => void;
+        danger?: boolean;
+    }[];
 }
 
 function ContextMenu({ items }: ContextMenuProps) {
@@ -151,7 +159,12 @@ interface FolderSelectorProps {
     placeholder?: string;
 }
 
-function FolderSelector({ options, value, onChange, placeholder }: FolderSelectorProps) {
+function FolderSelector({
+    options,
+    value,
+    onChange,
+    placeholder,
+}: FolderSelectorProps) {
     return (
         <select
             value={value ?? ""}
@@ -213,7 +226,13 @@ interface ModalActionsProps {
     danger?: boolean;
 }
 
-function ModalActions({ confirmLabel, onConfirm, onCancel, confirmDisabled, danger }: ModalActionsProps) {
+function ModalActions({
+    confirmLabel,
+    onConfirm,
+    onCancel,
+    confirmDisabled,
+    danger,
+}: ModalActionsProps) {
     return (
         <div className="flex gap-3">
             <button
@@ -256,26 +275,42 @@ export function Subjects() {
 
     const [folderStructure, setFolderStructure] = useState<CarpetaArbol[]>([]);
     const [loading, setLoading] = useState(true);
-    const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+    const [expandedFolders, setExpandedFolders] = useState<Set<string>>(() => {
+        const saved = localStorage.getItem(`expandedFolders-${portalId}`);
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+    });
 
     // ── Estado del modal activo ─────────────────────────────────────────────────
     const [activeModal, setActiveModal] = useState<ModalType>(null);
 
     // Datos compartidos para los distintos modales
-    const [targetFolderId, setTargetFolderId] = useState<string | null>(null);   // carpeta sobre la que se actúa
+    const [targetFolderId, setTargetFolderId] = useState<string | null>(null); // carpeta sobre la que se actúa
     const [targetSubjectId, setTargetSubjectId] = useState<string | null>(null); // materia sobre la que se actúa
 
     // ── Campos de formulario ────────────────────────────────────────────────────
     const [newFolderName, setNewFolderName] = useState("");
-    const [selectedParentFolder, setSelectedParentFolder] = useState<string | null>(null);
+    const [selectedParentFolder, setSelectedParentFolder] = useState<
+        string | null
+    >(null);
 
     const [subjectName, setSubjectName] = useState("");
     const [subjectTag, setSubjectTag] = useState("");
     const [subjectFolder, setSubjectFolder] = useState<string | null>(null);
 
     const [renameFolderValue, setRenameFolderValue] = useState("");
-    const [moveFolderTarget, setMoveFolderTarget] = useState<string | null>(null);
-    const [moveSubjectTarget, setMoveSubjectTarget] = useState<string | null>(null);
+    const [moveFolderTarget, setMoveFolderTarget] = useState<string | null>(
+        null,
+    );
+    const [moveSubjectTarget, setMoveSubjectTarget] = useState<string | null>(
+        null,
+    );
+
+    useEffect(() => {
+        localStorage.setItem(
+            `expandedFolders-${portalId}`,
+            JSON.stringify([...expandedFolders]),
+        );
+    }, [expandedFolders, portalId]);
 
     // ── Helpers de estado ───────────────────────────────────────────────────────
     const resetModal = () => {
@@ -309,7 +344,10 @@ export function Subjects() {
     };
 
     // ── Busca la carpeta por id recursivamente ─────────────────────────────────
-    const findFolder = (id: string, items: CarpetaArbol[]): CarpetaArbol | null => {
+    const findFolder = (
+        id: string,
+        items: CarpetaArbol[],
+    ): CarpetaArbol | null => {
         for (const item of items) {
             if (item.id === id) return item;
             const found = findFolder(id, item.subcarpetas ?? []);
@@ -318,7 +356,9 @@ export function Subjects() {
         return null;
     };
 
-    const targetFolder = targetFolderId ? findFolder(targetFolderId, folderStructure) : null;
+    const targetFolder = targetFolderId
+        ? findFolder(targetFolderId, folderStructure)
+        : null;
 
     // ── Acciones de carpeta ─────────────────────────────────────────────────────
     const openNewFolderModal = (parentId: string | null) => {
@@ -326,82 +366,63 @@ export function Subjects() {
         setActiveModal("newFolder");
     };
 
-    const createFolder = () => {
+    const refrescarEstructura = () => {
+        carpetaService
+            .getEstructura(Number(portalId))
+            .then((data) => setFolderStructure(data.carpetas));
+    };
+
+    const createFolder = async () => {
         if (!newFolderName.trim()) return;
-
-        const newFolder: CarpetaArbol = {
-            id: `folder-${Date.now()}`,
-            nombre: newFolderName,
-            carpetaPadreId: selectedParentFolder,
-            orden: 0,
-            subcarpetas: [],
-            materias: [],
-        };
-
-        if (selectedParentFolder === null) {
-            setFolderStructure((prev) => [...prev, newFolder]);
-        } else {
-            const addToFolder = (items: CarpetaArbol[]): CarpetaArbol[] =>
-                items.map((item) => {
-                    if (item.id === selectedParentFolder) {
-                        return { ...item, subcarpetas: [...(item.subcarpetas ?? []), newFolder] };
-                    }
-                    return { ...item, subcarpetas: addToFolder(item.subcarpetas ?? []) };
-                });
-            setFolderStructure((prev) => addToFolder(prev));
-        }
+        await carpetaService.crear(
+            Number(portalId),
+            newFolderName.trim(),
+            selectedParentFolder,
+        );
+        refrescarEstructura();
         resetModal();
     };
 
-    const renameFolder = () => {
+    const renameFolder = async () => {
         if (!renameFolderValue.trim() || !targetFolderId) return;
-
-        const applyRename = (items: CarpetaArbol[]): CarpetaArbol[] =>
-            items.map((item) => {
-                if (item.id === targetFolderId) return { ...item, nombre: renameFolderValue.trim() };
-                return { ...item, subcarpetas: applyRename(item.subcarpetas ?? []) };
-            });
-
-        setFolderStructure((prev) => applyRename(prev));
+        await carpetaService.renombrar(
+            Number(portalId),
+            targetFolderId,
+            renameFolderValue.trim(),
+        );
+        refrescarEstructura();
         resetModal();
     };
 
-    const deleteFolder = () => {
+    const deleteFolder = async () => {
         if (!targetFolderId) return;
-        const folder = findFolder(targetFolderId, folderStructure);
-        if (!folder) return;
-
-        const isEmpty =
-            (folder.subcarpetas?.length ?? 0) === 0 &&
-            (folder.materias?.length ?? 0) === 0;
-
-        if (!isEmpty) return; // El modal ya muestra el error; este guard es defensivo
-
-        const removeFolder = (items: CarpetaArbol[]): CarpetaArbol[] =>
-            items
-                .filter((item) => item.id !== targetFolderId)
-                .map((item) => ({ ...item, subcarpetas: removeFolder(item.subcarpetas ?? []) }));
-
-        setFolderStructure((prev) => removeFolder(prev));
+        await carpetaService.eliminar(targetFolderId);
+        refrescarEstructura();
         resetModal();
     };
 
-    const moveFolder = () => {
-        if (!targetFolderId || !moveFolderTarget) return;
-        // TODO: conectar con endpoint del back
+    const moveFolder = async () => {
+        if (!targetFolderId) return;
+        await carpetaService.mover(targetFolderId, moveFolderTarget); // null = mover a raíz
+        refrescarEstructura();
         resetModal();
     };
 
     // ── Acciones de materia ─────────────────────────────────────────────────────
-    const createSubject = () => {
+    const createSubject = async () => {
         if (!subjectName.trim() || !subjectTag.trim() || !subjectFolder) return;
-        // TODO: POST /api/carpetas/{subjectFolder}/materias  body: { nombre, etiqueta }
+        await apiClient.post(`/carpetas/${subjectFolder}/materias`, {
+            nombre: subjectName.trim(),
+            etiqueta: subjectTag.trim(),
+        });
+        refrescarEstructura();
         resetModal();
     };
 
-    const moveSubject = () => {
+    const moveSubject = async () => {
         if (!targetSubjectId || !moveSubjectTarget) return;
-        // TODO: conectar con endpoint del back
+        await materiaService.mover(targetSubjectId, moveSubjectTarget);
+        refrescarEstructura();
         resetModal();
     };
 
@@ -456,9 +477,13 @@ export function Subjects() {
                             <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                         )}
                         <Folder className="w-5 h-5 text-primary flex-shrink-0" />
-                        <span className="font-medium text-foreground">{item.nombre}</span>
+                        <span className="font-medium text-foreground">
+                            {item.nombre}
+                        </span>
                         <span className="text-xs text-foreground ml-2">
-                            {(item.subcarpetas?.length || 0) + (item.materias?.length || 0)} elementos
+                            {(item.subcarpetas?.length || 0) +
+                                (item.materias?.length || 0)}{" "}
+                            elementos
                         </span>
                     </button>
 
@@ -478,7 +503,9 @@ export function Subjects() {
 
                 {isExpanded && (
                     <div>
-                        {item.subcarpetas?.map((sub) => renderFolder(sub, depth + 1))}
+                        {item.subcarpetas?.map((sub) =>
+                            renderFolder(sub, depth + 1),
+                        )}
                         {item.materias?.map((materia) => (
                             <div
                                 key={materia.id}
@@ -503,10 +530,16 @@ export function Subjects() {
                                             items={[
                                                 {
                                                     label: "Mover materia",
-                                                    icon: <MoveRight className="w-4 h-4" />,
+                                                    icon: (
+                                                        <MoveRight className="w-4 h-4" />
+                                                    ),
                                                     onClick: () => {
-                                                        setTargetSubjectId(materia.id);
-                                                        setActiveModal("moveSubject");
+                                                        setTargetSubjectId(
+                                                            materia.id,
+                                                        );
+                                                        setActiveModal(
+                                                            "moveSubject",
+                                                        );
                                                     },
                                                 },
                                             ]}
@@ -523,11 +556,19 @@ export function Subjects() {
 
     // ── Opciones de carpeta para selectores ─────────────────────────────────────
     const allFolderOptions = flattenFolders(folderStructure);
-    const moveFolderOptions = flattenFolders(folderStructure, 0, targetFolderId ?? undefined);
+    const moveFolderOptions = flattenFolders(
+        folderStructure,
+        0,
+        targetFolderId ?? undefined,
+    );
 
     // ── Early returns ───────────────────────────────────────────────────────────
     if (loading)
-        return <div className="p-8 text-muted-foreground">Cargando estructura...</div>;
+        return (
+            <div className="p-8 text-muted-foreground">
+                Cargando estructura...
+            </div>
+        );
 
     if (!isMember && !isAdmin && !isOpen) {
         return <AccesoDenegado portalId={portalId} />;
@@ -550,7 +591,8 @@ export function Subjects() {
                         Materias de la Carrera
                     </h1>
                     <p className="text-muted-foreground">
-                        Explora las materias organizadas en carpetas personalizadas
+                        Explora las materias organizadas en carpetas
+                        personalizadas
                     </p>
                 </div>
 
@@ -604,9 +646,13 @@ export function Subjects() {
                             onChange={(e) => setNewFolderName(e.target.value)}
                             placeholder="Ej: Tercer Año, Electivas..."
                             className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                            style={{ border: "2px solid rgba(169, 180, 185, 0.15)" }}
+                            style={{
+                                border: "2px solid rgba(169, 180, 185, 0.15)",
+                            }}
                             autoFocus
-                            onKeyDown={(e) => e.key === "Enter" && createFolder()}
+                            onKeyDown={(e) =>
+                                e.key === "Enter" && createFolder()
+                            }
                         />
                     </div>
                     <ModalActions
@@ -632,7 +678,9 @@ export function Subjects() {
                                 onChange={(e) => setSubjectName(e.target.value)}
                                 placeholder="Ej: Algoritmos y Estructuras de Datos"
                                 className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                style={{ border: "2px solid rgba(169, 180, 185, 0.15)" }}
+                                style={{
+                                    border: "2px solid rgba(169, 180, 185, 0.15)",
+                                }}
                                 autoFocus
                             />
                         </div>
@@ -642,7 +690,8 @@ export function Subjects() {
                                 Etiqueta
                             </label>
                             <p className="text-xs text-muted-foreground mb-2">
-                                Identificador corto que se usará para el tablero en el foro.
+                                Identificador corto que se usará para el tablero
+                                en el foro.
                             </p>
                             <input
                                 type="text"
@@ -650,7 +699,9 @@ export function Subjects() {
                                 onChange={(e) => setSubjectTag(e.target.value)}
                                 placeholder="Ej: AED, MATE1, SO..."
                                 className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                style={{ border: "2px solid rgba(169, 180, 185, 0.15)" }}
+                                style={{
+                                    border: "2px solid rgba(169, 180, 185, 0.15)",
+                                }}
                             />
                         </div>
 
@@ -659,8 +710,14 @@ export function Subjects() {
                                 Carpeta
                             </label>
                             {allFolderOptions.length === 0 ? (
-                                <p className="text-sm text-muted-foreground px-4 py-3 rounded-sm" style={{ border: "2px solid rgba(169, 180, 185, 0.15)" }}>
-                                    No hay carpetas disponibles. Creá una primero.
+                                <p
+                                    className="text-sm text-muted-foreground px-4 py-3 rounded-sm"
+                                    style={{
+                                        border: "2px solid rgba(169, 180, 185, 0.15)",
+                                    }}
+                                >
+                                    No hay carpetas disponibles. Creá una
+                                    primero.
                                 </p>
                             ) : (
                                 <FolderSelector
@@ -689,7 +746,10 @@ export function Subjects() {
 
             {/* ── Modal: Cambiar nombre de carpeta ── */}
             {activeModal === "renameFolder" && (
-                <ModalShell title="Cambiar Nombre de Carpeta" onClose={resetModal}>
+                <ModalShell
+                    title="Cambiar Nombre de Carpeta"
+                    onClose={resetModal}
+                >
                     <div className="mb-6">
                         <label className="block text-sm font-medium text-foreground mb-2">
                             Nuevo nombre
@@ -697,11 +757,17 @@ export function Subjects() {
                         <input
                             type="text"
                             value={renameFolderValue}
-                            onChange={(e) => setRenameFolderValue(e.target.value)}
+                            onChange={(e) =>
+                                setRenameFolderValue(e.target.value)
+                            }
                             className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                            style={{ border: "2px solid rgba(169, 180, 185, 0.15)" }}
+                            style={{
+                                border: "2px solid rgba(169, 180, 185, 0.15)",
+                            }}
                             autoFocus
-                            onKeyDown={(e) => e.key === "Enter" && renameFolder()}
+                            onKeyDown={(e) =>
+                                e.key === "Enter" && renameFolder()
+                            }
                         />
                     </div>
                     <ModalActions
@@ -720,7 +786,8 @@ export function Subjects() {
                         <>
                             <p className="text-foreground mb-6">
                                 ¿Estás seguro de que querés eliminar la carpeta{" "}
-                                <strong>"{targetFolder?.nombre}"</strong>? Esta acción no se puede deshacer.
+                                <strong>"{targetFolder?.nombre}"</strong>? Esta
+                                acción no se puede deshacer.
                             </p>
                             <ModalActions
                                 confirmLabel="Eliminar"
@@ -734,7 +801,8 @@ export function Subjects() {
                             <div
                                 className="flex items-start gap-3 p-4 rounded-sm mb-6"
                                 style={{
-                                    background: "rgba(var(--destructive-rgb, 220 38 38) / 0.08)",
+                                    background:
+                                        "rgba(var(--destructive-rgb, 220 38 38) / 0.08)",
                                     border: "1px solid rgba(var(--destructive-rgb, 220 38 38) / 0.2)",
                                 }}
                             >
@@ -744,8 +812,12 @@ export function Subjects() {
                                         No se puede eliminar esta carpeta
                                     </p>
                                     <p className="text-sm text-foreground">
-                                        La carpeta <strong>"{targetFolder?.nombre}"</strong> contiene elementos.
-                                        Movelos o eliminá su contenido antes de continuar.
+                                        La carpeta{" "}
+                                        <strong>
+                                            "{targetFolder?.nombre}"
+                                        </strong>{" "}
+                                        contiene elementos. Movelos o eliminá su
+                                        contenido antes de continuar.
                                     </p>
                                 </div>
                             </div>
@@ -767,12 +839,31 @@ export function Subjects() {
                 <ModalShell title="Mover Carpeta" onClose={resetModal}>
                     <p className="text-sm text-muted-foreground mb-4">
                         Seleccioná el destino para{" "}
-                        <strong className="text-foreground">"{targetFolder?.nombre}"</strong>.
+                        <strong className="text-foreground">
+                            "{targetFolder?.nombre}"
+                        </strong>
+                        .
                     </p>
                     <div className="mb-6">
                         <label className="block text-sm font-medium text-foreground mb-2">
                             Carpeta destino
                         </label>
+                        <div className="mb-3">
+                            <button
+                                type="button"
+                                onClick={() => setMoveFolderTarget(null)}
+                                className={`w-full text-left px-4 py-2 rounded-sm text-sm transition-colors ${
+                                    moveFolderTarget === null
+                                        ? "bg-primary/10 text-primary font-medium"
+                                        : "hover:bg-surface-container-low text-foreground"
+                                }`}
+                                style={{
+                                    border: "2px solid rgba(169, 180, 185, 0.15)",
+                                }}
+                            >
+                                📁 Raíz (sin carpeta padre)
+                            </button>
+                        </div>
                         <FolderSelector
                             options={moveFolderOptions}
                             value={moveFolderTarget}
@@ -784,7 +875,7 @@ export function Subjects() {
                         confirmLabel="Mover"
                         onConfirm={moveFolder}
                         onCancel={resetModal}
-                        confirmDisabled={!moveFolderTarget}
+                        confirmDisabled={false}
                     />
                 </ModalShell>
             )}
