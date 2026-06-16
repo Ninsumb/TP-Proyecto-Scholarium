@@ -42,7 +42,8 @@ enum class TipoAccionAdmin {
     TABLERO_ELIMINADO,
 
     // Foro
-    POST_ELIMINADO,
+    POST_OCULTADO,
+    TABLERO_ACTUALIZADO,
 
     // Votaciones
     VOTACION_CREADA,

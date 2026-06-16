@@ -1,6 +1,7 @@
 package com.unsam.scholarium.service
 
 import com.unsam.scholarium.dto.CrearTableroRequest
+import com.unsam.scholarium.dto.EditarTableroRequest
 import com.unsam.scholarium.dto.EtiquetaSimpleResponse
 import com.unsam.scholarium.dto.TableroResponse
 import com.unsam.scholarium.exception.ElementDoesNotExistException
@@ -126,6 +127,42 @@ class ForoService(
         foroRepository.save(tablero)
         // El admin se registra desde VotacionAdminService.ejecutarAccion() cuando hay votación.
         // Si hay un endpoint directo de borrado, registralo ahí con el email del admin.
+    }
+
+    @Transactional
+    fun editarTablero(
+        portalId: Long,
+        tableroId: UUID,
+        emailUsuario: String,
+        request: EditarTableroRequest,
+    ): TableroResponse {
+        validarAdmin(
+            usuarioId = usuarioRepository.findByEmail(emailUsuario)
+                ?.id ?: throw ElementDoesNotExistException("Usuario no encontrado"),
+            portalId = portalId,
+        )
+
+        val tablero = foroRepository.findById(tableroId)
+            .orElseThrow { ElementDoesNotExistException("Tablero no encontrado") }
+
+        if (!tablero.activo) throw ElementDoesNotExistException("Tablero no encontrado")
+        if (tablero.portal.id != portalId) throw UnauthorizedException("El tablero no pertenece a este portal")
+
+        tablero.nombre = request.nombre
+        tablero.descripcion = request.descripcion
+
+        val admin = usuarioRepository.findByEmail(emailUsuario)!!
+        val portal = tablero.portal
+
+        accionAdminService.registrar(
+            portal = portal,
+            admin = admin,
+            tipo = TipoAccionAdmin.TABLERO_ACTUALIZADO,   // agregá este valor al enum
+            entidadId = tablero.id.toString(),
+            entidadDescripcion = tablero.nombre,
+        )
+
+        return toTableroResponse(foroRepository.save(tablero))
     }
 
     private fun toTableroResponse(tablero: Tablero) = TableroResponse(

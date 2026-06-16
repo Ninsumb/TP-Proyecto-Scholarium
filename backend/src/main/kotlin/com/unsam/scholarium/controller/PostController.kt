@@ -3,6 +3,7 @@ package com.unsam.scholarium.controller
 import com.unsam.scholarium.dto.CrearPostRequest
 import com.unsam.scholarium.dto.CrearRespuestaRequest
 import com.unsam.scholarium.dto.EditarPostRequest
+import com.unsam.scholarium.dto.OcultarPostRequest
 import com.unsam.scholarium.dto.PostResponse
 import com.unsam.scholarium.service.PostService
 import jakarta.validation.Valid
@@ -88,5 +89,24 @@ class PostController(private val postService: PostService) {
         val email = authentication.name
         postService.eliminarPost(postId, email)
         return ResponseEntity.noContent().build()
+    }
+
+    @PostMapping("/posts/{postId}/ocultar")
+    fun ocultarPost(
+        @PathVariable postId: UUID,
+        @Valid @RequestBody request: OcultarPostRequest,
+        authentication: Authentication,
+    ): ResponseEntity<PostResponse> {
+        val post = postService.ocultarPost(postId, authentication.name, request.motivo)
+        return ResponseEntity.ok(post)
+    }
+
+    @PostMapping("/posts/{postId}/develar")
+    fun develarPost(
+        @PathVariable postId: UUID,
+        authentication: Authentication,
+    ): ResponseEntity<PostResponse> {
+        val post = postService.develarPost(postId, authentication.name)
+        return ResponseEntity.ok(post)
     }
 }

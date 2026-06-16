@@ -43,6 +43,12 @@ class Post(
     @Column(nullable = false)
     var eliminado: Boolean = false,
 
+    @Column(nullable = false)
+    var ocultado: Boolean = false,
+
+    @Column(name = "ocultado_motivo", columnDefinition = "TEXT")
+    var ocultadoMotivo: String? = null,
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     val createdAt: Date? = null,

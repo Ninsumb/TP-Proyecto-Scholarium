@@ -12,6 +12,8 @@ data class PostResponse(
     val postPadreId: UUID?,
     val cantidadRespuestas: Long,
     val eliminado: Boolean,
+    val ocultado: Boolean,           // NUEVO
+    val ocultadoMotivo: String?,     // NUEVO — solo se puebla para admins
     val createdAt: Instant,
-    val updatedAt: Instant
+    val updatedAt: Instant,
 )

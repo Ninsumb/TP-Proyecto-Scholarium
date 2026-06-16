@@ -13,6 +13,7 @@ import com.unsam.scholarium.model.Post
 import com.unsam.scholarium.model.PostRevision
 import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.model.TipoAcceso
+import com.unsam.scholarium.model.TipoAccionAdmin
 import com.unsam.scholarium.repository.ForoRepository
 import com.unsam.scholarium.repository.MembresiaRepository
 import com.unsam.scholarium.repository.PostRepository
@@ -29,7 +30,8 @@ class PostService(
     private val foroRepository: ForoRepository,
     private val usuarioRepository: UsuarioRepository,
     private val membresiaRepository: MembresiaRepository,
-    private val postRevisionRepository: PostRevisionRepository
+    private val postRevisionRepository: PostRevisionRepository,
+    private val accionAdminService: AccionAdminService,
 ) {
 
     // ── Helpers privados ──────────────────────────────────────────────────────
@@ -41,6 +43,11 @@ class PostService(
     private fun resolverTablero(tableroId: UUID) =
         foroRepository.findById(tableroId)
             .orElseThrow { ElementDoesNotExistException("El tablero no existe") }
+
+    private fun esAdmin(usuarioId: Long, portalId: Long): Boolean =
+        membresiaRepository.existsByUsuarioIdAndPortalIdAndRol(
+            usuarioId, portalId, RolMembresia.ADMIN
+        )
 
     /**
      * Acceso de LECTURA: pasa si es miembro/admin, o si el portal es ABIERTO.
@@ -82,10 +89,11 @@ class PostService(
         if (!esMiembro) throw UnauthorizedException("No tenés permisos para operar en este portal")
     }
 
-    private fun toResponse(post: Post): PostResponse {
+    private fun toResponse(post: Post, esAdmin: Boolean = false): PostResponse {
         val cantidadRespuestas = postRepository.countAllRespuestasRecursivas(post.id!!)
-        return if (post.eliminado) {
-            PostResponse(
+
+        return when {
+            post.eliminado -> PostResponse(
                 id = post.id,
                 titulo = null,
                 contenido = null,
@@ -94,11 +102,26 @@ class PostService(
                 postPadreId = post.postPadre?.id,
                 cantidadRespuestas = cantidadRespuestas,
                 eliminado = true,
+                ocultado = false,
+                ocultadoMotivo = null,
                 createdAt = post.createdAt!!.toInstant(),
-                updatedAt = post.updatedAt!!.toInstant()
+                updatedAt = post.updatedAt!!.toInstant(),
             )
-        } else {
-            PostResponse(
+            post.ocultado && !esAdmin -> PostResponse(
+                id = post.id,
+                titulo = null,
+                contenido = null,
+                tableroId = post.tablero.id!!,
+                autor = null,
+                postPadreId = post.postPadre?.id,
+                cantidadRespuestas = cantidadRespuestas,
+                eliminado = false,
+                ocultado = true,
+                ocultadoMotivo = null,     // motivo nunca se expone a no-admins
+                createdAt = post.createdAt!!.toInstant(),
+                updatedAt = post.updatedAt!!.toInstant(),
+            )
+            else -> PostResponse(
                 id = post.id,
                 titulo = post.titulo,
                 contenido = post.contenido,
@@ -106,13 +129,15 @@ class PostService(
                 autor = AutorDTO(
                     id = post.autor.id!!,
                     nombre = post.autor.nombre,
-                    fotoPerfil = post.autor.fotoPerfil
+                    fotoPerfil = post.autor.fotoPerfil,
                 ),
                 postPadreId = post.postPadre?.id,
                 cantidadRespuestas = cantidadRespuestas,
                 eliminado = false,
+                ocultado = post.ocultado,
+                ocultadoMotivo = if (esAdmin) post.ocultadoMotivo else null,
                 createdAt = post.createdAt!!.toInstant(),
-                updatedAt = post.updatedAt!!.toInstant()
+                updatedAt = post.updatedAt!!.toInstant(),
             )
         }
     }
@@ -132,7 +157,9 @@ class PostService(
             tablero = tablero,
             autor = usuario
         )
-        return toResponse(postRepository.save(post))
+
+        val admin = esAdmin(usuario.id!!, tablero.portal.id!!)
+        return toResponse(postRepository.save(post), admin)
     }
 
     @Transactional(readOnly = true)
@@ -141,9 +168,10 @@ class PostService(
         val tablero = resolverTablero(tableroId)
         validarAccesoLecturaDesdePortalId(usuario.id!!, tablero.portal.id!!, tablero.portal)
 
+        val admin = esAdmin(usuario.id!!, tablero.portal.id!!)
         return postRepository
             .findByTableroIdAndPostPadreIsNullAndEliminadoFalseOrderByCreatedAtDesc(tableroId)
-            .map { toResponse(it) }
+            .map { toResponse(it, admin) }
     }
 
     @Transactional
@@ -164,7 +192,9 @@ class PostService(
             autor = usuario,
             postPadre = postPadre
         )
-        return toResponse(postRepository.save(respuesta))
+
+        val admin = esAdmin(usuario.id!!, respuesta.tablero.portal.id!!)
+        return toResponse(postRepository.save(respuesta), admin)
     }
 
     @Transactional(readOnly = true)
@@ -175,7 +205,8 @@ class PostService(
 
         validarAccesoLecturaDesdePortalId(usuario.id!!, post.tablero.portal.id!!, post.tablero.portal)
 
-        return postRepository.findAllRespuestasRecursivas(postId).map { toResponse(it) }
+        val admin = esAdmin(usuario.id!!, post.tablero.portal.id!!)
+        return postRepository.findAllRespuestasRecursivas(postId).map { toResponse(it, admin) }
     }
 
     @Transactional
@@ -187,8 +218,9 @@ class PostService(
         if (post.eliminado) throw ElementDoesNotExistException("El post no existe")
         if (post.autor.id != usuario.id) throw NotAdminException("No tenés permisos para editar este post")
 
+        val admin = esAdmin(usuario.id!!, post.tablero.portal.id!!)
         if (post.contenido == request.contenido && post.titulo == request.titulo) {
-            return toResponse(post)
+            return toResponse(post,admin)
         }
 
         val revision = PostRevision(
@@ -202,7 +234,8 @@ class PostService(
         post.contenido = request.contenido
         request.titulo?.let { post.titulo = it }
 
-        return toResponse(postRepository.save(post))
+
+        return toResponse(postRepository.save(post),admin)
     }
 
     @Transactional
@@ -240,7 +273,60 @@ class PostService(
 
         if (tokens.isEmpty()) return emptyList()
 
+        val admin = esAdmin(usuario.id!!, tablero.portal.id!!)
         return postRepository.buscarPostsEnTablero(tableroId, tokens)
-            .map { toResponse(it) }
+            .map { toResponse(it, admin) }
+    }
+
+    @Transactional
+    fun ocultarPost(postId: UUID, email: String, motivo: String): PostResponse {
+        val usuario = resolverUsuario(email)
+        val post = postRepository.findById(postId)
+            .orElseThrow { ElementDoesNotExistException("El post no existe") }
+
+        if (post.eliminado) throw ElementDoesNotExistException("El post no existe")
+        if (post.ocultado) throw BusinessException("El post ya está oculto")
+
+        val portalId = post.tablero.portal.id!!
+        if (!membresiaRepository.existsByUsuarioIdAndPortalIdAndRol(usuario.id!!, portalId, RolMembresia.ADMIN)) {
+            throw NotAdminException("Solo los administradores pueden ocultar posts")
+        }
+
+        post.ocultado = true
+        post.ocultadoMotivo = motivo
+        val saved = postRepository.save(post)
+
+        val portal = post.tablero.portal
+        accionAdminService.registrar(
+            portal = portal,
+            admin = usuario,
+            tipo = TipoAccionAdmin.POST_OCULTADO,
+            entidadId = post.id.toString(),
+            entidadDescripcion = "Se marcó como inapropiado un post del tablero \"${post.tablero.nombre}\"",
+            motivo = motivo,
+        )
+
+        return toResponse(saved, esAdmin = true)
+    }
+
+    @Transactional
+    fun develarPost(postId: UUID, email: String): PostResponse {
+        val usuario = resolverUsuario(email)
+        val post = postRepository.findById(postId)
+            .orElseThrow { ElementDoesNotExistException("El post no existe") }
+
+        if (post.eliminado) throw ElementDoesNotExistException("El post no existe")
+        if (!post.ocultado) throw BusinessException("El post no está oculto")
+
+        val portalId = post.tablero.portal.id!!
+        if (!membresiaRepository.existsByUsuarioIdAndPortalIdAndRol(usuario.id!!, portalId, RolMembresia.ADMIN)) {
+            throw NotAdminException("Solo los administradores pueden develar posts")
+        }
+
+        post.ocultado = false
+        post.ocultadoMotivo = null
+        val saved = postRepository.save(post)
+
+        return toResponse(saved, esAdmin = true)
     }
 }
