@@ -339,7 +339,17 @@ class VotacionAdminService(
                 // removerMiembro ya registra la acción internamente.
             }
 
-            TipoVotacion.BLOQUEO_MIEMBRO -> { /* TODO */ }
+            TipoVotacion.BLOQUEO_MIEMBRO -> {
+                val usuarioId = votacion.entidadId?.toLongOrNull()
+                    ?: throw BusinessException("entidadId inválido para BLOQUEO_MIEMBRO")
+                
+                portalService.bloquearMiembro(
+                    portalId          = votacion.portal.id!!,
+                    usuarioObjetivoId = usuarioId,
+                    emailAdmin        = emailProponente,
+                )
+                // bloquearMiembro ya registra la acción internamente.
+            }
 
             TipoVotacion.CAMBIO_TIPO_ACCESO -> {
                 val metadatosJson = votacion.metadatos

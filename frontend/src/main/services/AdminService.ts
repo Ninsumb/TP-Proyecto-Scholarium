@@ -253,11 +253,11 @@ class AdminService {
   }
 
 /**
-   * Bloquea a un miembro.
+   * levantar bloqueo a un miembro.
 
    * DELETE /api/portales/{portalId}/bloqueos/{usuarioId}
    */
-  async bloquearMiembro(portalId: number, usuarioId: number): Promise<void> {
+  async levantarBloqueoMiembro(portalId: number, usuarioId: number): Promise<void> {
     await apiClient.delete(`/portales/${portalId}/bloqueos/${usuarioId}`);
   }
 
