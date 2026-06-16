@@ -282,17 +282,19 @@ export function AccountSettings() {
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deletingAccount, setDeletingAccount] = useState(false);
+    const [deleteError, setDeleteError] = useState("");
 
     const handleDeleteAccount = async () => {
         setDeletingAccount(true);
+        setDeleteError("");
         try {
             await usuarioService.eliminarCuenta();
             localStorage.clear();
             window.location.href = "/";
         } catch {
-            // Si falla el DELETE, volvemos al estado anterior sin explotar
             setDeletingAccount(false);
             setShowDeleteConfirm(false);
+            setDeleteError("No se pudo eliminar la cuenta. Intentá de nuevo.");
         }
     };
 
@@ -649,6 +651,9 @@ export function AccountSettings() {
                                     </button>
                                 </div>
                             </div>
+                        )}
+                        {deleteError && (
+                            <p className="text-sm text-destructive mt-2">{deleteError}</p>
                         )}
                     </Section>
 
