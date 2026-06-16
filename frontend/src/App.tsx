@@ -20,6 +20,7 @@ import { RequestsAndMaterial } from './main/Pages/Portal/Admin/SolicitudesYMater
 import { AdminPanel } from './main/Pages/Portal/Admin/PanelDeAdministracion'
 import { PortalConfig } from './main/Pages/Portal/Admin/ConfiguracionPortal'
 import { Notifications } from './main/Pages/Perfil/Notificaciones'
+import { AdminRoute } from './main/Components/common/AdminRoute'
 import ForgotPassword from './main/Pages/Auth/ForgotPassword'
 import ResetPassword from './main/Pages/Auth/ResetPassword'
 
@@ -56,10 +57,9 @@ function App() {
             <Route path="/portal/:portalId/materias/:id" element={<SubjectDetail />} /> 
             <Route path="/portal/:portalId/foro" element={<ForumBoardsList />} /> 
             <Route path="/portal/:portalId/foro/:boardId" element={<ForumBoardView />} /> 
-            {/* <Route path="/portal/:portalId/admin" element={<AdminDashboard />} />  */}
-            <Route path="/portal/:portalId/admin/solicitudes" element={<RequestsAndMaterial />} /> 
-            <Route path="/portal/:portalId/admin/panel" element={<AdminPanel />} /> 
-            <Route path="/portal/:portalId/admin/configuracion" element={<PortalConfig />} /> 
+            <Route path="/portal/:portalId/admin/solicitudes" element={<AdminRoute><RequestsAndMaterial /></AdminRoute>} />
+            <Route path="/portal/:portalId/admin/panel" element={ <AdminRoute><AdminPanel /> </AdminRoute>} />
+            <Route path="/portal/:portalId/admin/configuracion"  element={<AdminRoute><PortalConfig /></AdminRoute>} />
             <Route path="/portal/:portalId/solicitud" element={<JoinPortal />} /> 
             <Route path="/portal/:portalId/solicitud-estado" element={<RequestStatus />} /> 
           </Route>
