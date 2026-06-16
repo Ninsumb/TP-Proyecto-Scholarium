@@ -504,35 +504,40 @@ const ICON_CONTAINER_CLS: Record<string, string> = {
 function AccionCard({ accion, cfg, pillCls, initials }: AccionCardProps) {
   const [open, setOpen] = useState(false);
   const iconContainerCls = ICON_CONTAINER_CLS[cfg.pillClass] ?? ICON_CONTAINER_CLS.neutral;
-
+ 
+  // Detectar hex de color en entidadDescripcion (para cambios de color de portal)
+  const hexColor = accion.entidadDescripcion
+    ? extractHexColor(accion.entidadDescripcion)
+    : null;
+ 
   return (
     <div
       className="border border-border bg-card overflow-hidden transition-colors"
-      style={{ borderRadius: 'var(--radius)' }}
+      style={{ borderRadius: "var(--radius)" }}
     >
       {/* Header — siempre visible, clickeable */}
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center gap-3 px-3.5 py-3 text-left hover:bg-accent transition-colors"
       >
         {/* Ícono de acción */}
         <div
           className={`w-8 h-8 flex items-center justify-center shrink-0 ${iconContainerCls}`}
-          style={{ borderRadius: 'var(--radius)' }}
+          style={{ borderRadius: "var(--radius)" }}
         >
           <AuditIcon tipo={accion.tipo} />
         </div>
-
+ 
         {/* Texto principal */}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-foreground leading-tight truncate">
             {cfg.label}
           </p>
           <p className="text-xs text-on-surface-variant mt-0.5 truncate">
-            {accion.entidadDescripcion ?? '—'}
+            {accion.entidadDescripcion ?? "—"}
           </p>
         </div>
-
+ 
         {/* Timestamp + chevron */}
         <div className="flex items-center gap-2 shrink-0">
           <time
@@ -543,47 +548,120 @@ function AccionCard({ accion, cfg, pillCls, initials }: AccionCardProps) {
             {relTime(accion.createdAt)}
           </time>
           <ChevronDown
-            className={`w-3.5 h-3.5 text-on-surface-variant transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
+            className={`w-3.5 h-3.5 text-on-surface-variant transition-transform duration-150 ${
+              open ? "rotate-180" : ""
+            }`}
           />
         </div>
       </button>
-
+ 
       {/* Cuerpo expandible */}
       {open && (
         <div className="border-t border-border px-3.5 py-3 space-y-2.5">
-          {/* Detalle */}
+ 
+          {/* ── Detalle ── */}
           {accion.entidadDescripcion && (
             <div className="flex items-start gap-2 text-xs">
-              <span className="text-on-surface-variant mt-0.5 shrink-0">Detalle</span>
-              <span className="text-foreground">{accion.entidadDescripcion}</span>
+              {/* Label con ancho fijo para alinear columna de valor */}
+              <span className="text-on-surface-variant shrink-0 w-14 pt-px">Detalle</span>
+              <span className="text-foreground flex items-center gap-1.5 flex-wrap">
+                {accion.entidadDescripcion}
+                {/* Dot de color si hay un hex en la descripción */}
+                {hexColor && (
+                  <span
+                    className="inline-block w-2.5 h-2.5 rounded-full shrink-0 border border-black/10"
+                    style={{ backgroundColor: hexColor }}
+                    title={hexColor}
+                  />
+                )}
+              </span>
             </div>
           )}
-
-          {/* Motivo */}
+ 
+          {/* ── Motivo (destacado) ── */}
           {accion.motivo && (
             <div className="flex items-start gap-2 text-xs">
-              <span className="text-on-surface-variant mt-0.5 shrink-0">Motivo</span>
-              <span className="text-foreground">{accion.motivo}</span>
+              <span className="text-on-surface-variant shrink-0 w-14 pt-px">Motivo</span>
+              {/* Recuadro destacado para el motivo */}
+              <div
+                className="flex-1 px-2.5 py-1.5 bg-surface-container border border-border text-foreground italic leading-relaxed"
+                style={{ borderRadius: "var(--radius)" }}
+              >
+                {accion.motivo}
+              </div>
             </div>
           )}
-
-          {/* Admin */}
+ 
+          {/* ── Admin que ejecutó la acción ── */}
           <div className="flex items-center gap-2 pt-0.5">
-            <div
-              className="w-6 h-6 bg-primary/10 text-primary flex items-center justify-center text-[10px] font-medium shrink-0"
-              style={{ borderRadius: '50%' }}
-            >
-              {initials}
-            </div>
-            <span className="text-xs text-on-surface-variant">
-              {accion.adminNombre}
-            </span>
+            {/* Avatar con foto o iniciales */}
+            <AdminAvatar
+              nombre={accion.adminNombre}
+              fotoPerfil={accion.adminFotoPerfil}
+              initials={initials}
+              size="sm"
+            />
+            {/* Fallback oculto inicialmente — se activa por JS si la img falla */}
+            {accion.adminFotoPerfil && (
+              <div
+                className="w-6 h-6 bg-primary/10 text-primary items-center justify-center text-[10px] font-medium shrink-0 hidden"
+                style={{ borderRadius: "50%" }}
+              >
+                {initials}
+              </div>
+            )}
+            <span className="text-xs text-on-surface-variant">{accion.adminNombre}</span>
             <span className="text-xs text-on-surface-variant ml-auto tabular-nums">
               {absTimeStr(accion.createdAt)}
             </span>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Helper: detectar hex color en un string ─────────────────────────────────
+// Retorna el primer #RRGGBB o #RGB que encuentre, o null si no hay ninguno.
+function extractHexColor(text: string): string | null {
+  const match = text.match(/#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/);
+  return match ? match[0] : null;
+}
+ 
+// ─── AdminAvatar ─────────────────────────────────────────────────────────────
+// Muestra la foto de perfil del admin si existe, o sus iniciales como fallback.
+ 
+interface AdminAvatarProps {
+  nombre: string;
+  fotoPerfil: string | null;
+  initials: string;
+  size?: "sm" | "md";
+}
+ 
+function AdminAvatar({ nombre, fotoPerfil, initials, size = "sm" }: AdminAvatarProps) {
+  const dims = size === "sm" ? "w-6 h-6 text-[10px]" : "w-8 h-8 text-xs";
+ 
+  if (fotoPerfil) {
+    return (
+      <img
+        src={fotoPerfil}
+        alt={nombre}
+        className={`${dims} rounded-full object-cover shrink-0`}
+        onError={(e) => {
+          // Si la imagen falla, ocultamos y mostramos fallback
+          (e.currentTarget as HTMLImageElement).style.display = "none";
+          (e.currentTarget.nextElementSibling as HTMLElement | null)?.style.setProperty("display", "flex");
+        }}
+      />
+    );
+  }
+ 
+  return (
+    <div
+      className={`${dims} bg-primary/10 text-primary flex items-center justify-center font-medium shrink-0`}
+      style={{ borderRadius: "50%" }}
+    >
+      {initials}
     </div>
   );
 }

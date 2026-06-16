@@ -1,8 +1,5 @@
 // src/types/Admin/Admin.ts
 
-
-
-
 export type TipoAccionAdmin =
   | 'SOLICITUD_APROBADA'
   | 'SOLICITUD_RECHAZADA'
@@ -39,6 +36,7 @@ export interface AccionAdminResponse {
   tipo: TipoAccionAdmin;
   adminId: number;
   adminNombre: string;
+  adminFotoPerfil: string | null;   // ← NUEVO
   entidadId: string | null;
   entidadDescripcion: string | null;
   motivo: string | null;
