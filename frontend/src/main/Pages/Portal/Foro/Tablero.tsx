@@ -369,6 +369,7 @@ function ReplyItem({
   const [contenidoRespuesta, setContenidoRespuesta] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [errorRespuesta, setErrorRespuesta] = useState<string | null>(null);
+  const [revelado, setRevelado] = useState(false);
 
   const esPropio = reply.autor !== null && reply.autor.id === usuarioActualId;
   const fuiEditado =
@@ -469,6 +470,39 @@ function ReplyItem({
         <p className="text-sm text-on-surface-variant italic">
           Esta respuesta fue ocultada por un administrador.
         </p>
+      </div>
+    );
+  }
+
+  // ── Caso: oculto, visible para admins con barrera de spoiler ──────────────
+  if (reply.ocultado && rolUsuario === "ADMIN" && !revelado) {
+    return (
+      <div
+        id={`reply-${reply.id}`}
+        className="py-4 pl-4 pr-2 border-b border-border last:border-b-0"
+      >
+        <div
+          className="flex flex-col items-center justify-center gap-2 py-4 px-4 border border-dashed border-destructive/40 bg-destructive/5 text-center"
+          style={{ borderRadius: "var(--radius)" }}
+        >
+          <ShieldAlert className="w-5 h-5 text-destructive/60" />
+          <div>
+            <p className="text-xs font-medium text-destructive/80">
+              Esta respuesta fue ocultada por considerarse inapropiada
+            </p>
+            <p className="text-xs text-on-surface-variant mt-0.5">
+              Solo vos la ves porque sos administrador
+            </p>
+          </div>
+          <button
+            onClick={() => setRevelado(true)}
+            className="flex items-center gap-1.5 px-3 py-1 text-xs border border-destructive/30 text-destructive/70 hover:bg-destructive/10 transition-colors"
+            style={{ borderRadius: "var(--radius)" }}
+          >
+            <Eye className="w-3 h-3" />
+            Ver respuesta
+          </button>
+        </div>
       </div>
     );
   }
@@ -686,6 +720,7 @@ function PostItem({
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [ocultarModal, setOcultarModal] = useState(false);
+  const [revelado, setRevelado] = useState(false);
 
   const esPropio = post.autor !== null && post.autor.id === usuarioActualId;
   const fuiEditado =
@@ -778,12 +813,56 @@ function PostItem({
   // ── Caso: eliminado ───────────────────────────────────────────────────────
   if (post.eliminado) return null;
 
-  // ── Caso: oculto para no-admins ───────────────────────────────────────────
+  /// ── Caso: oculto para no-admins ───────────────────────────────────────────
   if (post.ocultado && rolUsuario !== "ADMIN") {
     return (
       <>
         <div className="py-5 px-5 text-sm text-on-surface-variant italic">
           Este contenido fue ocultado por un administrador.
+        </div>
+        {!isLast && <div className="border-t border-border" />}
+      </>
+    );
+  }
+
+  // ── Caso: oculto, visible para admins con barrera de spoiler ──────────────
+  if (post.ocultado && rolUsuario === "ADMIN" && !revelado) {
+    return (
+      <>
+        <ConfirmDeleteModal
+          isOpen={confirmDelete}
+          esRespuesta={false}
+          onConfirmar={handleEliminar}
+          onCancelar={() => setConfirmDelete(false)}
+        />
+        <OcultarPostModal
+          isOpen={ocultarModal}
+          onConfirmar={handleOcultar}
+          onCancelar={() => setOcultarModal(false)}
+        />
+        <div className="py-5 px-5">
+          <div
+            className="flex flex-col items-center justify-center gap-3 py-6 px-4 border border-dashed border-destructive/40 bg-destructive/5 text-center"
+            style={{ borderRadius: "var(--radius)" }}
+          >
+            <ShieldAlert className="w-6 h-6 text-destructive/60" />
+            <div>
+              <p className="text-sm font-medium text-destructive/80">
+                Este post fue ocultado por considerarse inapropiado
+              </p>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                Solo vos lo ves porque sos administrador
+              </p>
+            </div>
+            <button
+              onClick={() => setRevelado(true)}
+              className="flex items-center gap-1.5 px-4 py-1.5 text-xs border border-destructive/30 text-destructive/70 hover:bg-destructive/10 transition-colors"
+              style={{ borderRadius: "var(--radius)" }}
+            >
+              <Eye className="w-3.5 h-3.5" />
+              Ver post
+            </button>
+          </div>
         </div>
         {!isLast && <div className="border-t border-border" />}
       </>
