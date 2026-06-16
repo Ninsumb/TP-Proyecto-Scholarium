@@ -1,26 +1,34 @@
 package com.unsam.scholarium.listener
 
+import com.unsam.scholarium.dto.MaterialAceptadoEvent
+import com.unsam.scholarium.dto.MaterialRechazadoEvent
 import com.unsam.scholarium.dto.PostOcultadoEvent
 import com.unsam.scholarium.dto.SolicitudAprobadaEvent
 import com.unsam.scholarium.dto.SolicitudRechazadaEvent
 import com.unsam.scholarium.dto.UsuarioExpulsadoEvent
+import com.unsam.scholarium.dto.VotacionAbiertaEvent
+import com.unsam.scholarium.dto.VotacionAprobadaEvent
+import com.unsam.scholarium.model.Portal
+import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.model.TipoNotificacion
+import com.unsam.scholarium.model.Usuario
+import com.unsam.scholarium.repository.MembresiaRepository
 import com.unsam.scholarium.service.NotificacionService
+import com.unsam.scholarium.service.PortalService
+import com.unsam.scholarium.service.UsuarioService
 import org.springframework.stereotype.Component
-import org.springframework.transaction.PlatformTransactionManager
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
-import org.springframework.transaction.support.TransactionSynchronizationManager
-import org.springframework.transaction.support.TransactionTemplate
 
 @Component
 class NotificacionEventListener(
-    private val notificacionService: NotificacionService
+    private val notificacionService: NotificacionService,
+    private val portalService: PortalService,
+    private val membresiaRepository: MembresiaRepository,
 ) {
 
     /*
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     fun onComentarioEnPost(event: ComentarioEnPostEvent) {
         notificacionService.crearNotificacion(
             usuario = event.post.autor,
@@ -74,16 +82,18 @@ class NotificacionEventListener(
         )
     }
 
-    /*
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     fun onVotacionAbierta(event: VotacionAbiertaEvent) {
+        var admins = obtenerAdmins(event.portal)
+
         // Notificar a TODOS los admins del portal
-        event.admins.forEach { admin ->
+        admins.forEach { admin ->
             notificacionService.crearNotificacion(
                 usuario = admin,
                 tipo = TipoNotificacion.VOTACION_ABIERTA,
                 titulo = "Nueva votación abierta",
-                descripcion = "Se abrió una votación en el portal \"${event.portal.nombre}\": \"${event.votacion.titulo}\".",
+                descripcion = "Se abrió una votación en el portal \"${event.portal.carrera}\": \"${event.votacion.tipo}\".",
                 portal = event.portal,
                 entidadId = event.votacion.id,
                 entidadTipo = "VOTACION"
@@ -91,35 +101,68 @@ class NotificacionEventListener(
         }
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     fun onVotacionAprobada(event: VotacionAprobadaEvent) {
-        event.admins.forEach { admin ->
+        var admins = obtenerAdmins(event.portal)
+
+        admins.forEach { admin ->
             notificacionService.crearNotificacion(
                 usuario = admin,
                 tipo = TipoNotificacion.VOTACION_APROBADA,
                 titulo = "Votación aprobada",
-                descripcion = "La votación \"${event.votacion.titulo}\" en el portal \"${event.portal.nombre}\" fue aprobada.",
+                descripcion = "La votación \"${event.votacion.tipo}\" \"${event.votacion.metadatos}\" en el portal \"${event.portal.carrera}\" fue aprobada.",
                 portal = event.portal,
                 entidadId = event.votacion.id,
                 entidadTipo = "VOTACION"
             )
         }
     }
-     */
 
-    /*
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    fun obtenerAdmins(portal: Portal): List<Usuario> {
+        return membresiaRepository.findByPortalAndRol(
+            portal = portal,
+            rol = RolMembresia.ADMIN
+        ).map {m -> m.usuario }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     fun onPostOcultado(event: PostOcultadoEvent) {
         notificacionService.crearNotificacion(
             usuario = event.post.autor,
             tipo = TipoNotificacion.POST_OCULTADO,
             titulo = "Tu post fue ocultado",
-            descripcion = "Un administrador marcó tu post \"${event.post.titulo}\" como inapropiado en el portal \"${event.portal.nombre}\".",
+            descripcion = "Un administrador marcó tu post \"${event.post.titulo}\" como inapropiado en el portal \"${event.portal.carrera}\".",
             portal = event.portal,
             motivo = event.motivo,
-            entidadId = event.post.id,
+            entidadId = null, //Hay que ver que onda los IDs
             entidadTipo = "POST"
         )
     }
-     */
+
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    fun onMaterialAceptado(event: MaterialAceptadoEvent) {
+        notificacionService.crearNotificacion(
+            usuario = event.material.usuario,
+            tipo = TipoNotificacion.MATERIAL_APROBADO,
+            titulo = "Material Aceptado",
+            descripcion = "El material \"${event.material.descripcion}\" fue aceptado.",
+            portal = event.portal,
+            entidadId = null, //Hay que ver que onda los IDs
+            entidadTipo = "MATERIAL_ACEPTADO"
+        )
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    fun onMaterialRechazado(event: MaterialRechazadoEvent) {
+        notificacionService.crearNotificacion(
+            usuario = event.material.usuario,
+            tipo = TipoNotificacion.MATERIAL_RECHAZADO,
+            titulo = "Material Rechazado",
+            descripcion = "El material \"${event.material.descripcion}\" fue rechazado. Motivo: ${event.material.motivoRechazo}",
+            portal = event.portal,
+            motivo = event.material.motivoRechazo,
+            entidadId = null, //Hay que ver que onda los IDs
+            entidadTipo = "MATERIAL_RECHAZADO"
+        )
+    }
 }

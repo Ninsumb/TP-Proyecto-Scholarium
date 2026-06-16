@@ -1,7 +1,9 @@
 package com.unsam.scholarium.service
 
+import com.unsam.scholarium.dto.MaterialAceptadoEvent
 import com.unsam.scholarium.dto.MaterialPendienteDTO
 import com.unsam.scholarium.dto.MaterialPublicadoResponse
+import com.unsam.scholarium.dto.MaterialRechazadoEvent
 import com.unsam.scholarium.dto.MaterialResponse
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
@@ -18,6 +20,7 @@ import com.unsam.scholarium.repository.MembresiaRepository
 import com.unsam.scholarium.repository.PortalRepository
 import com.unsam.scholarium.repository.UsuarioRepository
 import jakarta.persistence.EntityNotFoundException
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
@@ -32,7 +35,8 @@ class MaterialService(
     private val materialRepository: MaterialRepository,
     private val usuarioRepository: UsuarioRepository,
     private val membresiaRepository: MembresiaRepository,
-    private val portalRepository: PortalRepository
+    private val portalRepository: PortalRepository,
+    private val applicationEventPublisher: ApplicationEventPublisher
 ) {
     fun getMaterialPendiente(portalId: Long, email: String): List<MaterialPendienteDTO> {
         val portal = portalRepository.findById(portalId)
@@ -49,6 +53,7 @@ class MaterialService(
             .map { MaterialPendienteDTO.fromEntity(it) }
     }
 
+    @Transactional
     fun aprobarMaterial(materialId: UUID, email: String): Material {
 
         val material = materialRepository.findById(materialId)
@@ -73,6 +78,10 @@ class MaterialService(
         }
 
         material.estado = EstadoMaterial.PUBLICADO
+
+        applicationEventPublisher.publishEvent(
+            MaterialAceptadoEvent(material, portal)
+        )
 
         return materialRepository.save(material)
     }
@@ -126,6 +135,7 @@ class MaterialService(
         return MaterialResponse.fromEntity(guardado)
     }
 
+    @Transactional
     fun rechazarMaterial(materialId: UUID, email: String, motivo: String): Material {
 
         val material = materialRepository.findById(materialId)
@@ -150,6 +160,10 @@ class MaterialService(
 
         material.estado = EstadoMaterial.RECHAZADO
         material.motivoRechazo = motivo
+
+        applicationEventPublisher.publishEvent(
+            MaterialRechazadoEvent(material, portal, motivo)
+        )
 
         return materialRepository.save(material)
     }

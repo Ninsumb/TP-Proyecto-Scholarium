@@ -2,14 +2,6 @@ package com.unsam.scholarium.dto
 
 import com.unsam.scholarium.model.*
 
-/*
-data class ComentarioEnPostEvent(
-    val post: Post,
-    val comentario: Comentario,
-    val autorComentario: Usuario
-)
-*/
-
 data class SolicitudAprobadaEvent(
     val solicitud: Solicitud,
     val portal: Portal
@@ -27,19 +19,28 @@ data class UsuarioExpulsadoEvent(
     val motivo: String // Ej: "Expulsado por bloqueo del portal" o motivo manual
 )
 
-/*
 data class VotacionAbiertaEvent(
-    val votacion: Votacion,
+    val votacion: VotacionAdmin,
     val portal: Portal,
-    val admins: List<Usuario> // notificar a todos los admins del portal
+    val proponente: Usuario
 )
 
 data class VotacionAprobadaEvent(
-    val votacion: Votacion,
+    val votacion: VotacionAdmin,
     val portal: Portal,
-    val admins: List<Usuario>
+    val proponente: Usuario
 )
-*/
+
+data class MaterialAceptadoEvent(
+    val material: Material,
+    val portal: Portal
+)
+
+data class MaterialRechazadoEvent(
+    val material: Material,
+    val portal: Portal,
+    val motivo: String
+)
 
 data class PostOcultadoEvent(
     val post: Post,

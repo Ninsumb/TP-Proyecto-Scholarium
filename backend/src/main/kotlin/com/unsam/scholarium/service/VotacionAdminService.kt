@@ -1,5 +1,8 @@
 package com.unsam.scholarium.service
 
+import com.unsam.scholarium.dto.SolicitudRechazadaEvent
+import com.unsam.scholarium.dto.VotacionAbiertaEvent
+import com.unsam.scholarium.dto.VotacionAprobadaEvent
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.NotAdminException
@@ -15,6 +18,7 @@ import com.unsam.scholarium.repository.UsuarioRepository
 import com.unsam.scholarium.repository.VotacionAdminRepository
 import com.unsam.scholarium.repository.VotoAdminRepository
 import jakarta.transaction.Transactional
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -33,6 +37,7 @@ class VotacionAdminService(
     @Lazy private val materiaService: MateriaService,
     @Lazy private val foroService: ForoService,
     private val objectMapper: com.fasterxml.jackson.databind.ObjectMapper,
+    private val applicationEventPublisher: ApplicationEventPublisher,
 ) {
 
     companion object {
@@ -90,6 +95,11 @@ class VotacionAdminService(
 
         // Si era el único admin, ya hay mayoría 1/1 → resolver + ejecutar en el acto.
         evaluarYResolver(guardada)
+
+        //Notificacion de votacion creada
+        applicationEventPublisher.publishEvent(
+            VotacionAbiertaEvent(votacion, portal, proponente)
+        )
 
         return guardada
     }
@@ -211,6 +221,11 @@ class VotacionAdminService(
                 votacion.resolver(EstadoVotacion.APROBADA)
                 votacionRepository.save(votacion)
                 ejecutarAccion(votacion)
+
+                //Notificacion de votacion creada
+                applicationEventPublisher.publishEvent(
+                    VotacionAprobadaEvent(votacion, votacion.portal, votacion.proponente)
+                )
             }
             enContra > umbral -> {
                 votacion.resolver(EstadoVotacion.RECHAZADA)
