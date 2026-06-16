@@ -16,10 +16,10 @@ class Usuario(
     @Column(unique = true, nullable = false, length = 255)
     var email: String,  // era val
 
-    @Column(nullable = true)  // ← Ahora puede ser NULL si es login de Google
+    @Column(nullable = true)
     var password: String? = null,
 
-    @Column(unique = true, nullable = true)  // ← NUEVO: para identificar usuarios de Google
+    @Column(unique = true, nullable = true)
     val googleId: String? = null,
 
     @OneToMany(mappedBy = "usuario", cascade = [CascadeType.ALL], orphanRemoval = true)
@@ -29,7 +29,7 @@ class Usuario(
     val fechaRegistro: LocalDateTime = LocalDateTime.now(),
 
     @Column(nullable = false)
-    val activo: Boolean = true,
+    var activo: Boolean = true,
 
     @Column(nullable = true, name = "foto_perfil", length = 512)
     var fotoPerfil: String? = null

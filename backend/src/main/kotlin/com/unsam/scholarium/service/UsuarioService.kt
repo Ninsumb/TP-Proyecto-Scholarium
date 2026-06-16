@@ -100,6 +100,17 @@ class UsuarioService(
         val usuario = usuarioRepository.findByEmail(email)
             ?: throw ElementDoesNotExistException("Usuario no encontrado")
 
-        usuarioRepository.delete(usuario)
+        // Anonimizar datos personales
+        usuario.activo = false
+        usuario.nombre = "Usuario eliminado"
+        usuario.email = "deleted_${usuario.id}@eliminado.invalid"
+        usuario.password = null
+        usuario.fotoPerfil = null
+
+        // CascadeType.ALL + orphanRemoval = true en la entidad se encargan
+        // de eliminar todas las membresías en cascada automáticamente
+        usuario.membresias.clear()
+
+        usuarioRepository.save(usuario)
     }
 }
