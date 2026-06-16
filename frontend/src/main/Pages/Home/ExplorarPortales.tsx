@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import {
   Search, ArrowLeft, UserPlus, Loader2,
-  SquareArrowLeft, SquareArrowRight, Plus
+  SquareArrowLeft, SquareArrowRight, Plus, ArrowRight
 } from "lucide-react";
 import { portalService } from "../../services/PortalService";
 import type { PortalBusquedaDTO } from "../../types/Portales";
@@ -144,17 +144,31 @@ export function ExplorePortals() {
               <div className="grow" />
 
               <div className="mt-4">
-                <button
-                  onClick={() => navigate(`/portal/${portal.id}/solicitud`)}
-                  className="w-full py-2 flex items-center justify-center gap-2 text-sm rounded-sm transition-all"
-                  style={{
-                    background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)",
-                    color: "var(--primary-foreground)",
-                  }}
-                >
-                  <UserPlus className="w-4 h-4" />
-                  Solicitar acceso
-                </button>
+                {portal.tipoAcceso === "ABIERTO" ? (
+                  <button
+                    onClick={() => navigate(`/portal/${portal.id}`)}
+                    className="w-full py-2 flex items-center justify-center gap-2 text-sm rounded-sm transition-all"
+                    style={{
+                      background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)",
+                      color: "var(--primary-foreground)",
+                    }}
+                  >
+                    <ArrowRight className="w-4 h-4" />
+                    Ir al portal
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => navigate(`/portal/${portal.id}/solicitud`)}
+                    className="w-full py-2 flex items-center justify-center gap-2 text-sm rounded-sm transition-all"
+                    style={{
+                      background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)",
+                      color: "var(--primary-foreground)",
+                    }}
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Solicitar acceso
+                  </button>
+                )}
               </div>
             </div>
           ))}
