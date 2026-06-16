@@ -8,6 +8,7 @@ import com.unsam.scholarium.dto.SolicitudRechazadaEvent
 import com.unsam.scholarium.dto.UsuarioExpulsadoEvent
 import com.unsam.scholarium.dto.VotacionAbiertaEvent
 import com.unsam.scholarium.dto.VotacionAprobadaEvent
+import com.unsam.scholarium.dto.VotacionRechazadaEvent
 import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.model.TipoNotificacion
@@ -51,7 +52,7 @@ class NotificacionEventListener(
             descripcion = "Tu solicitud al portal \"${event.portal.carrera}\" fue aprobada.",
             portal = event.portal,
             entidadId = event.solicitud.id,
-            entidadTipo = "SOLICITUD_APROBADA"
+            entidadTipo = "SOLICITUD"
         )
     }
 
@@ -65,7 +66,7 @@ class NotificacionEventListener(
             portal = event.portal,
             motivo = event.motivo,
             entidadId = event.solicitud.id,
-            entidadTipo = "SOLICITUD_RECHAZADA"
+            entidadTipo = "SOLICITUD"
         )
     }
 
@@ -78,7 +79,7 @@ class NotificacionEventListener(
             descripcion = "Fuiste expulsado del portal \"${event.portal.carrera}\".",
             portal = event.portal,
             motivo = event.motivo,
-            entidadTipo = "USUARIO_EXPULSADO"
+            entidadTipo = "USUARIO"
         )
     }
 
@@ -111,6 +112,23 @@ class NotificacionEventListener(
                 tipo = TipoNotificacion.VOTACION_APROBADA,
                 titulo = "Votación aprobada",
                 descripcion = "La votación \"${event.votacion.tipo}\" \"${event.votacion.metadatos}\" en el portal \"${event.portal.carrera}\" fue aprobada.",
+                portal = event.portal,
+                entidadId = event.votacion.id,
+                entidadTipo = "VOTACION"
+            )
+        }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    fun onVotacionRechazada(event: VotacionRechazadaEvent) {
+        var admins = obtenerAdmins(event.portal)
+
+        admins.forEach { admin ->
+            notificacionService.crearNotificacion(
+                usuario = admin,
+                tipo = TipoNotificacion.VOTACION_RECHAZADA,
+                titulo = "Votación rechazada",
+                descripcion = "La votación \"${event.votacion.tipo}\" \"${event.votacion.metadatos}\" en el portal \"${event.portal.carrera}\" fue rechazada.",
                 portal = event.portal,
                 entidadId = event.votacion.id,
                 entidadTipo = "VOTACION"

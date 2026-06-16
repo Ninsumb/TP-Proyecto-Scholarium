@@ -3,6 +3,7 @@ package com.unsam.scholarium.service
 import com.unsam.scholarium.dto.SolicitudRechazadaEvent
 import com.unsam.scholarium.dto.VotacionAbiertaEvent
 import com.unsam.scholarium.dto.VotacionAprobadaEvent
+import com.unsam.scholarium.dto.VotacionRechazadaEvent
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.NotAdminException
@@ -222,7 +223,7 @@ class VotacionAdminService(
                 votacionRepository.save(votacion)
                 ejecutarAccion(votacion)
 
-                //Notificacion de votacion creada
+                //Notificacion de votacion aprobada
                 applicationEventPublisher.publishEvent(
                     VotacionAprobadaEvent(votacion, votacion.portal, votacion.proponente)
                 )
@@ -230,6 +231,11 @@ class VotacionAdminService(
             enContra > umbral -> {
                 votacion.resolver(EstadoVotacion.RECHAZADA)
                 votacionRepository.save(votacion)
+
+                //Notificacion de votacion rechazada
+                applicationEventPublisher.publishEvent(
+                    VotacionRechazadaEvent(votacion, votacion.portal, votacion.proponente)
+                )
             }
             // Sin mayoría todavía → queda ABIERTA.
         }
