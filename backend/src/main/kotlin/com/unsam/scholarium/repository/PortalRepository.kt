@@ -24,6 +24,7 @@ interface PortalRepository : JpaRepository<Portal, Long> {
         SELECT COUNT(p) > 0 FROM Portal p
         WHERE p.universidadNormalizada = :universidadNorm
         AND p.carreraNormalizada = :carreraNorm
+        AND p.activo = true
     """)
     fun existePortalConValoresNormalizados(
         @Param("universidadNorm") universidadNorm: String,
@@ -37,6 +38,7 @@ interface PortalRepository : JpaRepository<Portal, Long> {
         SELECT p FROM Portal p
         WHERE (:universidad IS NULL OR LOWER(p.universidad) LIKE LOWER(CONCAT('%', CAST(:universidad AS string), '%')))
         AND (:carrera IS NULL OR LOWER(p.carrera) LIKE LOWER(CONCAT('%', CAST(:carrera AS string), '%')))
+        AND p.activo = true
     """)
     fun buscarPortales(
         @Param("universidad") universidad: String?,

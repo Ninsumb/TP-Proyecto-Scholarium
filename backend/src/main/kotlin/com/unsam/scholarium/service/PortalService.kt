@@ -78,6 +78,16 @@ class PortalService(
     fun getDetalleById(id: Long, email: String): Triple<Portal, RolMembresia?, List<Int>> {
         val portal = portalRepository.findById(id).getOrNull()
             ?: throw ElementDoesNotExistException("Portal $id no encontrado")
+        if (!portal.activo) {
+            val membresiaTemporal = membresiaRepository.findByUsuarioIdAndPortalId(
+                usuarioRepository.findByEmail(email)?.id ?: throw ElementDoesNotExistException("Usuario no encontrado"),
+                id
+            )
+            if (membresiaTemporal?.rol != RolMembresia.ADMIN) {
+                throw UnauthorizedException("Este portal está archivado")
+            }
+        }
+
         val usuario = usuarioRepository.findByEmail(email)
             ?: throw ElementDoesNotExistException("Usuario no encontrado")
         val membresia = membresiaRepository.findByUsuarioIdAndPortalId(usuario.id!!, id)
@@ -556,5 +566,13 @@ class PortalService(
         portal.activo = false
         portalRepository.save(portal)
         // Acción registrada en VotacionAdminService.ejecutarAccion()
+    }
+
+    @Transactional(rollbackOn = [Exception::class])
+    fun activarPortal(portalId: Long) {
+        val portal = portalRepository.findById(portalId).getOrNull()
+            ?: throw ElementDoesNotExistException("Portal no encontrado")
+        portal.activo = true
+        portalRepository.save(portal)
     }
 }

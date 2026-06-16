@@ -24,7 +24,7 @@ import {
     type LucideIcon,
 } from "lucide-react";
 import { adminService } from "../../../services/AdminService";
-import { usePortalContext } from "../../../Hooks/usePortalContext";
+import { usePortalContext } from "../../../hooks/usePortalContext";
 import type { TipoAcceso } from "../../../types/Portal/Portal";
 import type {
     PlantillaSolicitudResponse,
@@ -209,7 +209,7 @@ function VoteModal({
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export function PortalConfig() {
-    const { portal, portalId } = usePortalContext();
+    const { portal, portalId, isArchived } = usePortalContext();
 
     // ── isPortalOpen: derivado directo del contexto, nunca en useState ────────
     // Razón: portal llega null en el primer render (fetch asíncrono).
@@ -278,7 +278,7 @@ export function PortalConfig() {
     // Modales
     const [voteModal, setVoteModal] = useState<{
         isOpen: boolean;
-        type: "university" | "career" | "portalAccess" | "archive";
+        type: "university" | "career" | "portalAccess" | "archive" | "activate";
         title: string;
         description: string;
     }>({ isOpen: false, type: "university", title: "", description: "" });
@@ -503,6 +503,16 @@ export function PortalConfig() {
         });
     };
 
+    const handleProposeActivate = () => {
+        setVoteModal({
+            isOpen: true,
+            type: "activate",
+            title: "Proponer Activar Portal",
+            description:
+                "Estás proponiendo activar este portal. El portal volverá a ser visible para todos los miembros. Esta acción requiere votación de todos los administradores.",
+        });
+    };
+
     // ── Confirmar votación ────────────────────────────────────────────────────
 
     const handleConfirmVote = async (reason: string) => {
@@ -516,6 +526,7 @@ export function PortalConfig() {
             career: "CAMBIO_CARRERA",
             portalAccess: "CAMBIO_TIPO_ACCESO",
             archive: "ARCHIVAR_PORTAL",
+            activate: "ACTIVAR_PORTAL",
         };
 
         let metadatos: string | null = null;
@@ -1185,21 +1196,27 @@ export function PortalConfig() {
                         style={{ borderRadius: "var(--radius)" }}
                     >
                         <p className="text-sm text-foreground mb-1 font-medium">
-                            Archivar Portal
+                            {isArchived ? "Activar Portal" : "Archivar Portal"}
                         </p>
                         <p className="text-sm text-on-surface-variant">
-                            El portal será ocultado y los miembros no podrán
-                            acceder. Esta acción se puede revertir, pero
-                            requiere votación de todos los administradores.
+                            {isArchived
+                                ? "El portal está archivado. Proponer activarlo lo hará visible nuevamente para los miembros. Requiere votación de todos los administradores."
+                                : "El portal será ocultado y los miembros no podrán acceder. Esta acción se puede revertir, pero requiere votación de todos los administradores."}
                         </p>
                     </div>
 
                     <button
-                        onClick={handleProposeArchive}
+                        onClick={
+                            isArchived
+                                ? handleProposeActivate
+                                : handleProposeArchive
+                        }
                         className="px-5 py-2.5 border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
                         style={{ borderRadius: "var(--radius)" }}
                     >
-                        Proponer Archivar Portal
+                        {isArchived
+                            ? "Proponer Activar Portal"
+                            : "Proponer Archivar Portal"}
                     </button>
                 </section>
             </div>

@@ -52,6 +52,7 @@ class VotacionAdminService(
             TipoVotacion.ELIMINAR_MATERIA    to "Eliminación de materia",
             TipoVotacion.ELIMINAR_TABLERO    to "Eliminación de tablero",
             TipoVotacion.ARCHIVAR_PORTAL     to "Archivar portal",
+            TipoVotacion.ACTIVAR_PORTAL to "Activar portal",
         )
     }
 
@@ -414,6 +415,17 @@ class VotacionAdminService(
                     portal = votacion.portal,
                     admin  = votacion.proponente,
                     tipo   = TipoAccionAdmin.PORTAL_ARCHIVADO,
+                    motivo = votacion.motivo,
+                )
+            }
+
+            TipoVotacion.ACTIVAR_PORTAL -> {
+                portalService.activarPortal(votacion.portal.id!!)
+
+                accionAdminService.registrar(
+                    portal = votacion.portal,
+                    admin  = votacion.proponente,
+                    tipo   = TipoAccionAdmin.PORTAL_ACTIVADO,
                     motivo = votacion.motivo,
                 )
             }

@@ -13,6 +13,7 @@ interface UsePortalContextReturn {
   isAdmin: boolean;
   isGuest: boolean;
   isOpen: boolean;
+  isArchived: boolean;
   canViewContent: boolean;
   portalId: number;
   refetch: () => Promise<void>;
@@ -25,6 +26,7 @@ export function usePortalContext(): UsePortalContextReturn {
   const [portal, setPortal] = useState<PortalDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isArchived = portal?.activo === false;
 
   const fetchPortalData = async () => {
     if (!portalId) {
@@ -75,6 +77,7 @@ export function usePortalContext(): UsePortalContextReturn {
     isAdmin,
     isGuest,
     isOpen,
+    isArchived,
     canViewContent,
     portalId: Number(portalId),
     refetch: fetchPortalData,
