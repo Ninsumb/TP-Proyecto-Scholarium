@@ -587,4 +587,57 @@ class PortalService(
         portal.activo = true
         portalRepository.save(portal)
     }
+
+   @Transactional(rollbackOn = [Exception::class])
+fun bloquearMiembro(portalId: Long, usuarioObjetivoId: Long, emailAdmin: String) {
+    val admin = validarUsuario(emailAdmin)
+
+    val membresiaAdmin = membresiaRepository.findByUsuarioIdAndPortalId(admin.id!!, portalId)
+    if (membresiaAdmin?.rol != RolMembresia.ADMIN) {
+        throw NotAdminException("Solo los administradores pueden bloquear miembros")
+    }
+
+    val usuarioObjetivo = usuarioRepository.findById(usuarioObjetivoId).getOrNull()
+        ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+    if (admin.id == usuarioObjetivo.id) {
+        throw BusinessException("No podés bloquearte a vos mismo")
+    }
+
+    
+    val membresiaObjetivo = membresiaRepository.findByUsuarioIdAndPortalId(usuarioObjetivoId, portalId)
+    
+    
+    val portal = membresiaObjetivo?.portal ?: portalRepository.findById(portalId).getOrNull()
+        ?: throw ElementDoesNotExistException("Portal no encontrado")
+
+    
+    if (membresiaObjetivo != null) {
+        membresiaRepository.delete(membresiaObjetivo)
+        membresiaRepository.flush() 
+    }
+
+    val estaBloqueado = portalBloqueoRepository.existsByPortalAndUsuario(portal, usuarioObjetivo)
+    if (!estaBloqueado) {
+        portalBloqueoRepository.save(
+            com.unsam.scholarium.model.PortalBloqueo(portal = portal, usuario = usuarioObjetivo)
+        )
+    }
+
+    applicationEventPublisher.publishEvent(
+        UsuarioExpulsadoEvent(
+            usuario = usuarioObjetivo,
+            portal = portal,
+            motivo = "Bloqueo por decisión administrativa" 
+        )
+    )
+
+    accionAdminService.registrar(
+        portal             = portal,
+        admin              = admin,
+        tipo               = TipoAccionAdmin.MIEMBRO_BLOQUEADO,
+        entidadId          = usuarioObjetivoId.toString(),
+        entidadDescripcion = usuarioObjetivo.nombre,
+    )
+}
 }

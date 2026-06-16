@@ -41,6 +41,7 @@ object PortalMapper {
             logoUrl = portal.logoUrl,
             iconoPortal = portal.iconoPortal,
             colorPortal = portal.colorPortal,
+            tipoAcceso = portal.tipoAcceso,
         )
     }
 
