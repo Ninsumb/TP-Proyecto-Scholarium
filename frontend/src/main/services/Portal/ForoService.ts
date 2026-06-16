@@ -6,6 +6,8 @@ import type {
   CrearPostRequest,
   CrearRespuestaRequest,
   EditarPostRequest,
+  OcultarPostRequest,
+  EditarTableroRequest,
 } from '../../types/Portal/Foro';
 
 class ForoService {
@@ -56,6 +58,24 @@ class ForoService {
     const response = await apiClient.post<PostResponse>(`/posts/${postId}/respuestas`, request);
     return response.data;
   }
+
+  async editarTablero(portalId: number, tableroId: string, request: EditarTableroRequest): Promise<TableroResponse> {
+  const response = await apiClient.put<TableroResponse>(
+    `/portales/${portalId}/foros/${tableroId}`,
+    request,
+  );
+  return response.data;
+}
+
+async ocultarPost(postId: string, request: OcultarPostRequest): Promise<PostResponse> {
+  const response = await apiClient.post<PostResponse>(`/posts/${postId}/ocultar`, request);
+  return response.data;
+}
+
+async develarPost(postId: string): Promise<PostResponse> {
+  const response = await apiClient.post<PostResponse>(`/posts/${postId}/develar`, {});
+  return response.data;
+}
 }
 
 export const foroService = new ForoService();
