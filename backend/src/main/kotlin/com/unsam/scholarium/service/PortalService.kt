@@ -462,26 +462,22 @@ class PortalService(
                 portal.descripcion = nuevo
             }
         }
-        request.iconoPortal?.let {
-            val nuevo = it.trim().takeIf { v -> v.isNotBlank() }
-            if (portal.iconoPortal != nuevo) {
-                cambios.add("Ícono: \"${portal.iconoPortal ?: "—"}\" → \"${nuevo ?: "—"}\"")
-                portal.iconoPortal = nuevo
-            }
+        val nuevoIcono = request.iconoPortal?.trim()?.takeIf { it.isNotBlank() }
+        if (portal.iconoPortal != nuevoIcono) {
+            cambios.add("Ícono: \"${portal.iconoPortal ?: "—"}\" → \"${nuevoIcono ?: "—"}\"")
+            portal.iconoPortal = nuevoIcono
         }
-        request.colorPortal?.let {
-            val nuevo = it.trim().takeIf { v -> v.isNotBlank() }
-            if (portal.colorPortal != nuevo) {
-                cambios.add("Color: \"${portal.colorPortal ?: "—"}\" → \"${nuevo ?: "—"}\"")
-                portal.colorPortal = nuevo
-            }
+
+        val nuevoColor = request.colorPortal?.trim()?.takeIf { it.isNotBlank() }
+        if (portal.colorPortal != nuevoColor) {
+            cambios.add("Color: \"${portal.colorPortal ?: "—"}\" → \"${nuevoColor ?: "—"}\"")
+            portal.colorPortal = nuevoColor
         }
-        request.logoUrl?.let {
-            val nuevo = it.trim().takeIf { v -> v.isNotBlank() }
-            if (portal.logoUrl != nuevo) {
-                cambios.add("Logo actualizado")
-                portal.logoUrl = nuevo
-            }
+
+        val nuevoLogo = request.logoUrl?.trim()?.takeIf { it.isNotBlank() }
+        if (portal.logoUrl != nuevoLogo) {
+            cambios.add("Logo actualizado")
+            portal.logoUrl = nuevoLogo
         }
 
         val guardado = portalRepository.save(portal)
