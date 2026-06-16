@@ -1,8 +1,10 @@
 package com.unsam.scholarium.controller
 
 import com.unsam.scholarium.dto.ActualizarPerfilRequest
+import com.unsam.scholarium.dto.ChangeEmailRequest
 import com.unsam.scholarium.dto.ChangePasswordRequest
 import com.unsam.scholarium.dto.NotificacionResponse
+import com.unsam.scholarium.dto.LoginResponse
 import com.unsam.scholarium.dto.UsuarioMeResponse
 import com.unsam.scholarium.dto.UsuarioPortalResponse
 import com.unsam.scholarium.service.AuthService
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.multipart.MultipartFile
 
 @RestController
@@ -76,6 +79,16 @@ class UsuarioController (
         val email = authentication.name
         val url = usuarioService.actualizarFotoPerfil(email, foto)
         return ResponseEntity.ok(mapOf("fotoPerfil" to url))
+    }
+
+    @PutMapping("/me/email")
+    fun cambiarEmail(
+        @RequestBody request: ChangeEmailRequest,
+        authentication: Authentication
+    ): ResponseEntity<LoginResponse> {
+        val email = authentication.name
+        val response = authService.changeEmail(email, request)
+        return ResponseEntity.ok(response)
     }
 
     @DeleteMapping("/me")

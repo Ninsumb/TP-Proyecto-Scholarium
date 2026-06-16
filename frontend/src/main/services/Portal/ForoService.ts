@@ -30,6 +30,14 @@ class ForoService {
     return response.data;
   }
 
+  async buscarPosts(tableroId: string, q: string): Promise<PostResponse[]> {
+    const response = await apiClient.get<PostResponse[]>(
+      `/foros/${tableroId}/posts/buscar`,
+      { params: { q } }
+    );
+    return response.data;
+  }
+
   async editarPost(postId: string, request: EditarPostRequest): Promise<PostResponse> {
     const response = await apiClient.put<PostResponse>(`/posts/${postId}`, request);
     return response.data;

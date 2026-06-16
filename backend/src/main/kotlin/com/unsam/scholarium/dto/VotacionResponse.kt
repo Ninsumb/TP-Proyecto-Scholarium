@@ -22,6 +22,7 @@ data class VotacionResponse(
     val votosAFavor: Long,
     val votosEnContra: Long,
     val totalAdmins: Long,
+    val usuarioYaVoto: Boolean? = null,
 ) {
     companion object {
         fun fromEntity(
@@ -29,6 +30,7 @@ data class VotacionResponse(
             votosAFavor: Long,
             votosEnContra: Long,
             totalAdmins: Long,
+            usuarioYaVoto: Boolean,
         ): VotacionResponse = VotacionResponse(
             id = v.id!!,
             portalId = v.portal.id!!,
@@ -46,6 +48,7 @@ data class VotacionResponse(
             votosAFavor = votosAFavor,
             votosEnContra = votosEnContra,
             totalAdmins = totalAdmins,
+            usuarioYaVoto = usuarioYaVoto
         )
     }
 }

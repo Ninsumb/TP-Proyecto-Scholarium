@@ -5,6 +5,8 @@ import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.model.Usuario
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 
 interface MembresiaRepository : JpaRepository<Membresia, Long> {
     fun findByUsuarioIdAndPortalId(usuarioId: Long, portalId: Long): Membresia?
@@ -33,6 +35,13 @@ interface MembresiaRepository : JpaRepository<Membresia, Long> {
     /** Lista las membresías del portal con un rol específico (ej. todos los admins). */
     fun findByPortalAndRol(portal: Portal, rol: RolMembresia): List<Membresia>
 
+    @Query("""
+    SELECT m FROM Membresia m
+    WHERE m.usuario = :usuario
+    AND (m.portal.activo = true OR m.rol = 'ADMIN')
+    ORDER BY m.fechaRegistro DESC
+""")
+    fun findPortalesActivosOAdmin(@Param("usuario") usuario: Usuario): List<Membresia>
     // ─────────────────────────────────────────────────────────────────────────────
 // AGREGAR AL MembresiaRepository
 // ─────────────────────────────────────────────────────────────────────────────

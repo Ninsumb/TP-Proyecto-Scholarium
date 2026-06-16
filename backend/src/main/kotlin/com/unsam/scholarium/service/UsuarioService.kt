@@ -5,6 +5,7 @@ import com.unsam.scholarium.dto.UsuarioMeResponse
 import com.unsam.scholarium.dto.UsuarioPortalResponse
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
+import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.repository.CarpetaRepository
 import com.unsam.scholarium.repository.MateriaRepository
 import com.unsam.scholarium.repository.MaterialRepository
@@ -27,16 +28,14 @@ class UsuarioService(
         val usuario = usuarioRepository.findByEmail(email)
             ?: throw ElementDoesNotExistException("Usuario no encontrado")
 
-        val membresias = membresiaRepository
-            .findByUsuarioOrderByFechaRegistroDesc(usuario)
+        val membresias = membresiaRepository.findPortalesActivosOAdmin(usuario)
 
-        return membresias.map { membresia ->
-
+        return membresias
+            .map { membresia ->
             val portal = membresia.portal
                 ?: throw IllegalStateException("La membresía no tiene portal")
 
             val cantidadMiembros = membresiaRepository.countByPortal(portal)
-
             val cantidadMaterias = materiaRepository.countByPortal(portal)
 
             UsuarioPortalResponse(
@@ -63,7 +62,6 @@ class UsuarioService(
             id = usuario.id,
             nombre = usuario.nombre,
             email = usuario.email,
-            bio = usuario.bio,
             fotoPerfil = usuario.fotoPerfil,
             createdAt = usuario.fechaRegistro,
             cantidadPortales = cantidadPortales,
@@ -79,12 +77,7 @@ class UsuarioService(
         if (request.nombre.isBlank() || request.nombre.length < 2)
             throw BusinessException("El nombre debe tener al menos 2 caracteres")
 
-        if (request.bio != null && request.bio.length > 300)
-            throw BusinessException("La bio no puede superar los 300 caracteres")
-
         usuario.nombre = request.nombre
-        usuario.bio = request.bio
-
         usuarioRepository.save(usuario)
 
         return getMiPerfil(email)
@@ -107,8 +100,6 @@ class UsuarioService(
         val usuario = usuarioRepository.findByEmail(email)
             ?: throw ElementDoesNotExistException("Usuario no encontrado")
 
-        // TODO: Considerar si se debe eliminar o marcar como eliminado
-        // Por ahora eliminamos físicamente
         usuarioRepository.delete(usuario)
     }
 }

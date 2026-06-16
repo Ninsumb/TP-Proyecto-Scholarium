@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import Login from './main/Pages/Auth/Login'
 import Register from './main/Pages/Auth/Register'
 import './App.css'
@@ -20,6 +21,16 @@ import { RequestsAndMaterial } from './main/Pages/Portal/Admin/SolicitudesYMater
 import { AdminPanel } from './main/Pages/Portal/Admin/PanelDeAdministracion'
 import { PortalConfig } from './main/Pages/Portal/Admin/ConfiguracionPortal'
 import { Notifications } from './main/Pages/Perfil/Notificaciones'
+import { AdminRoute } from './main/Components/common/AdminRoute'
+import ForgotPassword from './main/Pages/Auth/ForgotPassword'
+import ResetPassword from './main/Pages/Auth/ResetPassword'
+
+function LandingRedirect() {
+  useEffect(() => {
+    window.location.href = '/landing.html'
+  }, [])
+  return null
+}
 
 
 function App() {
@@ -27,11 +38,13 @@ function App() {
     <Router>
       <Routes>
         {/* Redirige la raíz al login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<LandingRedirect />} />
         
         {/* Rutas de autenticación */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route element={
           <ProtectedRoute> 
@@ -52,10 +65,9 @@ function App() {
             <Route path="/portal/:portalId/materias/:id" element={<SubjectDetail />} /> 
             <Route path="/portal/:portalId/foro" element={<ForumBoardsList />} /> 
             <Route path="/portal/:portalId/foro/:boardId" element={<ForumBoardView />} /> 
-            {/* <Route path="/portal/:portalId/admin" element={<AdminDashboard />} />  */}
-            <Route path="/portal/:portalId/admin/solicitudes" element={<RequestsAndMaterial />} /> 
-            <Route path="/portal/:portalId/admin/panel" element={<AdminPanel />} /> 
-            <Route path="/portal/:portalId/admin/configuracion" element={<PortalConfig />} /> 
+            <Route path="/portal/:portalId/admin/solicitudes" element={<AdminRoute><RequestsAndMaterial /></AdminRoute>} />
+            <Route path="/portal/:portalId/admin/panel" element={ <AdminRoute><AdminPanel /> </AdminRoute>} />
+            <Route path="/portal/:portalId/admin/configuracion"  element={<AdminRoute><PortalConfig /></AdminRoute>} />
             <Route path="/portal/:portalId/solicitud" element={<JoinPortal />} /> 
             <Route path="/portal/:portalId/solicitud-estado" element={<RequestStatus />} /> 
           </Route>

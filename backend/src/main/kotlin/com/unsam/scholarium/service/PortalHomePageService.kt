@@ -8,6 +8,7 @@ import com.unsam.scholarium.model.Block
 import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.model.PortalHomePage
 import com.unsam.scholarium.model.RolMembresia
+import com.unsam.scholarium.model.TipoAccionAdmin
 import com.unsam.scholarium.repository.MembresiaRepository
 import com.unsam.scholarium.repository.PortalHomePageRepository
 import com.unsam.scholarium.repository.PortalRepository
@@ -22,7 +23,8 @@ class PortalHomePageService(
     private val portalHomePageRepository: PortalHomePageRepository,
     private val portalRepository: PortalRepository,
     private val usuarioRepository: UsuarioRepository,
-    private val membresiaRepository: MembresiaRepository
+    private val membresiaRepository: MembresiaRepository,
+    private val accionAdminService: AccionAdminService,
 ) {
 
     fun getBlocks(portalId: Long): List<Block> {
@@ -35,12 +37,7 @@ class PortalHomePageService(
     }
 
     @Transactional(rollbackOn = [Exception::class])
-    fun updateBlocks(
-        portalId: Long,
-        email: String,
-        request: UpdateBlocksRequest
-    ): PortalHomePage {
-        // Validaciones
+    fun updateBlocks(portalId: Long, email: String, request: UpdateBlocksRequest): PortalHomePage {
         val portal = portalRepository.findById(portalId).getOrNull()
             ?: throw ElementDoesNotExistException("Portal $portalId no encontrado")
 
@@ -54,36 +51,39 @@ class PortalHomePageService(
             throw NotAdminException("Solo los administradores pueden editar la página")
         }
 
-        // Validaciones de negocio
-        if (request.blocks.isEmpty()) {
-            throw BusinessException("Debe haber al menos un bloque")
-        }
+        if (request.blocks.isEmpty()) throw BusinessException("Debe haber al menos un bloque")
+        if (request.blocks.size > 30) throw BusinessException("Máximo 30 bloques permitidos")
 
-        if (request.blocks.size > 30) {
-            throw BusinessException("Máximo 30 bloques permitidos")
-        }
-
-        // Actualizar o crear
         val existingHomePage = portalHomePageRepository.findByPortalId(portalId)
 
-        return if (existingHomePage != null) {
+        val result = if (existingHomePage != null) {
             val updated = existingHomePage.copy(
-                blocks = request.blocks,
+                blocks    = request.blocks,
                 updatedAt = LocalDateTime.now(),
                 updatedBy = usuario.id
             )
             portalHomePageRepository.save(updated)
         } else {
             val newHomePage = PortalHomePage(
-                portalId = portalId,
-                blocks = request.blocks,
+                portalId  = portalId,
+                blocks    = request.blocks,
                 updatedBy = usuario.id
             )
             portalHomePageRepository.save(newHomePage)
         }
+
+        accionAdminService.registrar(
+            portal             = portal,
+            admin              = usuario,
+            tipo               = TipoAccionAdmin.HOME_ACTUALIZADA,
+            entidadDescripcion = "${request.blocks.size} bloques",
+        )
+
+        return result
     }
 
     private fun getDefaultBlocks(portal: Portal): List<Block> {
+        // Sin cambios — bloque largo de defaults igual que el original
         return listOf(
             Block(
                 type = "header",
