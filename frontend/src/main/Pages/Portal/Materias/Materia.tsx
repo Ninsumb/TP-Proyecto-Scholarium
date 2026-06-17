@@ -70,9 +70,15 @@ export function SubjectDetail() {
   const [materials, setMaterials] = useState<MaterialResponse[]>([]);
   const [loadingMaterials, setLoadingMaterials] = useState(true);
   const [errorMaterials, setErrorMaterials] = useState<string | null>(null);
-  const [filterType, setFilterType] = useState<string>("all");
+  const [filterTipo, setFilterTipo] = useState("all");
+  const [filterExtension, setFilterExtension] = useState("all");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+  const [filterMode, setFilterMode] = useState<"tipo" | "extension">("tipo");
+
+  const TIPOS = ["all", "APUNTE", "PARCIAL", "FINAL", "GUIA_EJERCICIOS", "OTRO"];
+  const EXTENSIONES = ["all", "img", "pdf", "docx", "pptx"];
 
   // ── Cargar materia ────────────────────────────────────────────────────
   useEffect(() => {
@@ -138,11 +144,41 @@ export function SubjectDetail() {
 
   if (!puedeAcceder) {
       return <AccesoDenegado portalId={portalId} />;
-    }
+  }
 
-  const filteredMaterials = filterType === "all"
-    ? materials
-    : materials.filter((m) => m.tipo?.toLowerCase() === filterType.toLowerCase());
+  const getExtension = (tipoArchivo: string) => {
+    const mime = tipoArchivo.toLowerCase();
+  
+    if (mime.includes("wordprocessingml")) return "docx";
+    if (mime.includes("presentationml")) return "pptx";
+    if (mime.includes("pdf")) return "pdf";
+  
+    if (mime.includes("jpeg")) return "jpg";
+    if (mime.includes("png")) return "png";
+    if (mime.includes("gif")) return "gif";
+    if (mime.includes("webp")) return "webp";
+  
+    return mime;
+  };
+
+  const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
+
+  const filteredMaterials = materials.filter((m) => {
+    const coincideTipo =
+      filterTipo === "all" ||
+      m.tipo === filterTipo;
+  
+    const extension = getExtension(m.tipoArchivo);
+  
+    const coincideExtension =
+      filterExtension === "all"
+        ? true
+        : filterExtension === "img"
+          ? IMAGE_EXTENSIONS.includes(extension)
+          : extension === filterExtension;
+  
+    return coincideTipo && coincideExtension;
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -235,24 +271,58 @@ export function SubjectDetail() {
       </div>
 
       {/* ── Filtros y búsqueda ── */}
-      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">Filtrar:</span>
-          <div className="flex gap-2">
-            {["all", "pdf", "docx", "zip"].map((tipo) => (
-              <button
-                key={tipo}
-                onClick={() => setFilterType(tipo)}
-                className={`px-3 py-1 rounded-md text-sm transition-colors ${
-                  filterType === tipo
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-accent text-accent-foreground hover:bg-accent/80"
-                }`}
-              >
-                {tipo === "all" ? "Todos" : tipo.toUpperCase()}
-              </button>
-            ))}
-          </div>
+      <div className="mb-6 flex flex-col gap-4">
+
+        {/* Selector principal */}
+        <div className="flex gap-2">
+          {[
+            { key: "tipo", label: "Etiqueta" },
+            { key: "extension", label: "Extensión" },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => {
+                setFilterMode(key as "tipo" | "extension");
+                setFilterTipo("all");
+                setFilterExtension("all");
+              }}
+              className={`px-3 py-1 rounded-md ${
+                filterMode === key
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-accent"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Filtro dinámico */}
+        <div className="flex gap-2">
+          {(filterMode === "tipo" ? TIPOS : EXTENSIONES).map((value) => (
+            <button
+              key={value}
+              onClick={() =>
+                filterMode === "tipo"
+                  ? setFilterTipo(value)
+                  : setFilterExtension(value)
+              }
+              className={`px-3 py-1 rounded-md text-sm ${
+                (
+                  filterMode === "tipo"
+                    ? filterTipo === value
+                    : filterExtension === value
+                )
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-accent text-accent-foreground"
+              }`}
+            >
+              {value === "all"
+                ? "Todos"
+                : value.replaceAll("_", " ").toUpperCase()
+              }
+            </button>
+          ))}
         </div>
 
         <div className="relative w-full md:w-72">
@@ -292,7 +362,7 @@ export function SubjectDetail() {
                   <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <FileText className="w-4 h-4" />
-                      {material.tipo}
+                      {material.tipo.replaceAll("_", " ")}
                       {material.tamanio ? ` • ${material.tamanio}` : ""}
                     </span>
                     {material.createdAt && (
