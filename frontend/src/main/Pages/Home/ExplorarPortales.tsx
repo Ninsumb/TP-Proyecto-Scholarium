@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import {
   Search, ArrowLeft, UserPlus, Loader2,
-  SquareArrowLeft, SquareArrowRight, Plus, ArrowRight
+  SquareArrowLeft, SquareArrowRight, Plus, ArrowRight, Flag, Check
 } from "lucide-react";
 import { portalService } from "../../services/PortalService";
 import type { PortalBusquedaDTO } from "../../types/Portales";
@@ -23,6 +23,14 @@ export function ExplorePortals() {
 
   const [filtroUniversidad, setFiltroUniversidad] = useState<string>("");
   const [filtroCarrera, setFiltroCarrera] = useState<string>("");
+
+  // ─── Estado para el Modal de Denuncia ───
+  const [denunciaModal, setDenunciaModal] = useState<{ isOpen: boolean; portalId: number | null }>({ isOpen: false, portalId: null });
+  const [denunciaMotivo, setDenunciaMotivo] = useState<string>("");
+  const [denunciaComentarios, setDenunciaComentarios] = useState<string>("");
+  const [denunciaError, setDenunciaError] = useState<string | null>(null);
+  const [denunciaSuccess, setDenunciaSuccess] = useState<string | null>(null); // <-- Nuevo estado de éxito
+  const [isSubmittingDenuncia, setIsSubmittingDenuncia] = useState<boolean>(false);
 
   // Búsqueda con debounce — dispara fetchPortales cuando cambian los filtros
   useEffect(() => {
@@ -61,6 +69,38 @@ export function ExplorePortals() {
 
   const handleNextPage = () => {
     if (page < totalPages - 1) fetchPortales(page + 1);
+  };
+
+  // ─── Lógica para enviar denuncia ───
+  const handleDenunciar = async () => {
+    if (!denunciaModal.portalId || !denunciaMotivo.trim()) return;
+    setIsSubmittingDenuncia(true);
+    setDenunciaError(null);
+    setDenunciaSuccess(null); 
+    
+    try {
+      const response = await portalService.denunciarPortal(denunciaModal.portalId, {
+        motivo: denunciaMotivo,
+        comentarios: denunciaComentarios.trim() ? denunciaComentarios : undefined
+      });
+      setDenunciaSuccess(response.message); 
+     
+    } catch (error: unknown) {
+      console.error("Error al enviar denuncia:", error);
+      const axiosErr = error as { response?: { data?: { message?: string } } };
+      const msg = axiosErr?.response?.data?.message ?? "Ocurrió un error al enviar la denuncia. Por favor intentá de nuevo.";
+      setDenunciaError(msg);
+    } finally {
+      setIsSubmittingDenuncia(false);
+    }
+  };
+
+  const closeDenunciaModal = () => {
+    setDenunciaModal({ isOpen: false, portalId: null });
+    setDenunciaMotivo("");
+    setDenunciaComentarios("");
+    setDenunciaError(null);
+    setDenunciaSuccess(null); 
   };
 
   const sinResultados = !loading && portales.length === 0;
@@ -116,7 +156,16 @@ export function ExplorePortals() {
               key={portal.id}
               className="flex flex-col bg-surface-container-lowest p-6 relative rounded-sm shadow-sm border border-black/5"
             >
-              <div className="flex items-start gap-4 mb-4">
+              {/* Botón de denuncia */}
+              <button
+                onClick={() => setDenunciaModal({ isOpen: true, portalId: portal.id })}
+                className="absolute top-4 right-4 p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors"
+                title="Denunciar este portal"
+              >
+                <Flag className="w-4 h-4" />
+              </button>
+
+              <div className="flex items-start gap-4 mb-4 pr-6">
                 <PortalAvatar
                   logoUrl={portal.logoUrl}
                   iconoPortal={portal.iconoPortal}
@@ -229,6 +278,103 @@ export function ExplorePortals() {
             <Plus className="w-4 h-4" />
             Crear nuevo portal
           </Link>
+        </div>
+      )}
+
+      {/* ─── Modal de Denuncia ─── */}
+      {denunciaModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-surface-container-lowest w-full max-w-md rounded-sm shadow-xl p-6 relative">
+            <h2 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
+              <Flag className="w-5 h-5 text-destructive" />
+              Denunciar Portal
+            </h2>
+            
+            {denunciaSuccess ? (
+              // ─── ESTADO DE ÉXITO ───
+              <>
+                <div className="mb-6 mt-4 p-4 text-sm text-green-700 bg-green-600/10 border border-green-600/25 rounded-sm font-medium flex flex-col items-center text-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-green-600/20 flex items-center justify-center">
+                    <Check className="w-5 h-5 text-green-600" />
+                  </div>
+                  <p>{denunciaSuccess}</p>
+                </div>
+                <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={closeDenunciaModal}
+                    className="px-5 py-2.5 text-sm font-medium text-foreground bg-surface-container hover:bg-surface-container-high border border-black/10 rounded-sm transition-colors"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </>
+            ) : (
+              // ─── ESTADO DE FORMULARIO ───
+              <>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Por favor, contanos por qué estás denunciando este portal. Nuestro equipo de moderación revisará el caso.
+                </p>
+                
+                {/* Mensaje de error controlado en rojo si viene del back */}
+                {denunciaError && (
+                  <div className="mb-4 p-3 text-sm text-destructive bg-destructive/10 border border-destructive/25 rounded-sm font-medium">
+                    {denunciaError}
+                  </div>
+                )}
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">
+                      Motivo principal <span className="text-destructive">*</span>
+                    </label>
+                    <select
+                      value={denunciaMotivo}
+                      onChange={(e) => setDenunciaMotivo(e.target.value)}
+                      className="w-full p-2.5 text-sm bg-surface-container border border-black/10 rounded-sm outline-none focus:ring-2 focus:ring-primary text-foreground"
+                    >
+                      <option value="" disabled>Seleccioná un motivo...</option>
+                      <option value="Contenido inapropiado u ofensivo">Contenido inapropiado u ofensivo</option>
+                      <option value="Spam o publicidad engañosa">Spam o publicidad engañosa</option>
+                      <option value="Nombre o información falsa">Nombre o información falsa</option>
+                      <option value="Suplantación de identidad institucional">Suplantación de identidad institucional</option>
+                      <option value="Otro motivo">Otro motivo</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">
+                      Comentarios adicionales (opcional)
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder="Añadí más detalles sobre la denuncia..."
+                      value={denunciaComentarios}
+                      onChange={(e) => setDenunciaComentarios(e.target.value)}
+                      className="w-full p-2.5 text-sm bg-surface-container border border-black/10 rounded-sm outline-none focus:ring-2 focus:ring-primary text-foreground resize-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    onClick={closeDenunciaModal}
+                    disabled={isSubmittingDenuncia}
+                    className="px-4 py-2 text-sm font-medium text-foreground border border-black/10 rounded-sm hover:bg-surface-container transition-colors disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleDenunciar}
+                    disabled={!denunciaMotivo || isSubmittingDenuncia}
+                    className="px-4 py-2 text-sm font-medium rounded-sm flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isSubmittingDenuncia && <Loader2 className="w-4 h-4 animate-spin" />}
+                    Enviar denuncia
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>
