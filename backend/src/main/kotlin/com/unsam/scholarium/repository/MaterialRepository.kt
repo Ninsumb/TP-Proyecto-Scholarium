@@ -1,6 +1,7 @@
 package com.unsam.scholarium.repository
 
 import com.unsam.scholarium.model.EstadoMaterial
+import com.unsam.scholarium.model.Materia
 import com.unsam.scholarium.model.Material
 import com.unsam.scholarium.model.TipoMaterial
 import org.springframework.data.jpa.repository.JpaRepository
@@ -12,6 +13,8 @@ import java.util.UUID
 @Repository
 interface MaterialRepository : JpaRepository<Material, UUID> {
     fun findByIdIn(ids: List<UUID>): List<Material>
+
+    fun existsByMateria(materia: Materia): Boolean
 
     @Query("SELECT COUNT(m) " +
             "FROM Material m " +
