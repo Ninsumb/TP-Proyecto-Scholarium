@@ -8,6 +8,7 @@ import com.unsam.scholarium.service.MateriaService
 import com.unsam.scholarium.service.MaterialService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
@@ -74,8 +75,6 @@ class MateriaController(
         )
 
         return ResponseEntity.ok(response)
-
-
     }
 
     @GetMapping("/{materiaId}/material")
@@ -109,4 +108,13 @@ class MateriaController(
         return ResponseEntity.ok(materia)
     }
 
+    @DeleteMapping("/{materiaId}")
+    fun eliminarMateria(
+        @PathVariable materiaId: UUID,
+        authentication: Authentication
+    ): ResponseEntity<Void> {
+        val email = authentication.name
+        materiaService.eliminarMateria(materiaId, email)
+        return ResponseEntity.noContent().build()
+    }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useContext } from "react";
 import { Link, useParams, useOutletContext } from "react-router";
 import {
     BookOpen,
@@ -18,6 +18,7 @@ import {
 import { carpetaService } from "../../../services/Portal/CarpetaService";
 import type { CarpetaArbol } from "../../../types/Portal/Carpeta";
 import { materiaService } from "../../../services/Portal/MateriaService";
+import { MainContext } from "../../../types/MainContext";
 import apiClient from "../../../services/apiClient";
 
 // ─── Tipos de modal ────────────────────────────────────────────────────────────
@@ -25,6 +26,7 @@ type ModalType =
     | "newFolder"
     | "createSubject"
     | "renameFolder"
+    | "deleteSubject"
     | "deleteFolder"
     | "moveFolder"
     | "moveSubject"
@@ -242,14 +244,14 @@ function ModalActions({
                 style={
                     danger
                         ? {
-                              background: "var(--destructive)",
-                              color: "var(--destructive-foreground)",
-                          }
+                                background: "var(--destructive)",
+                                color: "var(--destructive-foreground)",
+                        }
                         : {
-                              background:
-                                  "linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)",
-                              color: "var(--primary-foreground)",
-                          }
+                                background:
+                                    "linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)",
+                                color: "var(--primary-foreground)",
+                        }
                 }
             >
                 {confirmLabel}
@@ -304,6 +306,8 @@ export function Subjects() {
     const [moveSubjectTarget, setMoveSubjectTarget] = useState<string | null>(
         null,
     );
+
+    const { showToast } = useContext(MainContext);
 
     useEffect(() => {
         localStorage.setItem(
@@ -419,6 +423,20 @@ export function Subjects() {
         resetModal();
     };
 
+    const deleteSubject = async () => {
+        if (!targetSubjectId) return;
+        try {
+            await materiaService.eliminar(targetSubjectId);
+            refrescarEstructura();
+            resetModal();
+        } catch (error: any) {
+            showToast(
+                error.response?.data?.message || "Ocurrió un error",
+                "error"
+            );
+        }
+    }
+
     const moveSubject = async () => {
         if (!targetSubjectId || !moveSubjectTarget) return;
         await materiaService.mover(targetSubjectId, moveSubjectTarget);
@@ -530,16 +548,19 @@ export function Subjects() {
                                             items={[
                                                 {
                                                     label: "Mover materia",
-                                                    icon: (
-                                                        <MoveRight className="w-4 h-4" />
-                                                    ),
+                                                    icon: <MoveRight className="w-4 h-4" />,
                                                     onClick: () => {
-                                                        setTargetSubjectId(
-                                                            materia.id,
-                                                        );
-                                                        setActiveModal(
-                                                            "moveSubject",
-                                                        );
+                                                        setTargetSubjectId(materia.id);
+                                                        setActiveModal("moveSubject");
+                                                    },
+                                                },
+                                                {
+                                                    label: "Eliminar materia",
+                                                    icon: <Trash2 className="w-4 h-4" />,
+                                                    danger: true,
+                                                    onClick: () => {
+                                                        setTargetSubjectId(materia.id);
+                                                        setActiveModal("deleteSubject");
                                                     },
                                                 },
                                             ]}
@@ -902,6 +923,44 @@ export function Subjects() {
                         onConfirm={moveSubject}
                         onCancel={resetModal}
                         confirmDisabled={!moveSubjectTarget}
+                    />
+                </ModalShell>
+            )}
+
+            {/* ── Modal: Eliminar materia ── */}
+            {activeModal === "deleteSubject" && (
+                <ModalShell title="Eliminar Materia" onClose={resetModal}>
+                    <div
+                        className="flex items-start gap-3 p-4 rounded-sm mb-6"
+                        style={{
+                            background:
+                                "rgba(var(--destructive-rgb, 220 38 38) / 0.08)",
+                            border:
+                                "1px solid rgba(var(--destructive-rgb, 220 38 38) / 0.2)",
+                        }}
+                    >
+                        <Trash2 className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+
+                        <div>
+                            <p className="text-sm font-medium text-destructive mb-1">
+                                Esta acción no se puede deshacer
+                            </p>
+
+                            <p className="text-sm text-foreground">
+                                ¿Querés eliminar esta materia?
+                            </p>
+
+                            <p className="text-xs text-muted-foreground mt-2">
+                                Si la materia tiene materiales asociados, la eliminación puede fallar.
+                            </p>
+                        </div>
+                    </div>
+
+                    <ModalActions
+                        confirmLabel="Eliminar"
+                        onConfirm={deleteSubject}
+                        onCancel={resetModal}
+                        danger
                     />
                 </ModalShell>
             )}

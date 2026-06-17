@@ -15,8 +15,6 @@ class Materia(
     @Column(nullable = false, length = 150)
     var nombre: String,
 
-    //TODO: LA DESC DEBERIA TENER ALGUN LIMITE, ESO LO VEMOS DSP
-
     @Column(nullable = true, columnDefinition = "TEXT")
     var descripcion: String? = null,
 
@@ -41,5 +39,6 @@ class Materia(
     private fun validar() {
         if (nombre.isBlank()) throw BusinessException("El nombre de la materia es obligatorio")
         if (nombre.length > 150) throw BusinessException("El nombre no puede tener más de 150 caracteres")
+        if ((descripcion?.length ?: 0) > 500) throw BusinessException("La descripción no puede tener más de 500 caracteres")
     }
 }
