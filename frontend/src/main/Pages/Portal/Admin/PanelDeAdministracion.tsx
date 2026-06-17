@@ -663,12 +663,12 @@ interface AdminAvatarProps {
   nombre: string;
   fotoPerfil: string | null;
   initials: string;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
 }
  
 function AdminAvatar({ nombre, fotoPerfil, initials, size = "sm" }: AdminAvatarProps) {
-  const dims = size === "sm" ? "w-6 h-6 text-[10px]" : "w-8 h-8 text-xs";
- 
+  const dims = size === "sm" ? "w-6 h-6 text-[10px]" : size === "md" ? "w-8 h-8 text-xs" : "w-12 h-12 text-base"; 
+
   if (fotoPerfil) {
     return (
       <img
@@ -1085,12 +1085,12 @@ export function AdminPanel() {
                   style={{ borderRadius: "var(--radius)" }}
                 >
                   <div className="flex items-center gap-3 flex-1">
-                    <div
-                      className="w-12 h-12 bg-primary/15 flex items-center justify-center text-primary"
-                      style={{ borderRadius: "var(--radius)" }}
-                    >
-                      <span className="font-medium">{getInitials(member.nombre)}</span>
-                    </div>
+                    <AdminAvatar
+                      nombre={member.nombre}
+                      fotoPerfil={member.fotoPerfil}
+                      initials={getInitials(member.nombre)}
+                      size="lg"
+                    />
                     <div className="flex-1">
                       <h3 className="text-foreground font-medium">{member.nombre}</h3>
                       <div className="flex items-center gap-2 mt-1">

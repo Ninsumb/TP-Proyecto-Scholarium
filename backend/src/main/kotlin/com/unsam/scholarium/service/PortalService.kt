@@ -451,6 +451,7 @@ class PortalService(
                 email         = membresia.usuario.email,
                 rol           = membresia.rol,
                 fechaRegistro = membresia.fechaRegistro,
+                fotoPerfil  =   membresia.usuario.fotoPerfil
             )
         }
     }

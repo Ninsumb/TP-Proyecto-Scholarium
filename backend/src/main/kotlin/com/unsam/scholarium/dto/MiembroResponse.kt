@@ -14,4 +14,5 @@ data class MiembroResponse(
     val email: String,
     val rol: RolMembresia,
     val fechaRegistro: LocalDateTime,
+    val fotoPerfil: String?
 )
