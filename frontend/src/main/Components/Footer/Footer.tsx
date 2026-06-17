@@ -1,6 +1,10 @@
-import { GraduationCap, Mail, Globe } from "lucide-react"
+import { GraduationCap, Mail } from "lucide-react"
+import { FaInstagram, FaPaypal } from "react-icons/fa"
+import { useState } from "react"
 
 export const Footer = () => {
+const [showEmail, setShowEmail] = useState(false);
+
     return (
         <footer className="bg-primary text-primary-foreground">
             <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
@@ -31,27 +35,31 @@ export const Footer = () => {
 
                     <div className="flex flex-wrap items-center gap-3">
 
-                        <a
-                            href="https://www.youtube.com/watch?v=WTLrPLff7Fo"
+                        <button
+                            onClick={() => setShowEmail((v) => !v)}
                             className="flex items-center gap-1 hover:opacity-80 transition"
                         >
                             <Mail className="w-4 h-4" />
-                            Contacto
-                        </a>
+
+                            {showEmail
+                                ? "scholarium.dev@gmail.com"
+                                : "Contacto"}
+                        </button>
 
                         <a
-                            href="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                            href="https://www.instagram.com/scholarium.dev/"
                             className="flex items-center gap-1 hover:opacity-80 transition"
                         >
-                            <Globe className="w-4 h-4" />
+                            <FaInstagram className="w-4 h-4" />
                             Instagram
                         </a>
 
                         <a
-                            href="https://www.youtube.com/watch?v=oavMtUWDBTM"
-                            className="bg-amber-300 text-primary px-3 py-1 rounded-2xl font-medium hover:opacity-90 transition"
+                            href="https://paypal.me/scholarium"
+                            className="inline-flex items-center gap-2 bg-amber-300 text-primary px-3 py-1 rounded-2xl font-medium hover:opacity-90 transition"
                         >
-                            ☕ Donar al proyecto
+                            <FaPaypal className="w-4 h-4" />
+                            Donar al proyecto
                         </a>
 
                     </div>

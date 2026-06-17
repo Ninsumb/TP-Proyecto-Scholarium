@@ -44,6 +44,8 @@ class UsuarioService(
                 carrera = portal.carrera,
                 descripcion = portal.descripcion,
                 logoUrl = portal.logoUrl,
+                iconoPortal = portal.iconoPortal,
+                colorPortal = portal.colorPortal,
                 rol = membresia.rol,
                 cantidadMiembros = cantidadMiembros,
                 cantidadMaterias = cantidadMaterias

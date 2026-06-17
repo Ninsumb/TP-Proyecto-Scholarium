@@ -9,6 +9,8 @@ data class UsuarioPortalResponse(
     val carrera: String,
     val descripcion: String?,
     val logoUrl: String?,
+    val iconoPortal: String?,
+    val colorPortal: String?,
     val rol: RolMembresia,
     val cantidadMiembros: Long,
     val cantidadMaterias: Long
