@@ -11,6 +11,7 @@ import {
     Pencil,
     Trash2,
     FolderSymlink,
+    Loader2,
     MoveRight,
     UserPlus,
     Lock,
@@ -18,6 +19,7 @@ import {
 import { carpetaService } from "../../../services/Portal/CarpetaService";
 import type { CarpetaArbol } from "../../../types/Portal/Carpeta";
 import { materiaService } from "../../../services/Portal/MateriaService";
+import { adminService } from "../../../services/AdminService";
 import { MainContext } from "../../../types/MainContext";
 import apiClient from "../../../services/apiClient";
 
@@ -26,7 +28,6 @@ type ModalType =
     | "newFolder"
     | "createSubject"
     | "renameFolder"
-    | "deleteSubject"
     | "deleteFolder"
     | "moveFolder"
     | "moveSubject"
@@ -36,6 +37,101 @@ interface FolderOption {
     id: string;
     nombre: string;
     depth: number;
+}
+
+interface VoteModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: (reason: string) => void;
+    title: string;
+    description: string;
+    loading?: boolean;
+}
+
+
+function VoteModal({
+    isOpen,
+    onClose,
+    onConfirm,
+    title,
+    description,
+    loading,
+}: VoteModalProps) {
+    const [reason, setReason] = useState("");
+
+    useEffect(() => {
+        if (isOpen) setReason("");
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    const handleConfirm = () => {
+        if (reason.trim()) {
+            onConfirm(reason);
+        }
+    };
+
+    const handleClose = () => {
+        setReason("");
+        onClose();
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div
+                className="bg-card max-w-lg w-full shadow-2xl"
+                style={{ borderRadius: "var(--radius)" }}
+            >
+                <div className="border-b border-border px-6 py-4">
+                    <h2 className="text-card-foreground">{title}</h2>
+                </div>
+                <div className="p-6 space-y-4">
+                    <div
+                        className="p-4 bg-primary/5 border border-primary/20"
+                        style={{ borderRadius: "var(--radius)" }}
+                    >
+                        <p className="text-sm text-foreground">{description}</p>
+                    </div>
+                    <div>
+                        <label className="block mb-2 text-sm font-medium text-foreground">
+                            Motivo de la propuesta{" "}
+                            <span className="text-destructive">*</span>
+                        </label>
+                        <textarea
+                            rows={4}
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            disabled={loading}
+                            className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none disabled:opacity-50"
+                            style={{ borderRadius: "var(--radius)" }}
+                            placeholder="Explica por qué propones este cambio. Todos los administradores verán este mensaje."
+                        />
+                    </div>
+                    <div className="flex gap-3 justify-end pt-2">
+                        <button
+                            onClick={handleClose}
+                            disabled={loading}
+                            className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
+                            style={{ borderRadius: "var(--radius)" }}
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={handleConfirm}
+                            disabled={!reason.trim() || loading}
+                            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            style={{ borderRadius: "var(--radius)" }}
+                        >
+                            {loading && (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            )}
+                            Abrir Votación
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 }
 
 function AccesoDenegado({ portalId }: { portalId: string | undefined }) {
@@ -275,6 +371,9 @@ export function Subjects() {
         isOpen: boolean;
     }>();
 
+    const [voteModalOpen, setVoteModalOpen] = useState(false);
+    const [voteLoading, setVoteLoading] = useState(false);
+
     const [folderStructure, setFolderStructure] = useState<CarpetaArbol[]>([]);
     const [loading, setLoading] = useState(true);
     const [expandedFolders, setExpandedFolders] = useState<Set<string>>(() => {
@@ -315,6 +414,11 @@ export function Subjects() {
             JSON.stringify([...expandedFolders]),
         );
     }, [expandedFolders, portalId]);
+
+    const openDeleteSubjectVote = (subjectId: string) => { 
+        setTargetSubjectId(subjectId); 
+        setVoteModalOpen(true); 
+    };
 
     // ── Helpers de estado ───────────────────────────────────────────────────────
     const resetModal = () => {
@@ -423,19 +527,26 @@ export function Subjects() {
         resetModal();
     };
 
-    const deleteSubject = async () => {
-        if (!targetSubjectId) return;
-        try {
-            await materiaService.eliminar(targetSubjectId);
-            refrescarEstructura();
-            resetModal();
-        } catch (error: any) {
-            showToast(
-                error.response?.data?.message || "Ocurrió un error",
-                "error"
-            );
-        }
-    }
+    const deleteSubject = async (motivo: string) => { 
+        if (!targetSubjectId) return; 
+        try { 
+            setVoteLoading(true); 
+            await adminService.crearVotacion(
+                Number(portalId), 
+                { 
+                    tipo: "ELIMINAR_MATERIA", 
+                    motivo, entidadId: 
+                    targetSubjectId, 
+                }
+            ); 
+            showToast( "Votación creada correctamente. Los administradores serán notificados.", "success" ); 
+            refrescarEstructura(); 
+            setVoteModalOpen(false); 
+            resetModal(); 
+        } catch (error: any) { 
+            showToast( error.response?.data?.message || "No se pudo generar la votación", "error" ); 
+        } finally { setVoteLoading(false); } 
+    };
 
     const moveSubject = async () => {
         if (!targetSubjectId || !moveSubjectTarget) return;
@@ -558,10 +669,7 @@ export function Subjects() {
                                                     label: "Eliminar materia",
                                                     icon: <Trash2 className="w-4 h-4" />,
                                                     danger: true,
-                                                    onClick: () => {
-                                                        setTargetSubjectId(materia.id);
-                                                        setActiveModal("deleteSubject");
-                                                    },
+                                                    onClick: () => {openDeleteSubjectVote(materia.id)},
                                                 },
                                             ]}
                                         />
@@ -926,44 +1034,19 @@ export function Subjects() {
                     />
                 </ModalShell>
             )}
-
-            {/* ── Modal: Eliminar materia ── */}
-            {activeModal === "deleteSubject" && (
-                <ModalShell title="Eliminar Materia" onClose={resetModal}>
-                    <div
-                        className="flex items-start gap-3 p-4 rounded-sm mb-6"
-                        style={{
-                            background:
-                                "rgba(var(--destructive-rgb, 220 38 38) / 0.08)",
-                            border:
-                                "1px solid rgba(var(--destructive-rgb, 220 38 38) / 0.2)",
-                        }}
-                    >
-                        <Trash2 className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
-
-                        <div>
-                            <p className="text-sm font-medium text-destructive mb-1">
-                                Esta acción no se puede deshacer
-                            </p>
-
-                            <p className="text-sm text-foreground">
-                                ¿Querés eliminar esta materia?
-                            </p>
-
-                            <p className="text-xs text-muted-foreground mt-2">
-                                Si la materia tiene materiales asociados, la eliminación puede fallar.
-                            </p>
-                        </div>
-                    </div>
-
-                    <ModalActions
-                        confirmLabel="Eliminar"
-                        onConfirm={deleteSubject}
-                        onCancel={resetModal}
-                        danger
-                    />
-                </ModalShell>
-            )}
+            <VoteModal 
+                isOpen={voteModalOpen} 
+                loading={voteLoading} 
+                title="Proponer Eliminar Materia" 
+                description=" 
+                Estás proponiendo eliminar esta materia. 
+                Esta acción requiere votación de todos los administradores." 
+                onClose={() => { 
+                    setVoteModalOpen(false); 
+                    setTargetSubjectId(null); 
+                    }} 
+                onConfirm={deleteSubject} 
+            />
         </div>
     );
 }

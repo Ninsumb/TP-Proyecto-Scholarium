@@ -190,7 +190,7 @@ class MateriaService(
         )
     }
 
-    @Transactional(readOnly = false)
+    @Transactional
     fun eliminarMateria(materiaId: UUID, email: String) {
         val materia = materiaRepository.findById(materiaId).getOrNull()
             ?: throw ElementDoesNotExistException("Materia no encontrada")
