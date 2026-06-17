@@ -19,6 +19,7 @@ import com.unsam.scholarium.repository.CarpetaRepository
 import com.unsam.scholarium.repository.EtiquetaRepository
 import com.unsam.scholarium.repository.ForoRepository
 import com.unsam.scholarium.repository.MateriaRepository
+import com.unsam.scholarium.repository.MaterialRepository
 import com.unsam.scholarium.repository.MembresiaRepository
 import com.unsam.scholarium.repository.UsuarioRepository
 import org.springframework.stereotype.Service
@@ -35,6 +36,7 @@ class MateriaService(
     private val etiquetaRepository: EtiquetaRepository,
     private val foroRepository: ForoRepository,
     private val accionAdminService: AccionAdminService,
+    private val materialRepository: MaterialRepository
 ) {
 
     fun validarAdmin(usuario: Usuario, portal: Portal) {
@@ -186,5 +188,18 @@ class MateriaService(
             orden       = materia.orden,
             updatedAt   = materia.updatedAt!!.toInstant()
         )
+    }
+
+    @Transactional
+    fun eliminarMateria(materiaId: UUID, email: String) {
+        val materia = materiaRepository.findById(materiaId).getOrNull()
+            ?: throw ElementDoesNotExistException("Materia no encontrada")
+
+        usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        if (materialRepository.existsByMateria(materia)) throw BusinessException("No se puede eliminar una materia con materiales asociados")
+
+        materiaRepository.delete(materia)
     }
 }

@@ -20,7 +20,7 @@ class MateriaService {
         );
         return response.data;
     }
-
+    
     async mover(materiaId: string, nuevaCarpetaId: string): Promise<void> {
         await apiClient.put(`/materias/${materiaId}/mover`, { nuevaCarpetaId });
     }

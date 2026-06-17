@@ -88,10 +88,11 @@ class PortalController(
     @PostMapping
     fun crearPortal(
         @RequestBody request: CrearPortalRequest,
+        @RequestPart(required = false) imagen: MultipartFile?,
         authentication: Authentication
     ): ResponseEntity<CrearPortalResponse> {
         val email = authentication.name
-        val portalCreado = portalService.createPortal(request, email)
+        val portalCreado = portalService.createPortal(request, imagen, email)
         return ResponseEntity.status(HttpStatus.CREATED).body(PortalMapper.toCrearPortalResponse(portalCreado))
     }
 
@@ -268,5 +269,24 @@ class PortalController(
         portalService.validarMembresiaUsuario(usuario, portalId, RolMembresia.ADMIN)
         val url = cloudinaryService.uploadImagenPortal(imagen, portalId)
         return ResponseEntity.ok(mapOf("logoUrl" to url))
+    }
+
+    /**
+     * Permite a un usuario denunciar un portal.
+     * POST /api/portales/{portalId}/denuncias
+     */
+    @PostMapping("/{portalId}/denuncias")
+    fun denunciarPortal(
+        @PathVariable portalId: Long,
+        @RequestBody request: com.unsam.scholarium.dto.DenunciaPortalRequest,
+        authentication: Authentication
+    ): ResponseEntity<Map<String, String>> {
+        val email = authentication.name
+        
+        portalService.denunciarPortal(portalId, email, request)
+        
+        return ResponseEntity.ok(
+            mapOf("message" to "Denuncia enviada exitosamente. Nuestro equipo la revisará a la brevedad.")
+        )
     }
 }
