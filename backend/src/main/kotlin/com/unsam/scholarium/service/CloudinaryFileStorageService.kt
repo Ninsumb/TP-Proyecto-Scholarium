@@ -121,12 +121,11 @@ class CloudinaryFileStorageService(
     }
 }
 
-
-
 private fun validar(file: MultipartFile) {
     val allowedTypes = setOf(
         "application/pdf",
-        "application/docx",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 
         "image/jpeg",
         "image/png",
@@ -136,12 +135,13 @@ private fun validar(file: MultipartFile) {
 
     val allowedExtensions = setOf(
         "pdf",
+        "docx",
+        "pptx",
         "jpg",
         "jpeg",
         "png",
         "gif",
         "webp",
-        "docx"
     )
 
     val extension = file.originalFilename
@@ -149,8 +149,8 @@ private fun validar(file: MultipartFile) {
         ?.lowercase()
 
     if (file.isEmpty) throw BusinessException("El archivo está vacío")
-    if (file.contentType !in allowedTypes) throw BusinessException("Tipo de archivo no permitido. Solo se aceptan PDF, imágenes (JPG, PNG, GIF, WEBP) y archivos ZIP")
-    if (extension.isNullOrBlank() || extension !in allowedExtensions) throw BusinessException("Extensión de archivo no permitida. Solo se aceptan PDF, imágenes y archivos ZIP.")
+    if (file.contentType !in allowedTypes) throw BusinessException("Tipo de archivo no permitido. Solo se aceptan PDF, PPTX, DOCX e imágenes (JPG, PNG, GIF, WEBP)")
+    if (extension.isNullOrBlank() || extension !in allowedExtensions) throw BusinessException("Extensión de archivo no permitida. Solo se aceptan PDF, PPTX, DOCX imágenes")
 }
 
 private fun validarImagen(file: MultipartFile) {

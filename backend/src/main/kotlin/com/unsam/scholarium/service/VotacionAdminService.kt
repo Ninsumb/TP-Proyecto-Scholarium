@@ -10,9 +10,11 @@ import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.NotAdminException
 import com.unsam.scholarium.exception.UnauthorizedException
 import com.unsam.scholarium.model.EstadoVotacion
+import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.model.TipoAccionAdmin
 import com.unsam.scholarium.model.TipoVotacion
+import com.unsam.scholarium.model.Usuario
 import com.unsam.scholarium.model.VotacionAdmin
 import com.unsam.scholarium.model.VotoAdmin
 import com.unsam.scholarium.repository.MembresiaRepository
@@ -85,6 +87,31 @@ class VotacionAdminService(
 
         if (!membresiaRepository.existsByUsuarioAndPortalAndRol(proponente, portal, RolMembresia.ADMIN)) {
             throw NotAdminException("Solo los admins del portal pueden proponer una votación")
+        }
+
+        val cantidadAdmins = membresiaRepository.countByPortalAndRol(portal, RolMembresia.ADMIN)
+
+        if (cantidadAdmins == 1L) {
+            ejecutarAccionDirecta(
+                portal = portal,
+                tipo = tipo,
+                entidadId = entidadId,
+                metadatos = metadatos,
+                proponente = proponente,
+                motivo = motivo,
+            )
+
+            return VotacionAdmin(
+                portal = portal,
+                tipo = tipo,
+                proponente = proponente,
+                motivo = motivo,
+                entidadId = entidadId,
+                metadatos = metadatos,
+                creadaEn = LocalDateTime.now(),
+                expiraEn = LocalDateTime.now(),
+                estado = EstadoVotacion.APROBADA,
+            )
         }
 
         val duplicada = votacionRepository.findFirstByPortalIdAndTipoAndEstadoAndEntidadId(
@@ -420,11 +447,10 @@ class VotacionAdminService(
             }
 
             TipoVotacion.ELIMINAR_MATERIA -> {
-                //TODO: Impementar bien un endpoint que haga soft delete de la materia...
-               /* val materiaId = votacion.entidadId?.let {
+               val materiaId = votacion.entidadId?.let {
                     runCatching { java.util.UUID.fromString(it) }.getOrNull()
                 } ?: throw BusinessException("entidadId inválido para ELIMINAR_MATERIA")
-                materiaService.eliminarMateria(materiaId)*/
+                materiaService.eliminarMateria(materiaId, votacion.proponente.email)
             }
 
             TipoVotacion.ELIMINAR_TABLERO -> {
@@ -464,6 +490,37 @@ class VotacionAdminService(
                 )
             }
         }
+    }
+
+    /** Ejecuta la acción si hay sólo un admin, con el fin de evitar crear votación */
+    private fun ejecutarAccionDirecta(
+        portal: Portal,
+        tipo: TipoVotacion,
+        entidadId: String?,
+        metadatos: String?,
+        proponente: Usuario,
+        motivo: String,
+    ) {
+        val votacionFake = VotacionAdmin(
+            portal = portal,
+            tipo = tipo,
+            proponente = proponente,
+            motivo = motivo,
+            entidadId = entidadId,
+            metadatos = metadatos,
+            creadaEn = LocalDateTime.now(),
+            expiraEn = LocalDateTime.now().plusDays(1)
+        )
+
+        ejecutarAccion(votacionFake)
+
+        accionAdminService.registrar(
+            portal = portal,
+            admin = proponente,
+            tipo = TipoAccionAdmin.ACCION_DIRECTA,
+            entidadDescripcion = TipoVotacion_LABEL[tipo] ?: tipo.name,
+            motivo = motivo,
+        )
     }
 
     /** Si está abierta pero venció, la cierra como EXPIRADA. */

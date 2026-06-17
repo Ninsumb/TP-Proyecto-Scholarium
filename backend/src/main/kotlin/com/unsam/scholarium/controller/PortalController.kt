@@ -88,10 +88,11 @@ class PortalController(
     @PostMapping
     fun crearPortal(
         @RequestBody request: CrearPortalRequest,
+        @RequestPart(required = false) imagen: MultipartFile?,
         authentication: Authentication
     ): ResponseEntity<CrearPortalResponse> {
         val email = authentication.name
-        val portalCreado = portalService.createPortal(request, email)
+        val portalCreado = portalService.createPortal(request, imagen, email)
         return ResponseEntity.status(HttpStatus.CREATED).body(PortalMapper.toCrearPortalResponse(portalCreado))
     }
 
