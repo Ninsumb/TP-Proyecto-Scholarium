@@ -272,29 +272,42 @@ export function SubjectDetail() {
 
       {/* ── Filtros y búsqueda ── */}
       <div className="mb-6 flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Selector principal */}
+          <div className="flex gap-2">
+            {[
+              { key: "tipo", label: "Etiqueta" },
+              { key: "extension", label: "Extensión" },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => {
+                  setFilterMode(key as "tipo" | "extension");
+                  setFilterTipo("all");
+                  setFilterExtension("all");
+                }}
+                className={`px-3 py-1 rounded-md ${
+                  filterMode === key
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-accent"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
-        {/* Selector principal */}
-        <div className="flex gap-2">
-          {[
-            { key: "tipo", label: "Etiqueta" },
-            { key: "extension", label: "Extensión" },
-          ].map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => {
-                setFilterMode(key as "tipo" | "extension");
-                setFilterTipo("all");
-                setFilterExtension("all");
-              }}
-              className={`px-3 py-1 rounded-md ${
-                filterMode === key
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-accent"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+          {/* Barra de búsqueda */}
+          <div className="relative w-full md:w-72">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Buscar material por nombre..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 border border-border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
         </div>
 
         {/* Filtro dinámico */}
@@ -323,17 +336,6 @@ export function SubjectDetail() {
               }
             </button>
           ))}
-        </div>
-
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Buscar material por nombre..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          />
         </div>
       </div>
 
