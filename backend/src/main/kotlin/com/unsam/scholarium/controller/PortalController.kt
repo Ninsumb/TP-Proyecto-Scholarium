@@ -269,4 +269,23 @@ class PortalController(
         val url = cloudinaryService.uploadImagenPortal(imagen, portalId)
         return ResponseEntity.ok(mapOf("logoUrl" to url))
     }
+
+    /**
+     * Permite a un usuario denunciar un portal.
+     * POST /api/portales/{portalId}/denuncias
+     */
+    @PostMapping("/{portalId}/denuncias")
+    fun denunciarPortal(
+        @PathVariable portalId: Long,
+        @RequestBody request: com.unsam.scholarium.dto.DenunciaPortalRequest,
+        authentication: Authentication
+    ): ResponseEntity<Map<String, String>> {
+        val email = authentication.name
+        
+        portalService.denunciarPortal(portalId, email, request)
+        
+        return ResponseEntity.ok(
+            mapOf("message" to "Denuncia enviada exitosamente. Nuestro equipo la revisará a la brevedad.")
+        )
+    }
 }
