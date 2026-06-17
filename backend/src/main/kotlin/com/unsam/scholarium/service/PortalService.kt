@@ -43,6 +43,7 @@ import jakarta.transaction.Transactional
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
+import org.springframework.web.multipart.MultipartFile
 import java.util.UUID
 import kotlin.jvm.optionals.getOrNull
 
@@ -56,10 +57,10 @@ class PortalService(
     private val usuarioRepository: UsuarioRepository,
     private val etiquetaRepository: EtiquetaRepository,
     private val plantillaSolicitudRepository: PlantillaSolicitudRepository,
-    private val votacionAdminService: VotacionAdminService,
     private val portalBloqueoRepository: PortalBloqueoRepository,
     private val applicationEventPublisher: ApplicationEventPublisher,
     private val accionAdminService: AccionAdminService,
+    private val cloudinaryService: CloudinaryFileStorageService
 ) {
 
     // ── Helpers ────────────────────────────────────────────────────────────
@@ -162,7 +163,7 @@ class PortalService(
      * 5. Crear la PlantillaSolicitud con estado abierta=true y requisitos por defecto.
      */
     @Transactional(rollbackOn = [Exception::class])
-    fun createPortal(request: CrearPortalRequest, email: String): Portal {
+    fun createPortal(request: CrearPortalRequest, imagen: MultipartFile?, email: String): Portal {
         val universidadNormalizada = Portal.normalizarParaUnicidad(request.universidad)
         val carreraNormalizada = Portal.normalizarParaUnicidad(request.carrera)
 
@@ -186,6 +187,11 @@ class PortalService(
 
         val membresiaAdmin = Membresia(usuario = usuario, portal = portal, rol = RolMembresia.ADMIN)
         portal.addMembresia(membresiaAdmin)
+
+        if (imagen != null) {
+            val logoUrl = cloudinaryService.uploadImagenPortal(imagen, portal.id!!)
+            portal.logoUrl = logoUrl
+        }
 
         val portalGuardado = portalRepository.save(portal)
 
