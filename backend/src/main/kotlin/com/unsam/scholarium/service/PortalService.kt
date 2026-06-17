@@ -60,7 +60,9 @@ class PortalService(
     private val portalBloqueoRepository: PortalBloqueoRepository,
     private val applicationEventPublisher: ApplicationEventPublisher,
     private val accionAdminService: AccionAdminService,
-    private val cloudinaryService: CloudinaryFileStorageService
+    private val mailService: MailService,
+    private val cloudinaryService: CloudinaryFileStorageService,
+
 ) {
 
     // ── Helpers ────────────────────────────────────────────────────────────
@@ -646,4 +648,83 @@ fun bloquearMiembro(portalId: Long, usuarioObjetivoId: Long, emailAdmin: String)
         entidadDescripcion = usuarioObjetivo.nombre,
     )
 }
+
+    @Transactional(rollbackOn = [Exception::class])
+    fun denunciarPortal(portalId: Long, emailUsuario: String, request: com.unsam.scholarium.dto.DenunciaPortalRequest) {
+        val portal = validarPortal(portalId)
+        val usuario = validarUsuario(emailUsuario)
+
+        val staffEmail = "support.scholarium@gmail.com" 
+        
+        val asunto = "🚨 Nueva Denuncia de Portal: ${portal.universidad} - ${portal.carrera}"
+        
+        val cuerpoHtml = """
+            <!DOCTYPE html>
+            <html lang="es">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="font-family: Arial, sans-serif; background-color: #f4f4f5; margin: 0; padding: 20px; color: #333;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="background-color: #ef4444; color: white; padding: 20px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 20px;">🚨 Reporte de Moderación</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 30px;">
+                            <p style="margin-top: 0; color: #4b5563; line-height: 1.5;">Se ha recibido una nueva denuncia para un portal en la plataforma. A continuación, los detalles del caso:</p>
+                            
+                            <div style="margin-bottom: 25px;">
+                                <h2 style="font-size: 16px; font-weight: bold; color: #111827; border-bottom: 2px solid #f3f4f6; padding-bottom: 8px; margin-bottom: 15px;">🏛️ Datos del Portal</h2>
+                                <p style="margin: 0 0 10px 0;"><strong>ID:</strong> ${portal.id}</p>
+                                <p style="margin: 0 0 10px 0;"><strong>Universidad:</strong> ${portal.universidad}</p>
+                                <p style="margin: 0 0 10px 0;"><strong>Carrera:</strong> ${portal.carrera}</p>
+                            </div>
+
+                            <div style="margin-bottom: 25px;">
+                                <h2 style="font-size: 16px; font-weight: bold; color: #111827; border-bottom: 2px solid #f3f4f6; padding-bottom: 8px; margin-bottom: 15px;">👤 Datos del Denunciante</h2>
+                                <p style="margin: 0 0 10px 0;"><strong>ID Usuario:</strong> ${usuario.id}</p>
+                                <p style="margin: 0 0 10px 0;"><strong>Nombre:</strong> ${usuario.nombre}</p>
+                                <p style="margin: 0 0 10px 0;"><strong>Email:</strong> <a href="mailto:${usuario.email}" style="color: #2563eb; text-decoration: none;">${usuario.email}</a></p>
+                            </div>
+
+                            <div style="margin-bottom: 25px;">
+                                <h2 style="font-size: 16px; font-weight: bold; color: #111827; border-bottom: 2px solid #f3f4f6; padding-bottom: 8px; margin-bottom: 15px;">⚠️ Detalles de la Denuncia</h2>
+                                <p style="margin: 0 0 5px 0;"><strong>Motivo Principal:</strong></p>
+                                <div style="padding: 10px; background-color: #fee2e2; color: #991b1b; border-radius: 4px; font-weight: bold; display: inline-block; margin-bottom: 15px;">
+                                    ${request.motivo}
+                                </div>
+                                
+                                <p style="margin: 0 0 5px 0;"><strong>Comentarios adicionales:</strong></p>
+                                <div style="padding: 15px; background-color: #f9fafb; border-left: 4px solid #d1d5db; color: #4b5563; font-style: italic;">
+                                    ${request.comentarios ?: "El usuario no brindó comentarios adicionales."}
+                                </div>
+                            </div>
+
+                            <div style="text-align: center; margin-top: 35px;">
+                                <a href="http://localhost:5173/portal/${portal.id}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; text-transform: uppercase; font-size: 14px;">
+                                    Revisar el Portal
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 15px; text-align: center; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb;">
+                            Este es un mensaje automático generado por el sistema de moderación de Scholarium.
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+        """.trimIndent()
+
+        
+        mailService.send(to = staffEmail, subject = asunto, body = cuerpoHtml, isHtml = true)
+    }
+
+
+
+
 }
