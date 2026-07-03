@@ -39,6 +39,8 @@ class AuthService(
         val usuario = usuarioRepository.findByEmail(request.email)
             ?: throw UnauthorizedException("Credenciales incorrectas")
 
+        if (!usuario.activo) throw UnauthorizedException("Credenciales incorrectas")
+
         // Verificar que sea un usuario de email/password (NO de Google)
         if (usuario.password == null) {
             throw UnauthorizedException("Esta cuenta fue creada con Google. Usa 'Continuar con Google'")
@@ -102,6 +104,8 @@ class AuthService(
             usuario = usuarioRepository.save(usuario)
         }
 
+        if (!usuario.activo) throw UnauthorizedException("Credenciales incorrectas")
+
         // PASO 4: Generar tokens JWT (MISMO proceso para login y registro)
         val token = jwtService.generateToken(
             userId = usuario.id!!,
@@ -122,6 +126,9 @@ class AuthService(
         val email = jwtService.extractEmail(refreshToken)
         val usuario = usuarioRepository.findByEmail(email)
             ?: throw UnauthorizedException("Usuario no encontrado")
+
+        // Sin esto, el usuario eliminado puede seguir operando hasta que expire el access token
+        if (!usuario.activo) throw UnauthorizedException("Esta cuenta ha sido eliminada")
 
         val newToken = jwtService.generateToken(
             userId = usuario.id!!,

@@ -88,6 +88,7 @@ export interface MiembroResponse {
   email: string;
   rol: RolMembresia;
   fechaRegistro: string; // ISO LocalDateTime serializado
+  fotoPerfil: string | null; 
 }
 
 // ─── Votaciones ──────────────────────────────────────────────────────────────

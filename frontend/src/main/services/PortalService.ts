@@ -5,6 +5,11 @@
 import apiClient from './apiClient';
 import type { BuscarPortalesResponse, CrearPortalRequest, CrearPortalResponse } from '../types/Portales';
 
+export interface DenunciaPortalRequest {
+  motivo: string;
+  comentarios?: string;
+}
+
 class PortalService {
   async getPortales(
     universidad: string,
@@ -21,6 +26,13 @@ class PortalService {
     const response = await apiClient.post<CrearPortalResponse>('/portales', request);
     return response.data;
   }
+
+  async denunciarPortal(portalId: number, request: DenunciaPortalRequest): Promise<{ message: string }> {
+    const response = await apiClient.post<{ message: string }>(`/portales/${portalId}/denuncias`, request);
+    return response.data;
+  }
+
+
 }
 
 export const portalService = new PortalService();

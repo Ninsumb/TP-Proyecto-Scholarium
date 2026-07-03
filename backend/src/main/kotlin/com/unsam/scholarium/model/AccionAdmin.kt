@@ -42,7 +42,8 @@ enum class TipoAccionAdmin {
     TABLERO_ELIMINADO,
 
     // Foro
-    POST_ELIMINADO,
+    POST_OCULTADO,
+    TABLERO_ACTUALIZADO,
 
     // Votaciones
     VOTACION_CREADA,
@@ -55,6 +56,8 @@ enum class TipoAccionAdmin {
 
     // Agregar en TipoAccionAdmin:
     SOLICITUDES_ESTADO_CAMBIADO,   // reemplaza el uso ambiguo de PLANTILLA_SOLICITUD_ACTUALIZADA para el toggle abierta/cerrada
+
+    ACCION_DIRECTA // se usa cuando hay un solo admin
 }
 
 @Entity

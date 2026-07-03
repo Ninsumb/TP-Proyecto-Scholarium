@@ -19,7 +19,8 @@ import {
   CornerDownRight,
   UserPlus,
   Lock,
-   Search,
+  Search,
+  Eye,
 } from "lucide-react";
 import { foroService } from "../../../services/Portal/ForoService";
 import { usuarioService } from "../../../services/UsuarioService";
@@ -34,19 +35,14 @@ import type {
 // Genera variantes simples de un token para tolerar typos de 1 carácter
 function expandirToken(token: string): string[] {
   const variantes = new Set<string>([token]);
-
-  // Omisión de un carácter: "cokies" genera "okies", "ckies", "coies", etc.
   for (let i = 0; i < token.length; i++) {
     variantes.add(token.slice(0, i) + token.slice(i + 1));
   }
-
-  // Transposición de dos caracteres adyacentes: "cokies" → "ockies", "ckoies", ...
   for (let i = 0; i < token.length - 1; i++) {
     const chars = token.split("");
     [chars[i], chars[i + 1]] = [chars[i + 1], chars[i]];
     variantes.add(chars.join(""));
   }
-
   return Array.from(variantes).filter((v) => v.length >= 2);
 }
 
@@ -54,19 +50,14 @@ function expandirToken(token: string): string[] {
 
 function highlightText(text: string, query: string): React.ReactNode {
   if (!query.trim()) return text;
-
-  // Separamos en tokens, escapamos regex, y los unimos con OR
   const tokens = query
     .trim()
     .split(/\s+/)
     .filter((t) => t.length >= 2)
     .map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-
   if (tokens.length === 0) return text;
-
   const regex = new RegExp(`(${tokens.join("|")})`, "gi");
   const parts = text.split(regex);
-
   return parts.map((part, i) =>
     regex.test(part) ? (
       <mark
@@ -80,6 +71,8 @@ function highlightText(text: string, query: string): React.ReactNode {
     )
   );
 }
+
+// ── Acceso denegado ───────────────────────────────────────────────────────────
 
 function AccesoDenegado({ portalId }: { portalId: string | undefined }) {
   return (
@@ -112,14 +105,12 @@ function AccesoDenegado({ portalId }: { portalId: string | undefined }) {
 
 function useRolEnPortal(portalId: number): "ADMIN" | "MIEMBRO" | null {
   const [rol, setRol] = useState<"ADMIN" | "MIEMBRO" | null>(null);
-
   useEffect(() => {
     usuarioService.getMisPortales().then((portales) => {
       const portal = portales.find((p) => p.id === portalId);
       setRol(portal?.rol ?? null);
     });
   }, [portalId]);
-
   return rol;
 }
 
@@ -128,11 +119,22 @@ function useRolEnPortal(portalId: number): "ADMIN" | "MIEMBRO" | null {
 interface PostMenuProps {
   esPropio: boolean;
   rolUsuario: "ADMIN" | "MIEMBRO" | null;
+  ocultado: boolean;
   onEditar: () => void;
   onEliminar: () => void;
+  onOcultar: () => void;
+  onDevelar: () => void;
 }
 
-function PostMenu({ esPropio, rolUsuario, onEditar, onEliminar }: PostMenuProps) {
+function PostMenu({
+  esPropio,
+  rolUsuario,
+  ocultado,
+  onEditar,
+  onEliminar,
+  onOcultar,
+  onDevelar,
+}: PostMenuProps) {
   const [abierto, setAbierto] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -162,6 +164,7 @@ function PostMenu({ esPropio, rolUsuario, onEditar, onEliminar }: PostMenuProps)
           style={{ borderRadius: "var(--radius)" }}
         >
           {esPropio ? (
+            // ── Opciones para el propio autor ──
             <>
               <button
                 onClick={() => { setAbierto(false); onEditar(); }}
@@ -179,14 +182,28 @@ function PostMenu({ esPropio, rolUsuario, onEditar, onEliminar }: PostMenuProps)
               </button>
             </>
           ) : rolUsuario === "ADMIN" ? (
-            <button
-              onClick={() => setAbierto(false)}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors text-left"
-            >
-              <ShieldAlert className="w-4 h-4" />
-              Marcar como inapropiado
-            </button>
+            // ── Opciones de admin (nunca es su propio post) ──
+            <>
+              {!ocultado ? (
+                <button
+                  onClick={() => { setAbierto(false); onOcultar(); }}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors text-left"
+                >
+                  <ShieldAlert className="w-4 h-4" />
+                  Marcar como inapropiado
+                </button>
+              ) : (
+                <button
+                  onClick={() => { setAbierto(false); onDevelar(); }}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left"
+                >
+                  <Eye className="w-4 h-4 text-primary" />
+                  Develar post
+                </button>
+              )}
+            </>
           ) : (
+            // ── Opción para miembros comunes ──
             <button
               onClick={() => setAbierto(false)}
               className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-on-surface-variant hover:bg-accent transition-colors text-left"
@@ -248,6 +265,72 @@ function ConfirmDeleteModal({ isOpen, esRespuesta, onConfirmar, onCancelar }: Co
   );
 }
 
+// ── Modal de confirmación para ocultar un post ────────────────────────────────
+
+interface OcultarPostModalProps {
+  isOpen: boolean;
+  onConfirmar: (motivo: string) => void;
+  onCancelar: () => void;
+}
+
+function OcultarPostModal({ isOpen, onConfirmar, onCancelar }: OcultarPostModalProps) {
+  const [motivo, setMotivo] = useState("");
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!motivo.trim()) return;
+    onConfirmar(motivo.trim());
+    setMotivo("");
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div
+        className="bg-card max-w-sm w-full shadow-2xl p-6"
+        style={{ borderRadius: "var(--radius)" }}
+      >
+        <h3 className="text-foreground mb-2">Marcar como inapropiado</h3>
+        <p className="text-sm text-on-surface-variant mb-4">
+          Este contenido quedará oculto para los miembros. Escribí el motivo para
+          que quede registrado en el historial de administración.
+        </p>
+        <form onSubmit={handleSubmit}>
+          <textarea
+            rows={3}
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+            placeholder="Motivo..."
+            className="w-full px-3 py-2 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none text-sm mb-4"
+            style={{ borderRadius: "var(--radius)" }}
+            autoFocus
+          />
+          <div className="flex gap-3 justify-end">
+            <button
+              type="button"
+              onClick={() => { onCancelar(); setMotivo(""); }}
+              className="px-4 py-2 border border-border hover:bg-accent transition-colors text-sm"
+              style={{ borderRadius: "var(--radius)" }}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={!motivo.trim()}
+              className="px-4 py-2 bg-destructive text-white hover:bg-destructive/90 transition-colors text-sm flex items-center gap-2 disabled:opacity-60"
+              style={{ borderRadius: "var(--radius)" }}
+            >
+              <ShieldAlert className="w-4 h-4" />
+              Ocultar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ── Respuesta individual ──────────────────────────────────────────────────────
 
 interface ReplyItemProps {
@@ -280,18 +363,18 @@ function ReplyItem({
   const [guardando, setGuardando] = useState(false);
   const [errorEdit, setErrorEdit] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [ocultarModal, setOcultarModal] = useState(false);
 
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [contenidoRespuesta, setContenidoRespuesta] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [errorRespuesta, setErrorRespuesta] = useState<string | null>(null);
+  const [revelado, setRevelado] = useState(false);
 
   const esPropio = reply.autor !== null && reply.autor.id === usuarioActualId;
   const fuiEditado =
     !reply.eliminado &&
     new Date(reply.updatedAt).getTime() - new Date(reply.createdAt).getTime() > 1000;
-
-  // Es respuesta de respuesta si su padre no es el post raíz
   const esRespuestaDeRespuesta = reply.postPadreId !== postRaizId;
 
   const handleScrollAlPadre = () => {
@@ -327,13 +410,29 @@ function ReplyItem({
     }
   };
 
+  const handleOcultar = async (motivo: string) => {
+    try {
+      const updated = await foroService.ocultarPost(reply.id, { motivo });
+      onEditada(updated);
+      setOcultarModal(false);
+    } catch {
+      setOcultarModal(false);
+    }
+  };
+
+  const handleDevelar = async () => {
+    try {
+      const updated = await foroService.develarPost(reply.id);
+      onEditada(updated);
+    } catch { /* silencioso */ }
+  };
+
   const handleResponder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!contenidoRespuesta.trim()) return;
     try {
       setEnviando(true);
       setErrorRespuesta(null);
-      // Apuntamos al ID de esta respuesta directamente — el back ya soporta profundidad libre
       const nueva = await foroService.responderPost(reply.id, {
         contenido: contenidoRespuesta.trim(),
       });
@@ -347,15 +446,68 @@ function ReplyItem({
     }
   };
 
+  // ── Caso: eliminado ───────────────────────────────────────────────────────
   if (reply.eliminado) {
     return (
-      <div id={`reply-${reply.id}`} className="flex gap-3 py-4 pl-4 pr-2 relative transition-all border-b border-border last:border-b-0">
-        
-        <p className="text-sm text-on-surface-variant italic">Respuesta eliminada por el usuario.</p>
+      <div
+        id={`reply-${reply.id}`}
+        className="flex gap-3 py-4 pl-4 pr-2 relative transition-all border-b border-border last:border-b-0"
+      >
+        <p className="text-sm text-on-surface-variant italic">
+          Respuesta eliminada por el usuario.
+        </p>
       </div>
     );
   }
 
+  // ── Caso: oculto para no-admins ───────────────────────────────────────────
+  if (reply.ocultado && rolUsuario !== "ADMIN") {
+    return (
+      <div
+        id={`reply-${reply.id}`}
+        className="flex gap-3 py-4 pl-4 pr-2 relative transition-all border-b border-border last:border-b-0"
+      >
+        <p className="text-sm text-on-surface-variant italic">
+          Esta respuesta fue ocultada por un administrador.
+        </p>
+      </div>
+    );
+  }
+
+  // ── Caso: oculto, visible para admins con barrera de spoiler ──────────────
+  if (reply.ocultado && rolUsuario === "ADMIN" && !revelado) {
+    return (
+      <div
+        id={`reply-${reply.id}`}
+        className="py-4 pl-4 pr-2 border-b border-border last:border-b-0"
+      >
+        <div
+          className="flex flex-col items-center justify-center gap-2 py-4 px-4 border border-dashed border-destructive/40 bg-destructive/5 text-center"
+          style={{ borderRadius: "var(--radius)" }}
+        >
+          <ShieldAlert className="w-5 h-5 text-destructive/60" />
+          <div>
+            <p className="text-xs font-medium text-destructive/80">
+              Esta respuesta fue ocultada por considerarse inapropiada
+            </p>
+            <p className="text-xs text-on-surface-variant mt-0.5">
+              Solo vos la ves porque sos administrador
+            </p>
+          </div>
+          <button
+            onClick={() => setRevelado(true)}
+            className="flex items-center gap-1.5 px-3 py-1 text-xs border border-destructive/30 text-destructive/70 hover:bg-destructive/10 transition-colors"
+            style={{ borderRadius: "var(--radius)" }}
+          >
+            <Eye className="w-3 h-3" />
+            Ver respuesta
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Caso normal (incluye oculto visible para admins) ─────────────────────
   return (
     <>
       <ConfirmDeleteModal
@@ -364,9 +516,16 @@ function ReplyItem({
         onConfirmar={handleEliminar}
         onCancelar={() => setConfirmDelete(false)}
       />
+      <OcultarPostModal
+        isOpen={ocultarModal}
+        onConfirmar={handleOcultar}
+        onCancelar={() => setOcultarModal(false)}
+      />
 
-      <div id={`reply-${reply.id}`} className="flex gap-3 py-4 pl-4 pr-2 relative transition-all rounded-sm border-b border-border last:border-b-0">
-
+      <div
+        id={`reply-${reply.id}`}
+        className="flex gap-3 py-4 pl-4 pr-2 relative transition-all rounded-sm border-b border-border last:border-b-0"
+      >
         <Avatar nombre={reply.autor!.nombre} fotoPerfil={reply.autor!.fotoPerfil} size="sm" />
 
         <div className="flex-1 min-w-0">
@@ -374,7 +533,17 @@ function ReplyItem({
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-medium text-foreground text-sm">{reply.autor!.nombre}</span>
 
-              {/* "Respondiendo a" — solo aparece si es respuesta de respuesta */}
+              {/* Badge "Oculto" visible solo para admins */}
+              {reply.ocultado && rolUsuario === "ADMIN" && (
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-destructive/10 text-destructive"
+                  style={{ borderRadius: "var(--radius)" }}
+                >
+                  <ShieldAlert className="w-3 h-3" />
+                  Oculto
+                </span>
+              )}
+
               {esRespuestaDeRespuesta && autorPadreNombre && (
                 <button
                   onClick={handleScrollAlPadre}
@@ -400,11 +569,15 @@ function ReplyItem({
                 <span className="text-xs text-on-surface-variant italic">(editado)</span>
               )}
             </div>
+
             <PostMenu
               esPropio={esPropio}
               rolUsuario={rolUsuario}
+              ocultado={reply.ocultado}
               onEditar={() => { setContenidoEdit(reply.contenido ?? ""); setEditando(true); }}
               onEliminar={() => setConfirmDelete(true)}
+              onOcultar={() => setOcultarModal(true)}
+              onDevelar={handleDevelar}
             />
           </div>
 
@@ -449,8 +622,7 @@ function ReplyItem({
                   : reply.contenido}
               </p>
 
-              {/* Botón Responder */}
-              {!editando && canInteract && (
+              {!editando && canInteract && !reply.ocultado && (
                 <button
                   onClick={() => setShowReplyForm((v) => !v)}
                   className="mt-1.5 text-xs text-on-surface-variant hover:text-primary transition-colors"
@@ -459,7 +631,6 @@ function ReplyItem({
                 </button>
               )}
 
-              {/* Formulario de respuesta a esta respuesta */}
               {showReplyForm && canInteract && (
                 <form onSubmit={handleResponder} className="mt-3">
                   {errorRespuesta && (
@@ -521,7 +692,16 @@ interface PostItemProps {
   onEditado: (updated: PostResponse) => void;
 }
 
-function PostItem({ post, isLast, usuarioActualId, rolUsuario, canInteract, searchQuery, onEliminado, onEditado }: PostItemProps) {
+function PostItem({
+  post,
+  isLast,
+  usuarioActualId,
+  rolUsuario,
+  canInteract,
+  searchQuery,
+  onEliminado,
+  onEditado,
+}: PostItemProps) {
   const [expandido, setExpandido] = useState(false);
   const [respuestas, setRespuestas] = useState<PostResponse[]>([]);
   const [cargandoRespuestas, setCargandoRespuestas] = useState(false);
@@ -539,6 +719,8 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, canInteract, sear
   const [errorEdit, setErrorEdit] = useState<string | null>(null);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [ocultarModal, setOcultarModal] = useState(false);
+  const [revelado, setRevelado] = useState(false);
 
   const esPropio = post.autor !== null && post.autor.id === usuarioActualId;
   const fuiEditado =
@@ -608,10 +790,86 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, canInteract, sear
     }
   };
 
-  const cantidadMostrada = respuestas.length > 0 ? respuestas.length : post.cantidadRespuestas;
+  const handleOcultar = async (motivo: string) => {
+    try {
+      const updated = await foroService.ocultarPost(post.id, { motivo });
+      onEditado(updated);
+      setOcultarModal(false);
+    } catch {
+      setOcultarModal(false);
+    }
+  };
 
+  const handleDevelar = async () => {
+    try {
+      const updated = await foroService.develarPost(post.id);
+      onEditado(updated);
+    } catch { /* silencioso */ }
+  };
+
+  const cantidadMostrada =
+    respuestas.length > 0 ? respuestas.length : post.cantidadRespuestas;
+
+  // ── Caso: eliminado ───────────────────────────────────────────────────────
   if (post.eliminado) return null;
 
+  /// ── Caso: oculto para no-admins ───────────────────────────────────────────
+  if (post.ocultado && rolUsuario !== "ADMIN") {
+    return (
+      <>
+        <div className="py-5 px-5 text-sm text-on-surface-variant italic">
+          Este contenido fue ocultado por un administrador.
+        </div>
+        {!isLast && <div className="border-t border-border" />}
+      </>
+    );
+  }
+
+  // ── Caso: oculto, visible para admins con barrera de spoiler ──────────────
+  if (post.ocultado && rolUsuario === "ADMIN" && !revelado) {
+    return (
+      <>
+        <ConfirmDeleteModal
+          isOpen={confirmDelete}
+          esRespuesta={false}
+          onConfirmar={handleEliminar}
+          onCancelar={() => setConfirmDelete(false)}
+        />
+        <OcultarPostModal
+          isOpen={ocultarModal}
+          onConfirmar={handleOcultar}
+          onCancelar={() => setOcultarModal(false)}
+        />
+        <div className="py-5 px-5">
+          <div
+            className="flex flex-col items-center justify-center gap-3 py-6 px-4 border border-dashed border-destructive/40 bg-destructive/5 text-center"
+            style={{ borderRadius: "var(--radius)" }}
+          >
+            <ShieldAlert className="w-6 h-6 text-destructive/60" />
+            <div>
+              <p className="text-sm font-medium text-destructive/80">
+                Este post fue ocultado por considerarse inapropiado
+              </p>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                Solo vos lo ves porque sos administrador
+              </p>
+            </div>
+            <button
+              onClick={() => setRevelado(true)}
+              className="flex items-center gap-1.5 px-4 py-1.5 text-xs border border-destructive/30 text-destructive/70 hover:bg-destructive/10 transition-colors"
+              style={{ borderRadius: "var(--radius)" }}
+            >
+              <Eye className="w-3.5 h-3.5" />
+              Ver post
+            </button>
+          </div>
+        </div>
+        {!isLast && <div className="border-t border-border" />}
+      </>
+    );
+  }
+
+  // ── Caso normal (incluye oculto visible para admins) ─────────────────────
   return (
     <>
       <ConfirmDeleteModal
@@ -620,16 +878,32 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, canInteract, sear
         onConfirmar={handleEliminar}
         onCancelar={() => setConfirmDelete(false)}
       />
+      <OcultarPostModal
+        isOpen={ocultarModal}
+        onConfirmar={handleOcultar}
+        onCancelar={() => setOcultarModal(false)}
+      />
 
       <div className="py-5 px-5">
         <div className="flex gap-4">
-
           <Avatar nombre={post.autor!.nombre} fotoPerfil={post.autor!.fotoPerfil} size="md" />
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="flex items-baseline gap-2 flex-wrap">
                 <span className="font-medium text-foreground">{post.autor!.nombre}</span>
+
+                {/* Badge "Oculto" visible solo para admins */}
+                {post.ocultado && rolUsuario === "ADMIN" && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-destructive/10 text-destructive"
+                    style={{ borderRadius: "var(--radius)" }}
+                  >
+                    <ShieldAlert className="w-3 h-3" />
+                    Oculto
+                  </span>
+                )}
+
                 <span className="text-sm text-on-surface-variant">
                   {new Date(post.createdAt).toLocaleDateString("es-ES", {
                     day: "numeric",
@@ -642,15 +916,19 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, canInteract, sear
                   <span className="text-xs text-on-surface-variant italic">(editado)</span>
                 )}
               </div>
+
               <PostMenu
                 esPropio={esPropio}
                 rolUsuario={rolUsuario}
+                ocultado={post.ocultado}
                 onEditar={() => {
                   setTituloEdit(post.titulo ?? "");
                   setContenidoEdit(post.contenido ?? "");
                   setEditando(true);
                 }}
                 onEliminar={() => setConfirmDelete(true)}
+                onOcultar={() => setOcultarModal(true)}
+                onDevelar={handleDevelar}
               />
             </div>
 
@@ -727,7 +1005,7 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, canInteract, sear
                     {cantidadMostrada === 1 ? "respuesta" : "respuestas"}
                   </span>
                 </button>
-                {canInteract && (
+                {canInteract && !post.ocultado && (
                   <button
                     onClick={() => setShowReplyForm((v) => !v)}
                     className="text-sm text-on-surface-variant hover:text-primary transition-colors"
@@ -795,12 +1073,10 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, canInteract, sear
             )}
             {!cargandoRespuestas &&
               respuestas.map((r) => {
-                // Nombre del autor padre: solo relevante si es respuesta de respuesta
                 const autorPadreNombre =
                   r.postPadreId !== post.id
                     ? (respuestas.find((x) => x.id === r.postPadreId)?.autor?.nombre ?? null)
                     : null;
-
                 return (
                   <ReplyItem
                     key={r.id}
@@ -814,12 +1090,16 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, canInteract, sear
                     onEliminada={(id) =>
                       setRespuestas((prev) =>
                         prev.map((x) =>
-                          x.id === id ? { ...x, eliminado: true, contenido: null, autor: null } : x
+                          x.id === id
+                            ? { ...x, eliminado: true, contenido: null, autor: null }
+                            : x
                         )
                       )
                     }
                     onEditada={(updated) =>
-                      setRespuestas((prev) => prev.map((x) => (x.id === updated.id ? updated : x)))
+                      setRespuestas((prev) =>
+                        prev.map((x) => (x.id === updated.id ? updated : x))
+                      )
                     }
                     onNuevaRespuesta={(nueva) => {
                       setRespuestas((prev) => [...prev, nueva]);
@@ -828,11 +1108,13 @@ function PostItem({ post, isLast, usuarioActualId, rolUsuario, canInteract, sear
                   />
                 );
               })}
-            {!cargandoRespuestas && respuestas.length === 0 && post.cantidadRespuestas === 0 && (
-              <p className="text-sm text-on-surface-variant py-3">
-                Todavía no hay respuestas. ¡Sé el primero!
-              </p>
-            )}
+            {!cargandoRespuestas &&
+              respuestas.length === 0 &&
+              post.cantidadRespuestas === 0 && (
+                <p className="text-sm text-on-surface-variant py-3">
+                  Todavía no hay respuestas. ¡Sé el primero!
+                </p>
+              )}
           </div>
         )}
       </div>
@@ -883,16 +1165,26 @@ function NewPostModal({ isOpen, tableroId, onClose, onCreado }: NewPostModalProp
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card max-w-2xl w-full shadow-2xl" style={{ borderRadius: "var(--radius)" }}>
+      <div
+        className="bg-card max-w-2xl w-full shadow-2xl"
+        style={{ borderRadius: "var(--radius)" }}
+      >
         <div className="border-b border-border px-6 py-4 flex items-center justify-between">
           <h2 className="text-card-foreground">Nueva Publicación</h2>
-          <button onClick={onClose} className="p-2 hover:bg-accent transition-colors" style={{ borderRadius: "var(--radius)" }}>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-accent transition-colors"
+            style={{ borderRadius: "var(--radius)" }}
+          >
             <Plus className="w-5 h-5 rotate-45 text-muted-foreground" />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {error && (
-            <div className="flex items-center gap-2 px-4 py-3 bg-destructive/10 text-destructive text-sm" style={{ borderRadius: "var(--radius)" }}>
+            <div
+              className="flex items-center gap-2 px-4 py-3 bg-destructive/10 text-destructive text-sm"
+              style={{ borderRadius: "var(--radius)" }}
+            >
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               {error}
             </div>
@@ -920,7 +1212,12 @@ function NewPostModal({ isOpen, tableroId, onClose, onCreado }: NewPostModalProp
             />
           </div>
           <div className="flex gap-3 justify-end pt-2">
-            <button type="button" onClick={onClose} className="px-6 py-2.5 border border-border hover:bg-accent transition-colors" style={{ borderRadius: "var(--radius)" }}>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-2.5 border border-border hover:bg-accent transition-colors"
+              style={{ borderRadius: "var(--radius)" }}
+            >
               Cancelar
             </button>
             <button
@@ -938,6 +1235,7 @@ function NewPostModal({ isOpen, tableroId, onClose, onCreado }: NewPostModalProp
     </div>
   );
 }
+
 // ── Menú de administración del tablero ───────────────────────────────────────
 
 interface TableroAdminMenuProps {
@@ -945,9 +1243,16 @@ interface TableroAdminMenuProps {
   tableroId: string;
   nombre: string;
   descripcion: string | null;
+  onActualizado: (t: TableroResponse) => void;
 }
 
-function TableroAdminMenu({ portalId, tableroId, nombre, descripcion }: TableroAdminMenuProps) {
+function TableroAdminMenu({
+  portalId,
+  tableroId,
+  nombre,
+  descripcion,
+  onActualizado,
+}: TableroAdminMenuProps) {
   const [abierto, setAbierto] = useState(false);
 
   // Modal de votación para eliminar
@@ -957,10 +1262,12 @@ function TableroAdminMenu({ portalId, tableroId, nombre, descripcion }: TableroA
   const [errorVote, setErrorVote] = useState<string | null>(null);
   const [successVote, setSuccessVote] = useState(false);
 
-  // Modal de edición (sin endpoint aún)
+  // Modal de edición
   const [editando, setEditando] = useState(false);
   const [nuevoNombre, setNuevoNombre] = useState(nombre);
   const [nuevaDescripcion, setNuevaDescripcion] = useState(descripcion ?? "");
+  const [guardandoEdicion, setGuardandoEdicion] = useState(false);
+  const [errorEdicion, setErrorEdicion] = useState<string | null>(null);
 
   const ref = useRef<HTMLDivElement>(null);
 
@@ -973,6 +1280,25 @@ function TableroAdminMenu({ portalId, tableroId, nombre, descripcion }: TableroA
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  const handleGuardarEdicion = async () => {
+    if (!nuevoNombre.trim()) return;
+    try {
+      setGuardandoEdicion(true);
+      setErrorEdicion(null);
+      const actualizado = await foroService.editarTablero(
+        Number(portalId),
+        tableroId,
+        { nombre: nuevoNombre.trim(), descripcion: nuevaDescripcion.trim() || null },
+      );
+      onActualizado(actualizado);
+      setEditando(false);
+    } catch (err: any) {
+      setErrorEdicion(err?.response?.data?.message || "No se pudo guardar.");
+    } finally {
+      setGuardandoEdicion(false);
+    }
+  };
 
   const handleProponerEliminacion = async () => {
     if (!motivo.trim()) return;
@@ -998,7 +1324,10 @@ function TableroAdminMenu({ portalId, tableroId, nombre, descripcion }: TableroA
       {/* Modal de edición */}
       {editando && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card max-w-lg w-full shadow-2xl" style={{ borderRadius: "var(--radius)" }}>
+          <div
+            className="bg-card max-w-lg w-full shadow-2xl"
+            style={{ borderRadius: "var(--radius)" }}
+          >
             <div className="border-b border-border px-6 py-4">
               <h2 className="text-card-foreground">Editar tablero</h2>
             </div>
@@ -1025,25 +1354,25 @@ function TableroAdminMenu({ portalId, tableroId, nombre, descripcion }: TableroA
                   style={{ borderRadius: "var(--radius)" }}
                 />
               </div>
-              <div
-                className="p-3 bg-yellow-600/10 border border-yellow-600/20 text-yellow-700 text-sm"
-                style={{ borderRadius: "var(--radius)" }}
-              >
-                El endpoint para editar tableros aún no está disponible.
-              </div>
+              {errorEdicion && (
+                <p className="text-sm text-destructive">{errorEdicion}</p>
+              )}
               <div className="flex gap-3 justify-end pt-2">
                 <button
-                  onClick={() => setEditando(false)}
-                  className="px-5 py-2.5 border border-border hover:bg-accent transition-colors"
+                  onClick={() => { setEditando(false); setErrorEdicion(null); }}
+                  disabled={guardandoEdicion}
+                  className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
                   style={{ borderRadius: "var(--radius)" }}
                 >
                   Cancelar
                 </button>
                 <button
-                  disabled
-                  className="px-5 py-2.5 bg-primary text-primary-foreground opacity-50 cursor-not-allowed"
+                  onClick={handleGuardarEdicion}
+                  disabled={guardandoEdicion || !nuevoNombre.trim()}
+                  className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors disabled:opacity-50 flex items-center gap-2"
                   style={{ borderRadius: "var(--radius)" }}
                 >
+                  {guardandoEdicion && <Loader2 className="w-4 h-4 animate-spin" />}
                   Guardar
                 </button>
               </div>
@@ -1055,12 +1384,14 @@ function TableroAdminMenu({ portalId, tableroId, nombre, descripcion }: TableroA
       {/* Modal de votación para eliminar */}
       {voteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card max-w-lg w-full shadow-2xl" style={{ borderRadius: "var(--radius)" }}>
+          <div
+            className="bg-card max-w-lg w-full shadow-2xl"
+            style={{ borderRadius: "var(--radius)" }}
+          >
             <div className="border-b border-border px-6 py-4">
               <h2 className="text-card-foreground">Proponer Eliminación de Tablero</h2>
             </div>
             <div className="p-6 space-y-4">
-
               {successVote ? (
                 <>
                   <div
@@ -1085,7 +1416,10 @@ function TableroAdminMenu({ portalId, tableroId, nombre, descripcion }: TableroA
                     className="p-4 bg-primary/5 border border-primary/20 text-sm text-foreground"
                     style={{ borderRadius: "var(--radius)" }}
                   >
-                    Estás proponiendo eliminar el tablero <span className="font-medium">"{nombre}"</span>. Esta acción requiere votación de todos los administradores. Si se aprueba, el tablero quedará inactivo.
+                    Estás proponiendo eliminar el tablero{" "}
+                    <span className="font-medium">"{nombre}"</span>. Esta acción requiere
+                    votación de todos los administradores. Si se aprueba, el tablero
+                    quedará inactivo.
                   </div>
                   <div>
                     <label className="block mb-2 text-sm font-medium text-foreground">
@@ -1151,6 +1485,7 @@ function TableroAdminMenu({ portalId, tableroId, nombre, descripcion }: TableroA
                 setAbierto(false);
                 setNuevoNombre(nombre);
                 setNuevaDescripcion(descripcion ?? "");
+                setErrorEdicion(null);
                 setEditando(true);
               }}
               className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left"
@@ -1191,8 +1526,8 @@ export function ForumBoardView() {
   const [showNewPostModal, setShowNewPostModal] = useState(false);
 
   // ── Búsqueda ──────────────────────────────────────────────────────────────
-  const [searchInput, setSearchInput] = useState("");      // lo que el usuario tipea
-  const [searchQuery, setSearchQuery] = useState("");      // lo que efectivamente se buscó (con debounce)
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<PostResponse[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [errorBusqueda, setErrorBusqueda] = useState<string | null>(null);
@@ -1200,39 +1535,31 @@ export function ForumBoardView() {
 
   const isSearchActive = searchQuery.trim().length > 0;
 
-  // Debounce: cada vez que cambia searchInput, esperamos 350ms antes de buscar
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-
     const trimmed = searchInput.trim();
-
     if (!trimmed) {
       setSearchQuery("");
       setSearchResults([]);
       setErrorBusqueda(null);
       return;
     }
-
     debounceRef.current = setTimeout(async () => {
       try {
         setBuscando(true);
         setErrorBusqueda(null);
-
-        // Expandimos cada token con sus variantes para tolerar typos
         const tokensOriginales = trimmed.toLowerCase().split(/\s+/).filter(Boolean);
         const tokensExpandidos = tokensOriginales.flatMap(expandirToken);
         const queryExpandida = [...new Set(tokensExpandidos)].join(" ");
-
         const results = await foroService.buscarPosts(tableroId, queryExpandida);
         setSearchResults(results);
-        setSearchQuery(trimmed); // Para el highlight usamos la query original, no la expandida
+        setSearchQuery(trimmed);
       } catch {
         setErrorBusqueda("No se pudo realizar la búsqueda.");
       } finally {
         setBuscando(false);
       }
     }, 350);
-
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
@@ -1278,7 +1605,6 @@ export function ForumBoardView() {
     return <AccesoDenegado portalId={portalId} />;
   }
 
-  // Lista que se muestra: resultados si hay búsqueda activa, posts normales si no
   const postsAMostrar = isSearchActive ? searchResults : posts;
 
   return (
@@ -1307,7 +1633,9 @@ export function ForumBoardView() {
                 </span>
               </div>
               {tablero.descripcion && (
-                <p className="text-on-surface-variant text-sm max-w-2xl">{tablero.descripcion}</p>
+                <p className="text-on-surface-variant text-sm max-w-2xl">
+                  {tablero.descripcion}
+                </p>
               )}
             </>
           ) : (
@@ -1321,6 +1649,7 @@ export function ForumBoardView() {
               tableroId={tableroId}
               nombre={tablero.nombre}
               descripcion={tablero.descripcion ?? null}
+              onActualizado={(t) => setTablero(t)}
             />
           )}
           {canInteract && (
@@ -1364,8 +1693,6 @@ export function ForumBoardView() {
               </button>
             )}
           </div>
-
-          {/* Indicador de estado de búsqueda */}
           {buscando && (
             <div className="absolute right-10 top-1/2 -translate-y-1/2">
               <Loader2 className="w-4 h-4 animate-spin text-on-surface-variant" />
@@ -1374,7 +1701,7 @@ export function ForumBoardView() {
         </div>
       )}
 
-      {/* Feedback de resultados de búsqueda */}
+      {/* Feedback resultados de búsqueda */}
       {isSearchActive && !buscando && !errorBusqueda && (
         <p className="text-sm text-on-surface-variant mb-4">
           {searchResults.length === 0
@@ -1416,13 +1743,18 @@ export function ForumBoardView() {
       {!cargando && !error && !isSearchActive && posts.length === 0 && (
         <div className="text-center py-16">
           <MessageCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-30" />
-          <p className="text-on-surface-variant">Todavía no hay publicaciones en este tablero.</p>
+          <p className="text-on-surface-variant">
+            Todavía no hay publicaciones en este tablero.
+          </p>
         </div>
       )}
 
       {/* Lista de posts */}
       {!cargando && !error && postsAMostrar.filter((p) => !p.eliminado).length > 0 && (
-        <div className="bg-surface-container-lowest shadow-sm" style={{ borderRadius: "var(--radius)" }}>
+        <div
+          className="bg-surface-container-lowest shadow-sm"
+          style={{ borderRadius: "var(--radius)" }}
+        >
           {postsAMostrar
             .filter((p) => !p.eliminado)
             .map((post, index, arr) => (

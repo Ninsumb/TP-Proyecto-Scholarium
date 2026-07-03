@@ -52,3 +52,27 @@ export interface EditarPostRequest {
 export interface CrearRespuestaRequest {
   contenido: string;
 }
+
+export interface PostResponse {
+  id: string;
+  titulo: string | null;
+  contenido: string | null;
+  tableroId: string;
+  autor: AutorDTO | null;
+  postPadreId: string | null;
+  cantidadRespuestas: number;
+  eliminado: boolean;
+  ocultado: boolean;           // NUEVO
+  ocultadoMotivo: string | null; // NUEVO — solo presente para admins
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OcultarPostRequest {
+  motivo: string;
+}
+
+export interface EditarTableroRequest {
+  nombre: string;
+  descripcion: string | null;
+}
