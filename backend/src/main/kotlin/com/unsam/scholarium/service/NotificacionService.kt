@@ -108,7 +108,8 @@ class NotificacionService(
             portalNombre = notificacion.portal?.carrera, //O COMO SEA !!!
             leida = notificacion.leida,
             fechaCreacion = notificacion.fechaCreacion,
-            entidadId = notificacion.entidadId
+            entidadId = notificacion.entidadId,
+            entidadTipo = notificacion.entidadTipo
         )
     }
 }
