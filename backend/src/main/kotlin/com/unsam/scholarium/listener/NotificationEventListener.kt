@@ -170,12 +170,43 @@ class NotificacionEventListener(
     ): String {
         val type = object : TypeToken<Map<String, Any>>() {}.type
         return when (votacion.tipo) {
+            TipoVotacion.DEGRADAR_ADMIN -> "degradar permisos de administrador a un usuario."
+
             TipoVotacion.EXPULSION_MIEMBRO -> {
                 val resultado = Gson().fromJson(votacion.metadatos, type) as? Map<String, *>
                 val nombre = resultado?.get("nombreMiembro") as? String
-                return "expulsion al usuario ${nombre}"
+                return "expulsion al miembro ${nombre}"
             }
-            else -> "ULISES LPM TE FALTO UN FORMATEO DE VOTACION"
+
+            TipoVotacion.BLOQUEO_MIEMBRO -> "bloquear a un miembro."
+
+            TipoVotacion.CAMBIO_TIPO_ACCESO -> {
+                val resultado = Gson().fromJson(votacion.metadatos, type) as? Map<String, *>
+                val nuevoTipoAcceso = resultado?.get("nuevoTipoAcceso") as? String
+                return "cambio tipo de acceso a ${nuevoTipoAcceso}"
+            }
+
+            TipoVotacion.CAMBIO_UNIVERSIDAD -> {
+                val resultado = Gson().fromJson(votacion.metadatos, type) as? Map<String, *>
+                val nuevoValor = resultado?.get("nuevoValor") as? String
+                return "cambio de universidad a ${nuevoValor}"
+            }
+
+            TipoVotacion.CAMBIO_CARRERA -> {
+                val resultado = Gson().fromJson(votacion.metadatos, type) as? Map<String, *>
+                val nuevoValor = resultado?.get("nuevoValor") as? String
+                return "cambio de carrera a ${nuevoValor}"
+            }
+
+            TipoVotacion.ELIMINAR_MATERIA -> "Eliminacion de materia"
+
+            TipoVotacion.ELIMINAR_TABLERO -> "Eliminar tablero"
+
+            TipoVotacion.ARCHIVAR_PORTAL -> "Archivar portal ${portal.carrera}"
+
+            TipoVotacion.ACTIVAR_PORTAL -> "Activar portal ${portal.carrera}"
+
+            else -> "votacion desconocida"
         }
     }
 
