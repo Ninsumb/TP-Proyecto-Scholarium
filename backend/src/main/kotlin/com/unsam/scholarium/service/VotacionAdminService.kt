@@ -1,10 +1,8 @@
 package com.unsam.scholarium.service
 
-import com.unsam.scholarium.dto.SolicitudRechazadaEvent
 import com.unsam.scholarium.dto.VotacionAbiertaEvent
 import com.unsam.scholarium.dto.VotacionAprobadaEvent
 import com.unsam.scholarium.dto.VotacionEmpatadaEvent
-import com.unsam.scholarium.dto.VotacionRechazadaEvent
 import com.unsam.scholarium.exception.BusinessException
 import com.unsam.scholarium.exception.ElementDoesNotExistException
 import com.unsam.scholarium.exception.NotAdminException
@@ -30,7 +28,6 @@ import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 import kotlin.jvm.optionals.getOrNull
 import org.springframework.context.annotation.Lazy
-import java.util.UUID
 
 @Service
 class VotacionAdminService(
@@ -55,13 +52,14 @@ class VotacionAdminService(
             TipoVotacion.DEGRADAR_ADMIN      to "Degradar administrador",
             TipoVotacion.EXPULSION_MIEMBRO   to "Expulsión de miembro",
             TipoVotacion.BLOQUEO_MIEMBRO     to "Bloqueo de miembro",
+            TipoVotacion.LEVANTAR_BLOQUEO    to "Desbloqueo de miembro",
             TipoVotacion.CAMBIO_TIPO_ACCESO  to "Cambio de tipo de acceso",
             TipoVotacion.CAMBIO_UNIVERSIDAD  to "Cambio de universidad",
             TipoVotacion.CAMBIO_CARRERA      to "Cambio de carrera",
             TipoVotacion.ELIMINAR_MATERIA    to "Eliminación de materia",
             TipoVotacion.ELIMINAR_TABLERO    to "Eliminación de tablero",
             TipoVotacion.ARCHIVAR_PORTAL     to "Archivar portal",
-            TipoVotacion.ACTIVAR_PORTAL to "Activar portal",
+            TipoVotacion.ACTIVAR_PORTAL      to "Activar portal",
         )
     }
 
@@ -376,6 +374,18 @@ class VotacionAdminService(
                     emailAdmin        = emailProponente,
                 )
                 // bloquearMiembro ya registra la acción internamente.
+            }
+
+            TipoVotacion.LEVANTAR_BLOQUEO -> {
+                val usuarioId = votacion.entidadId?.toLongOrNull()
+                    ?: throw BusinessException("entidadId inválido para BLOQUEO_MIEMBRO")
+
+                portalService.levantarBloqueo(
+                    portalId          = votacion.portal.id!!,
+                    emailAdmin        = emailProponente,
+                    userId = usuarioId
+                )
+                // levantarBloqueo ya registra la acción internamente.
             }
 
             TipoVotacion.CAMBIO_TIPO_ACCESO -> {
