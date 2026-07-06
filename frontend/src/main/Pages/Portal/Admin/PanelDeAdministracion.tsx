@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Users, History, Vote, MoreVertical,
   ChevronUp, ChevronDown, Check, X, Clock, Loader2,
+  BlocksIcon,
+  Lock,
 } from "lucide-react";
 import { adminService } from "../../../services/AdminService";
 import { authService } from "../../../services/AuthService";
@@ -23,16 +25,19 @@ interface ActionMenuProps {
   member: MiembroResponse;
   currentUserId: number | null;
   onAction: (action: string, member: MiembroResponse) => void;
+  bloqueado: Boolean
 }
 
-function ActionMenu({ member, currentUserId, onAction }: ActionMenuProps) {
+function ActionMenu({ member, currentUserId, onAction, bloqueado}: ActionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   // El admin no ve las opciones de degradar/remover/bloquear sobre sí mismo
   if (member.usuarioId === currentUserId) return null;
 
   const actions =
-    member.rol === "ADMIN"
+      bloqueado ? [
+          { label: "Desbloquear",              value: "unblock"}
+      ] : member.rol === "ADMIN"
       ? [
           { label: "Degradar a Miembro",       value: "demote" },
           { label: "Expulsar",                 value: "kick" },
@@ -702,7 +707,7 @@ export function AdminPanel() {
   const portalId = portal?.id as number;
   const currentUserId = authService.getUserId();
 
-  const [activeTab, setActiveTab] = useState<"members" | "history" | "votes">("members");
+  const [activeTab, setActiveTab] = useState<"members" | "history" | "votes" | "blocks">("members");
 
   // ── Estado de miembros ────────────────────────────────────────────────────
   const [members, setMembers]         = useState<MiembroResponse[]>([]);
@@ -717,12 +722,18 @@ export function AdminPanel() {
   const [showClosedVotes, setShowClosedVotes] = useState(false);
   const [loadingClosedVotes, setLoadingClosedVotes] = useState(false);
 
+  // ── Estado de historial ──────────────────────────────────────────────────
   const [historialAcciones, setHistorialAcciones] = useState<AccionAdminResponse[]>([]);
   const [loadingHistorial, setLoadingHistorial]   = useState(false);
   const [historialError, setHistorialError]       = useState<string | null>(null);
   const [historialPage, setHistorialPage]         = useState(0);
   const [historialTotalPages, setHistorialTotalPages] = useState(0);
   const [historialFiltro, setHistorialFiltro] = useState<string>('all');
+
+  // ── Estado de bloqueos ──────────────────────────────────────────────────
+  const [blockedMembers, setBlockedMembers] = useState<MiembroResponse[]>([]);
+  const [loadingBlockedMembers, setLoadingBlockedMembers] = useState(false);
+  const [blockedMembersError, setBlockedMembersError] = useState<string | null>(null);
 
   // Loading al votar u operar sobre un miembro
   const [votingId, setVotingId] = useState<number | null>(null);
@@ -775,6 +786,28 @@ export function AdminPanel() {
   useEffect(() => {
     if (activeTab === "members") fetchMembers();
   }, [activeTab, fetchMembers]);
+
+  // ── Carga de miembros bloqueados ──────────────────────────────────────────
+
+  const fetchBlockedMembers = useCallback(async () => {
+    if (!portalId) return;
+    setLoadingBlockedMembers(true);
+    setBlockedMembersError(null);
+
+    try{
+      const data = await adminService.getMiembrosBloqueados(portalId);
+      setBlockedMembers(data);
+    } catch {
+      setBlockedMembersError("No se pudieron cargar los miembros bloqueados.");
+    } finally {
+      setLoadingBlockedMembers(false);
+    }
+
+  }, [portalId])
+
+  useEffect(() => {
+    if (activeTab === "blocks") fetchBlockedMembers();
+  }, [activeTab, fetchBlockedMembers])
 
   // ── Carga de historial ────────────────────────────────────────────────────────
 
@@ -1034,9 +1067,10 @@ export function AdminPanel() {
       <div className="mb-6 border-b border-border">
         <div className="flex gap-1">
           {[
-            { key: "members", icon: Users,   label: "Miembros",    badge: null },
-            { key: "history", icon: History, label: "Historial",   badge: null },
-            { key: "votes",   icon: Vote,    label: "Votaciones",  badge: votes.length > 0 ? votes.length : null },
+            { key: "members", icon: Users,   label: "Miembros",            badge: null },
+            { key: "history", icon: History, label: "Historial",           badge: null },
+            { key: "votes",   icon: Vote,    label: "Votaciones",          badge: votes.length > 0 ? votes.length : null },
+            { key: "blocks",  icon: Lock,    label: "Miembros bloqueados", badge: null},
           ].map(({ key, icon: Icon, label, badge }) => (
             <button
               key={key}
@@ -1078,46 +1112,7 @@ export function AdminPanel() {
             <div className="text-center py-12 text-destructive text-sm">{membersError}</div>
           ) : (
             <div className="space-y-3">
-              {members.map((member) => (
-                <div
-                  key={member.membresiaId}
-                  className="bg-surface-container-lowest p-4 shadow-sm flex items-center justify-between"
-                  style={{ borderRadius: "var(--radius)" }}
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    <AdminAvatar
-                      nombre={member.nombre}
-                      fotoPerfil={member.fotoPerfil}
-                      initials={getInitials(member.nombre)}
-                      size="lg"
-                    />
-                    <div className="flex-1">
-                      <h3 className="text-foreground font-medium">{member.nombre}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span
-                          className={`px-2 py-0.5 text-xs font-medium ${
-                            member.rol === "ADMIN"
-                              ? "bg-destructive/10 text-destructive border border-destructive/20"
-                              : "bg-surface-container text-on-surface-variant"
-                          }`}
-                          style={{ borderRadius: "var(--radius)" }}
-                        >
-                          {rolLabel(member.rol)}
-                        </span>
-                        <span className="text-xs text-on-surface-variant">
-                          Miembro desde{" "}
-                          {new Date(member.fechaRegistro).toLocaleDateString("es-ES")}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <ActionMenu 
-                    member={member} 
-                    currentUserId={currentUserId} 
-                    onAction={handleMemberAction} 
-                  />
-                </div>
-              ))}
+              {listaMiembros(members, false)}
               {members.length === 0 && (
                 <p className="text-center py-10 text-on-surface-variant text-sm">
                   No hay miembros en este portal todavía.
@@ -1510,6 +1505,38 @@ export function AdminPanel() {
         </div>
       )}
 
+      {/* ── Miembros bloqueados ── */}
+      
+      {activeTab === "blocks" && (
+        <div>
+          {/* -- Si esta vacio -- */}
+          { loadingBlockedMembers ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-7 h-7 animate-spin text-primary" />
+              </div>
+            ) : blockedMembersError ? (
+              <div className="text-center py-12 text-destructive text-sm">{votesError}</div>
+            ) : blockedMembers.length == 0 ? (
+            <div className="text-center py-12">
+              <div
+                className="w-16 h-16 bg-surface-container-low mx-auto mb-4 flex items-center justify-center"
+                style={{ borderRadius: "var(--radius)" }}
+              >
+                <Vote className="w-8 h-8 text-on-surface-variant" />
+              </div>
+              <h3 className="text-foreground mb-2">No hay miembros bloqueados</h3>
+              <p className="text-on-surface-variant text-sm max-w-md mx-auto">
+                Cuando bloquees usuarios, apareceran aqui.
+              </p>
+            </div>
+          ) : (
+            <div>{listaMiembros(blockedMembers, true)}</div>
+          )
+          }
+        </div>
+      )}
+
+
       {/* ── Modales del sistema ── */}
       
       {/* Modal para confirmación de acciones directas (ahora solo para Ascender) */}
@@ -1545,4 +1572,68 @@ export function AdminPanel() {
       <Toast toast={toast} />   
     </div>
   );
+
+  function listaMiembros(members: MiembroResponse[], bloqueados: Boolean): import("react").ReactNode {
+    return members.map((member) => (
+      <div
+        key={member.membresiaId}
+        className="bg-surface-container-lowest p-4 shadow-sm flex items-center justify-between"
+        style={{ borderRadius: "var(--radius)" }}
+      >
+        <div className="flex items-center gap-3 flex-1">
+          <AdminAvatar
+            nombre={member.nombre}
+            fotoPerfil={member.fotoPerfil}
+            initials={getInitials(member.nombre)}
+            size="lg" />
+          <div className="flex-1">
+            <h3 className="text-foreground font-medium">{member.nombre}</h3>
+            <div className="flex items-center gap-2 mt-1">
+              { bloqueados ? (
+                <>
+                <span
+                className={`px-2 py-0.5 text-xs font-medium bg-surface-container text-on-surface-variant`}
+                style={{ borderRadius: "var(--radius)" }}
+              >
+                Bloqueado
+              </span>
+
+              <span className="text-xs text-on-surface-variant">
+                Bloqueado desde{" "}
+                {new Date(member.fechaRegistro).toLocaleDateString("es-ES")}
+              </span>
+              </>
+              ): (
+                <>
+                <span
+                className={`px-2 py-0.5 text-xs font-medium ${member.rol === "ADMIN"
+                    ? "bg-destructive/10 text-destructive border border-destructive/20"
+                    : "bg-surface-container text-on-surface-variant"}`}
+                style={{ borderRadius: "var(--radius)" }}
+              >
+                {rolLabel(member.rol)}
+              </span>
+              
+              <span className="text-xs text-on-surface-variant">
+                Miembro desde{" "}
+                {new Date(member.fechaRegistro).toLocaleDateString("es-ES")}
+              </span>
+              </>
+              )}
+              
+              
+            </div>
+          </div>
+        </div>
+        {
+
+        }
+        <ActionMenu
+          member={member}
+          currentUserId={currentUserId}
+          onAction={handleMemberAction}
+          bloqueado={bloqueados} />
+      </div>
+    ));
+  }
 }

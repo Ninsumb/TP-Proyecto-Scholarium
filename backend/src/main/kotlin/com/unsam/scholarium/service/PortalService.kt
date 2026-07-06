@@ -465,6 +465,30 @@ class PortalService(
     }
 
     /**
+     * Devuelve los miembros bloqueados del portal
+     * Solo accesible por admins del portal.
+     */
+    fun getMiembrosBloqueados(portalId: Long, email: String): List<MiembroResponse> {
+        val portal = validarPortal(portalId)
+        val usuario = validarUsuario(email)
+        val membresiaAdmin = membresiaRepository.findByUsuarioIdAndPortalId(usuario.id!!, portalId)
+            ?: throw NotAdminException("No sos miembro del portal")
+        if (membresiaAdmin.rol != RolMembresia.ADMIN)
+            throw NotAdminException("Solo los administradores pueden ver los miembros bloqueados")
+        return portalBloqueoRepository.findAllByPortalId(portalId).map { bloqueo ->
+            MiembroResponse(
+                usuarioId     = bloqueo.usuario.id!!,
+                membresiaId   = bloqueo.id!!,
+                nombre        = bloqueo.usuario.nombre,
+                email         = bloqueo.usuario.email,
+                rol           = RolMembresia.MIEMBRO, //ignorar, para no hacer otro dto separado.
+                fechaRegistro = bloqueo.fechaBloqueo,
+                fotoPerfil  =   bloqueo.usuario.fotoPerfil
+            )
+        }
+    }
+
+    /**
      * Actualiza los campos de identidad/visual del portal que NO requieren votación:
      * unidadAcademica, descripcion, iconoPortal, colorPortal, logoUrl.
      *

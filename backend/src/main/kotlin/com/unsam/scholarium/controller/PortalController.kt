@@ -225,6 +225,20 @@ class PortalController(
     }
 
     /**
+     * Lista los miembros bloqueados del portal.
+     * Solo admins.
+     * GET /api/portales/{portalId}/miembros
+     */
+    @GetMapping("/{portalId}/miembros/bloqueados")
+    fun getMiembrosBloqueados(
+        @PathVariable portalId: Long,
+        authentication: Authentication,
+    ): ResponseEntity<List<MiembroResponse>> {
+        val email = authentication.name
+        return ResponseEntity.ok(portalService.getMiembrosBloqueados(portalId, email))
+    }
+
+    /**
      * Actualiza los campos no-votables del portal (descripcion, unidadAcademica, iconoPortal,
      * colorPortal, logoUrl).
      * Solo admins.
