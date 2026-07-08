@@ -465,6 +465,30 @@ class PortalService(
     }
 
     /**
+     * Devuelve los miembros bloqueados del portal
+     * Solo accesible por admins del portal.
+     */
+    fun getMiembrosBloqueados(portalId: Long, email: String): List<MiembroResponse> {
+        val portal = validarPortal(portalId)
+        val usuario = validarUsuario(email)
+        val membresiaAdmin = membresiaRepository.findByUsuarioIdAndPortalId(usuario.id!!, portalId)
+            ?: throw NotAdminException("No sos miembro del portal")
+        if (membresiaAdmin.rol != RolMembresia.ADMIN)
+            throw NotAdminException("Solo los administradores pueden ver los miembros bloqueados")
+        return portalBloqueoRepository.findAllByPortalId(portalId).map { bloqueo ->
+            MiembroResponse(
+                usuarioId     = bloqueo.usuario.id!!,
+                membresiaId   = bloqueo.id!!,
+                nombre        = bloqueo.usuario.nombre,
+                email         = bloqueo.usuario.email,
+                rol           = RolMembresia.MIEMBRO, //ignorar, para no hacer otro dto separado.
+                fechaRegistro = bloqueo.fechaBloqueo,
+                fotoPerfil  =   bloqueo.usuario.fotoPerfil
+            )
+        }
+    }
+
+    /**
      * Actualiza los campos de identidad/visual del portal que NO requieren votación:
      * unidadAcademica, descripcion, iconoPortal, colorPortal, logoUrl.
      *
@@ -525,30 +549,7 @@ class PortalService(
         return guardado
     }
 
-    @Transactional(rollbackOn = [Exception::class])
-    fun levantarBloqueo(portalId: Long, userId: Long, emailAdmin: String) {
-        val portal = validarPortal(portalId)
-        val admin = validarUsuario(emailAdmin)
-        validarMembresiaUsuario(admin, portalId, RolMembresia.ADMIN)
 
-        val usuarioObjetivo = usuarioRepository.findById(userId).getOrNull()
-            ?: throw ElementDoesNotExistException("Usuario no encontrado")
-
-        val membresia = membresiaRepository.findByUsuarioIdAndPortalId(userId, portalId)
-        val estaBloqueado = portalBloqueoRepository.existsByPortalAndUsuario(portal, usuarioObjetivo)
-        if (!estaBloqueado) throw BusinessException("El usuario no está bloqueado")
-
-        membresia?.let { membresiaRepository.delete(it) }
-        portalBloqueoRepository.deleteByPortalAndUsuario(portal, usuarioObjetivo)
-
-        accionAdminService.registrar(
-            portal             = portal,
-            admin              = admin,
-            tipo               = TipoAccionAdmin.BLOQUEO_LEVANTADO,
-            entidadId          = userId.toString(),
-            entidadDescripcion = usuarioObjetivo.nombre,
-        )
-    }
 
     @Transactional(rollbackOn = [Exception::class])
     fun cambiarUniversidad(portalId: Long, nuevaUniversidad: String) {
@@ -612,14 +613,10 @@ fun bloquearMiembro(portalId: Long, usuarioObjetivoId: Long, emailAdmin: String)
     if (admin.id == usuarioObjetivo.id) {
         throw BusinessException("No podés bloquearte a vos mismo")
     }
-
     
     val membresiaObjetivo = membresiaRepository.findByUsuarioIdAndPortalId(usuarioObjetivoId, portalId)
-    
-    
     val portal = membresiaObjetivo?.portal ?: portalRepository.findById(portalId).getOrNull()
         ?: throw ElementDoesNotExistException("Portal no encontrado")
-
     
     if (membresiaObjetivo != null) {
         membresiaRepository.delete(membresiaObjetivo)
@@ -649,6 +646,31 @@ fun bloquearMiembro(portalId: Long, usuarioObjetivoId: Long, emailAdmin: String)
         entidadDescripcion = usuarioObjetivo.nombre,
     )
 }
+
+    @Transactional(rollbackOn = [Exception::class])
+    fun levantarBloqueo(portalId: Long, userId: Long, emailAdmin: String) {
+        val portal = validarPortal(portalId)
+        val admin = validarUsuario(emailAdmin)
+        validarMembresiaUsuario(admin, portalId, RolMembresia.ADMIN)
+
+        val usuarioObjetivo = usuarioRepository.findById(userId).getOrNull()
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        val membresia = membresiaRepository.findByUsuarioIdAndPortalId(userId, portalId)
+        val estaBloqueado = portalBloqueoRepository.existsByPortalAndUsuario(portal, usuarioObjetivo)
+        if (!estaBloqueado) throw BusinessException("El usuario no está bloqueado")
+
+        membresia?.let { membresiaRepository.delete(it) }
+        portalBloqueoRepository.deleteByPortalAndUsuario(portal, usuarioObjetivo)
+
+        accionAdminService.registrar(
+            portal             = portal,
+            admin              = admin,
+            tipo               = TipoAccionAdmin.BLOQUEO_LEVANTADO,
+            entidadId          = userId.toString(),
+            entidadDescripcion = usuarioObjetivo.nombre,
+        )
+    }
 
     @Transactional(rollbackOn = [Exception::class])
     fun denunciarPortal(portalId: Long, emailUsuario: String, request: com.unsam.scholarium.dto.DenunciaPortalRequest) {

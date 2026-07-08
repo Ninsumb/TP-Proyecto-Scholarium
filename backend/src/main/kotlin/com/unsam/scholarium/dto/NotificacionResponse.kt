@@ -13,4 +13,5 @@ data class NotificacionResponse(
     val leida: Boolean,
     val fechaCreacion: LocalDateTime,
     val entidadId: Long?,
+    val entidadTipo: String?
 )

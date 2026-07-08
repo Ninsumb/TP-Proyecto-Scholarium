@@ -32,6 +32,17 @@ class AdminService {
     return response.data;
   }
 
+  /**
+   * Lista todos los miembros bloqueados del portal.
+   * GET /api/portales/{portalId}/miembros/bloqueados
+   */
+  async getMiembrosBloqueados(portalId: number): Promise<MiembroResponse[]> {
+    const response = await apiClient.get<MiembroResponse[]>(
+      `/portales/${portalId}/miembros/bloqueados`,
+    );
+    return response.data;
+  }
+
   // ── Portal (identidad / visual) ───────────────────────────────────────────
 
   /**

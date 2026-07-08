@@ -1,6 +1,6 @@
 // src/main/Components/common/AdminRoute.tsx
 import { Navigate } from 'react-router-dom';
-import { usePortalContext } from '../../Hooks/usePortalContext';
+import { usePortalContext } from '../../hooks/usePortalContext';
 
 export const AdminRoute = ({ children }: { children: React.ReactNode }) => {
     const { isAdmin, loading } = usePortalContext();
