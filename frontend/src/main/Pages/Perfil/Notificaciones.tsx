@@ -6,13 +6,13 @@ import {
 import { notificacionService } from "../../services/NotificacionService";
 
 // ─── Tipos ─────────────────────────────────────────────────────────────────────
-type NotificationType = "material" | "foro" | "solicitud" | "sistema";
+type NotificationType = "material" | "foro" | "solicitud" | "sistema" | "votacion";
 
 interface Notification {
     id: string;
-    type: NotificationType;
+    tipo: NotificationType;
     title: string;
-    description: string;
+    descripcion: string;
     timestamp: string;
     read: boolean;
     portalName?: string;
@@ -39,6 +39,7 @@ const TYPE_LABELS: Record<NotificationType, string> = {
     foro: "Foro",
     solicitud: "Solicitud",
     sistema: "Sistema",
+    votacion: "Votacion"
 };
 
 // ─── Componente principal ──────────────────────────────────────────────────────
@@ -57,9 +58,9 @@ export function Notifications() {
             // Ajustá estos campos según lo que devuelva exactamente tu backend
             const mappedData: Notification[] = data.map((n: any) => ({
                 id: n.id,
-                type: n.tipo?.toLowerCase() || "sistema", // Asumiendo que el back manda el tipo
+                tipo: n.entidadTipo?.toLowerCase() || "sistema", // Asumiendo que el back manda el tipo
                 title: n.titulo || "Notificación",
-                description: n.mensaje,
+                descripcion: n.descripcion,
                 timestamp: new Date(n.fechaCreacion).toLocaleDateString("es-ES", {
                     day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit"
                 }),
@@ -254,7 +255,7 @@ export function Notifications() {
                                     className="w-9 h-9 flex items-center justify-center flex-shrink-0 bg-surface-container-low mt-0.5"
                                     style={{ borderRadius: "var(--radius)" }}
                                 >
-                                    <NotificationIcon type={notif.type} />
+                                    <NotificationIcon type={notif.tipo} />
                                 </div>
 
                                 {/* Contenido */}
@@ -266,12 +267,16 @@ export function Notifications() {
                                         <span
                                             className="text-xs px-1.5 py-0.5 bg-surface-container text-on-surface-variant rounded-sm flex-shrink-0"
                                         >
-                                            {TYPE_LABELS[notif.type]}
+                                            {TYPE_LABELS[notif.tipo]}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-on-surface-variant leading-snug mb-1.5">
-                                        {notif.description}
-                                    </p>
+
+                                    <div>
+                                        <span className="text-sm text-on-surface-variant leading-snug mb-1.5">
+                                            { notif.descripcion }
+                                        </span>
+                                    </div>
+                                    
                                     <div className="flex items-center gap-2 text-xs text-on-surface-variant">
                                         <span>{notif.timestamp}</span>
                                         {notif.portalName && (

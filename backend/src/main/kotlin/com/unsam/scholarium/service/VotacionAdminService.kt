@@ -61,7 +61,7 @@ class VotacionAdminService(
             TipoVotacion.ELIMINAR_MATERIA    to "Eliminación de materia",
             TipoVotacion.ELIMINAR_TABLERO    to "Eliminación de tablero",
             TipoVotacion.ARCHIVAR_PORTAL     to "Archivar portal",
-            TipoVotacion.ACTIVAR_PORTAL to "Activar portal",
+            TipoVotacion.ACTIVAR_PORTAL      to "Activar portal",
         )
     }
 
@@ -414,7 +414,7 @@ class VotacionAdminService(
                 val portalActual = portalRepository.findById(votacion.portal.id!!).getOrNull()
                 val valorAnterior = portalActual?.universidad ?: "—"
 
-                portalService.cambiarUniversidad(portalId = votacion.portal.id!!, nuevaUniversidad = nuevoValor)
+                portalService.cambiarUniversidad(portalId = votacion.portal.id, nuevaUniversidad = nuevoValor)
 
                 accionAdminService.registrar(
                     portal             = votacion.portal,

@@ -1,5 +1,11 @@
 package com.unsam.scholarium.listener
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.google.api.client.json.Json
+import com.google.gson.Gson
+import com.google.gson.JsonObject
+import com.google.gson.reflect.TypeToken
 import com.unsam.scholarium.dto.MaterialAceptadoEvent
 import com.unsam.scholarium.dto.MaterialRechazadoEvent
 import com.unsam.scholarium.dto.PostOcultadoEvent
@@ -13,14 +19,18 @@ import com.unsam.scholarium.dto.VotacionRechazadaEvent
 import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.model.TipoNotificacion
+import com.unsam.scholarium.model.TipoVotacion
 import com.unsam.scholarium.model.Usuario
+import com.unsam.scholarium.model.VotacionAdmin
 import com.unsam.scholarium.repository.MembresiaRepository
 import com.unsam.scholarium.service.NotificacionService
 import com.unsam.scholarium.service.PortalService
 import com.unsam.scholarium.service.UsuarioService
+
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
+
 
 @Component
 class NotificacionEventListener(
@@ -95,7 +105,7 @@ class NotificacionEventListener(
                 usuario = admin,
                 tipo = TipoNotificacion.VOTACION_ABIERTA,
                 titulo = "Nueva votación abierta",
-                descripcion = "Se abrió una votación en el portal \"${event.portal.carrera}\": \"${event.votacion.tipo}\".",
+                descripcion = "Se abrió una votación en el portal \"${event.portal.carrera}\": \"${formatVotacionDescripcion(event.votacion, event.portal)}\".",
                 portal = event.portal,
                 entidadId = event.votacion.id,
                 entidadTipo = "VOTACION"
@@ -112,7 +122,7 @@ class NotificacionEventListener(
                 usuario = admin,
                 tipo = TipoNotificacion.VOTACION_APROBADA,
                 titulo = "Votación aprobada",
-                descripcion = "La votación \"${event.votacion.tipo}\" \"${event.votacion.metadatos}\" en el portal \"${event.portal.carrera}\" fue aprobada.",
+                descripcion = "La votación \"${formatVotacionDescripcion(event.votacion, event.portal)}\" en el portal \"${event.portal.carrera}\" fue aprobada.",
                 portal = event.portal,
                 entidadId = event.votacion.id,
                 entidadTipo = "VOTACION"
@@ -129,7 +139,7 @@ class NotificacionEventListener(
                 usuario = admin,
                 tipo = TipoNotificacion.VOTACION_RECHAZADA,
                 titulo = "Votación rechazada",
-                descripcion = "La votación \"${event.votacion.tipo}\" \"${event.votacion.metadatos}\" en el portal \"${event.portal.carrera}\" fue rechazada.",
+                descripcion = "La votación ${formatVotacionDescripcion(event.votacion, event.portal)} en el portal \"${event.portal.carrera}\" fue rechazada.",
                 portal = event.portal,
                 entidadId = event.votacion.id,
                 entidadTipo = "VOTACION"
@@ -146,7 +156,7 @@ class NotificacionEventListener(
                 usuario = admin,
                 tipo = TipoNotificacion.VOTACION_EMPATADA,
                 titulo = "Votación aprobada",
-                descripcion = "La votación \"${event.votacion.tipo}\" \"${event.votacion.metadatos}\" en el portal \"${event.portal.carrera}\" fue aprobada.",
+                descripcion = "La votacion de ${formatVotacionDescripcion(event.votacion, event.portal)} en el portal \"${event.portal.carrera}\" fue empatada.",
                 portal = event.portal,
                 entidadId = event.votacion.id,
                 entidadTipo = "VOTACION"
@@ -154,11 +164,59 @@ class NotificacionEventListener(
         }
     }
 
+    fun formatVotacionDescripcion(
+        votacion: VotacionAdmin,
+        portal: Portal
+    ): String {
+        val type = object : TypeToken<Map<String, Any>>() {}.type
+        return when (votacion.tipo) {
+            TipoVotacion.DEGRADAR_ADMIN -> "degradar permisos de administrador a un usuario."
+
+            TipoVotacion.EXPULSION_MIEMBRO -> {
+                val resultado = Gson().fromJson(votacion.metadatos, type) as? Map<String, *>
+                val nombre = resultado?.get("nombreMiembro") as? String
+                return "expulsion al miembro ${nombre}"
+            }
+
+            TipoVotacion.BLOQUEO_MIEMBRO -> "bloquear a un miembro."
+
+            TipoVotacion.CAMBIO_TIPO_ACCESO -> {
+                val resultado = Gson().fromJson(votacion.metadatos, type) as? Map<String, *>
+                val nuevoTipoAcceso = resultado?.get("nuevoTipoAcceso") as? String
+                return "cambio tipo de acceso a ${nuevoTipoAcceso}"
+            }
+
+            TipoVotacion.CAMBIO_UNIVERSIDAD -> {
+                val resultado = Gson().fromJson(votacion.metadatos, type) as? Map<String, *>
+                val nuevoValor = resultado?.get("nuevoValor") as? String
+                return "cambio de universidad a ${nuevoValor}"
+            }
+
+            TipoVotacion.CAMBIO_CARRERA -> {
+                val resultado = Gson().fromJson(votacion.metadatos, type) as? Map<String, *>
+                val nuevoValor = resultado?.get("nuevoValor") as? String
+                return "cambio de carrera a ${nuevoValor}"
+            }
+
+            TipoVotacion.ELIMINAR_MATERIA -> "Eliminacion de materia"
+
+            TipoVotacion.ELIMINAR_TABLERO -> "Eliminar tablero"
+
+            TipoVotacion.ARCHIVAR_PORTAL -> "Archivar portal ${portal.carrera}"
+
+            TipoVotacion.ACTIVAR_PORTAL -> "Activar portal ${portal.carrera}"
+
+            else -> "votacion desconocida"
+        }
+    }
+
+
+
     fun obtenerAdmins(portal: Portal): List<Usuario> {
         return membresiaRepository.findByPortalAndRol(
             portal = portal,
             rol = RolMembresia.ADMIN
-        ).map {m -> m.usuario }
+        ).map { m -> m.usuario }
     }
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
