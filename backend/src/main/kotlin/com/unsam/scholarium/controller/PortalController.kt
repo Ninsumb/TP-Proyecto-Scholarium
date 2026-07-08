@@ -10,12 +10,8 @@ import com.unsam.scholarium.dto.MembresiaResponse
 import com.unsam.scholarium.dto.PortalBusquedaResponse
 import com.unsam.scholarium.dto.PortalEstructuraDTO
 import com.unsam.scholarium.dto.PortalResponse
-import com.unsam.scholarium.dto.SolicitudRequest
-import com.unsam.scholarium.dto.SolicitudResponse
 import com.unsam.scholarium.dto.MiembroResponse
 import com.unsam.scholarium.dto.ActualizarPortalRequest
-import com.unsam.scholarium.dto.CambiarTipoAccesoRequest
-import com.unsam.scholarium.dto.VotacionResponse
 import com.unsam.scholarium.mapper.PortalMapper
 import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.model.RolMembresia
@@ -26,7 +22,6 @@ import org.springframework.security.core.Authentication
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -42,7 +37,6 @@ import org.springframework.web.multipart.MultipartFile
 
 @RestController
 @RequestMapping("/api/portales")
-@CrossOrigin(origins = ["http://localhost:5173"])
 class PortalController(
     private val portalService: PortalService,
     private val materialService: MaterialService,
