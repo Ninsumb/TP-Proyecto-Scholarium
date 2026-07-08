@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Users, History, Vote, MoreVertical,
   ChevronUp, ChevronDown, Check, X, Clock, Loader2,
-  BlocksIcon,
   Lock,
 } from "lucide-react";
 import { adminService } from "../../../services/AdminService";
@@ -10,7 +9,7 @@ import { authService } from "../../../services/AuthService";
 import { usePortalContext } from "../../../hooks/usePortalContext";
 import { useToast } from "../../../hooks/useToast";
 import { Toast } from "../../../Components/common/Toast";
-import type { AccionAdminResponse, PageAccionAdminResponse } from "../../../types/Admin/Admin";
+import type { AccionAdminResponse } from "../../../types/Admin/Admin";
 
 import type {
   MiembroResponse,
@@ -440,14 +439,6 @@ const ACCION_CFG: Record<string, {
   VOTACION_CERRADA:                { label: 'Votación cerrada',              pillClass: 'neutral', icon: 'neutral',        grupo: 'votaciones'   }
 };
 
-const PILL_STYLES: Record<string, string> = {
-  success: 'bg-green-600/10 text-green-700 border border-green-600/25 dark:text-green-400',
-  danger:  'bg-destructive/10 text-destructive border border-destructive/25',
-  warning: 'bg-yellow-500/10 text-yellow-700 border border-yellow-500/25 dark:text-yellow-400',
-  info:    'bg-primary/10 text-primary border border-primary/25',
-  neutral: 'bg-surface-container text-on-surface-variant border border-border',
-};
-
 const ACCION_GRUPOS = [
   { key: 'all',        label: 'Todas'       },
   { key: 'miembros',   label: 'Miembros'    },
@@ -469,27 +460,13 @@ function relTime(isoString: string): string {
   return new Date(isoString).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
 }
 
-function absTime(isoString: string): string {
-  return new Date(isoString).toLocaleString('es-ES', {
-    day: '2-digit', month: '2-digit', year: '2-digit',
-    hour: '2-digit', minute: '2-digit',
-  });
-}
-
 // ─── AccionCard ───────────────────────────────────────────────────────────────
 
 interface AccionCardProps {
   accion: AccionAdminResponse;
   cfg: { label: string; pillClass: string; icon?: string; grupo: string };
-  pillCls: string;
   initials: string;
 }
-
-// Mapa de ícono de Lucide por tipo de acción — usamos los que ya importaste + algunos nuevos
-const ACCION_ICON_MAP: Record<string, React.ReactNode> = {
-  // Para no agregar 30 imports, usamos un SVG inline pequeño como fallback
-  // y los iconos de Lucide que ya están en scope para los casos comunes.
-};
 
 function absTimeStr(isoString: string): string {
   return new Date(isoString).toLocaleString('es-ES', {
@@ -507,7 +484,7 @@ const ICON_CONTAINER_CLS: Record<string, string> = {
   neutral: 'bg-surface-container text-on-surface-variant',
 };
 
-function AccionCard({ accion, cfg, pillCls, initials }: AccionCardProps) {
+function AccionCard({ accion, cfg, initials }: AccionCardProps) {
   const [open, setOpen] = useState(false);
   const iconContainerCls = ICON_CONTAINER_CLS[cfg.pillClass] ?? ICON_CONTAINER_CLS.neutral;
  
@@ -1196,7 +1173,6 @@ export function AdminPanel() {
               icon: 'dots',
               grupo: 'portal' as const,
             };
-            const pillCls = PILL_STYLES[cfg.pillClass] ?? PILL_STYLES.neutral;
             const initials = accion.adminNombre
               .split(' ')
               .slice(0, 2)
@@ -1208,7 +1184,6 @@ export function AdminPanel() {
                 key={accion.id}
                 accion={accion}
                 cfg={cfg}
-                pillCls={pillCls}
                 initials={initials}
               />
             );
