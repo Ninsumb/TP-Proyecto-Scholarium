@@ -165,6 +165,8 @@ class MaterialService(
 
         if (!esAdmin) throw NotAdminException("No tenés permisos para rechazar material")
 
+        material.publicId?.let { storageService.delete(it) }
+
         material.estado = EstadoMaterial.RECHAZADO
         material.motivoRechazo = motivo
         val guardado = materialRepository.save(material)
