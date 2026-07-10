@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useOutletContext } from "react-router";
 import {
-  FileText, Download, Upload, ArrowLeft, Calendar,
+  Download, Upload, ArrowLeft, Calendar,
   User, Edit2, Save, X, Search, Loader2,
-  UserPlus, Lock
+  UserPlus, Lock, BookOpen, Inbox, AlertCircle
 } from "lucide-react";
 import { UploadMaterialModal } from "./SubirMaterialModal";
 import { materialService } from "../../../services/Material/MaterialService";
 import { materiaService } from "../../../services/Portal/MateriaService";
 import type { MaterialResponse } from "../../../types/Material/Material";
 import type { MateriaResponse } from "../../../types/Portal/Materia";
+import { getTipoColor, getExtensionColor } from "../../../Utils/tagColors";
+import { getExtensionIcon } from "../../../Utils/materialIcons";
+import { Pagination } from "../../../Components/common/Pagination";
 
 interface PortalContext {
   isMember: boolean;
@@ -35,8 +38,8 @@ function AccesoDenegado({ portalId }: { portalId: string | undefined }) {
         </p>
         <Link
           to={`/portal/${portalId}/solicitud`}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors"
-          style={{ borderRadius: "var(--radius)" }}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors portal-hoverable"
+          style={{ borderRadius: "var(--radius)", boxShadow: "var(--portal-shadow-card)" }}
         >
           <UserPlus className="w-5 h-5" />
           Enviar Solicitud
@@ -76,6 +79,8 @@ export function SubjectDetail() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   const [filterMode, setFilterMode] = useState<"tipo" | "extension">("tipo");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 6;
 
   const TIPOS = ["all", "APUNTE", "PARCIAL", "FINAL", "GUIA_EJERCICIOS", "OTRO"];
   const EXTENSIONES = ["all", "img", "pdf", "docx", "pptx"];
@@ -148,16 +153,16 @@ export function SubjectDetail() {
 
   const getExtension = (tipoArchivo: string) => {
     const mime = tipoArchivo.toLowerCase();
-  
+
     if (mime.includes("wordprocessingml")) return "docx";
     if (mime.includes("presentationml")) return "pptx";
     if (mime.includes("pdf")) return "pdf";
-  
+
     if (mime.includes("jpeg")) return "jpg";
     if (mime.includes("png")) return "png";
     if (mime.includes("gif")) return "gif";
     if (mime.includes("webp")) return "webp";
-  
+
     return mime;
   };
 
@@ -167,70 +172,98 @@ export function SubjectDetail() {
     const coincideTipo =
       filterTipo === "all" ||
       m.tipo === filterTipo;
-  
+
     const extension = getExtension(m.tipoArchivo);
-  
+
     const coincideExtension =
       filterExtension === "all"
         ? true
         : filterExtension === "img"
           ? IMAGE_EXTENSIONS.includes(extension)
           : extension === filterExtension;
-  
+
     return coincideTipo && coincideExtension;
   });
 
+  const totalPages = Math.max(1, Math.ceil(filteredMaterials.length / PAGE_SIZE));
+  const pagedMaterials = filteredMaterials.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filterTipo, filterExtension, searchTerm]);
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
       <Link
         to={`/portal/${portalId}/materias`}
-        className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
+        className="group inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary mb-6 transition-colors"
       >
-        <ArrowLeft className="w-4 h-4" />
+        <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
         Volver a Materias
       </Link>
 
       {/* ── Header de la materia ── */}
-      <div className="bg-card border border-border rounded-lg p-6 mb-8">
+      <div
+        className="bg-card border border-border rounded-lg p-6 sm:p-7 mb-8 portal-fade-up"
+        style={{ boxShadow: "var(--portal-shadow-card)" }}
+      >
         {loadingMateria ? (
           <div className="flex items-center gap-3 text-muted-foreground">
             <Loader2 className="w-5 h-5 animate-spin" />
             <span>Cargando materia...</span>
           </div>
         ) : (
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              {isEditing ? (
-                <>
-                  <input
-                    value={editNombre}
-                    onChange={(e) => setEditNombre(e.target.value)}
-                    className="w-full text-3xl font-semibold px-3 py-1 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary mb-3"
-                  />
-                  <textarea
-                    value={editDescripcion}
-                    onChange={(e) => setEditDescripcion(e.target.value)}
-                    placeholder="Descripción de la materia (opcional)..."
-                    className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary min-h-[80px] text-sm"
-                  />
-                </>
-              ) : (
-                <>
-                  <h1 className="text-3xl mb-2 text-card-foreground">
-                    {materia?.nombre ?? "Materia"}
-                  </h1>
-                  {materia?.descripcion && (
-                    <p className="text-muted-foreground">{materia.descripcion}</p>
-                  )}
-                </>
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5">
+            <div className="flex items-start gap-4 flex-1 min-w-0">
+              {!isEditing && (
+                <div
+                  className="hidden sm:flex w-12 h-12 items-center justify-center flex-shrink-0"
+                  style={{
+                    borderRadius: "var(--radius-sm)",
+                    background: "var(--primary)",
+                    color: "var(--primary-foreground)",
+                  }}
+                >
+                  <BookOpen className="w-6 h-6" />
+                </div>
               )}
+              <div className="flex-1 min-w-0">
+                {isEditing ? (
+                  <>
+                    <input
+                      value={editNombre}
+                      onChange={(e) => setEditNombre(e.target.value)}
+                      className="w-full text-2xl sm:text-3xl font-semibold px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-shadow mb-3"
+                      style={{ fontFamily: "Work Sans, sans-serif" }}
+                    />
+                    <textarea
+                      value={editDescripcion}
+                      onChange={(e) => setEditDescripcion(e.target.value)}
+                      placeholder="Descripción de la materia (opcional)..."
+                      className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-shadow min-h-[80px] text-sm"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <h1
+                      className="text-2xl sm:text-3xl font-semibold mb-2 text-card-foreground"
+                      style={{ fontFamily: "Work Sans, sans-serif" }}
+                    >
+                      {materia?.nombre ?? "Materia"}
+                    </h1>
+                    {materia?.descripcion && (
+                      <p className="text-muted-foreground leading-relaxed">{materia.descripcion}</p>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
 
-            <div className="flex gap-2 ml-4 flex-shrink-0">
+            <div className="flex gap-2 flex-shrink-0">
               {isAdmin && !isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 bg-muted text-muted-foreground rounded-md hover:bg-accent transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-muted text-muted-foreground rounded-md hover:bg-accent hover:text-foreground transition-colors flex items-center gap-2 portal-hoverable"
                 >
                   <Edit2 className="w-4 h-4" />
                   Editar
@@ -241,7 +274,8 @@ export function SubjectDetail() {
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-60"
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary-dim transition-colors flex items-center gap-2 disabled:opacity-60 portal-hoverable"
+                    style={{ boxShadow: "var(--portal-shadow-card)" }}
                   >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     Guardar
@@ -249,7 +283,7 @@ export function SubjectDetail() {
                   <button
                     onClick={handleCancel}
                     disabled={saving}
-                    className="px-4 py-2 bg-muted text-muted-foreground rounded-md hover:bg-accent transition-colors flex items-center gap-2"
+                    className="px-4 py-2 bg-muted text-muted-foreground rounded-md hover:bg-accent hover:text-foreground transition-colors flex items-center gap-2"
                   >
                     <X className="w-4 h-4" />
                     Cancelar
@@ -259,7 +293,8 @@ export function SubjectDetail() {
               {puedeSubirMaterial && !isEditing && (
                 <button
                   onClick={() => setIsUploadModalOpen(true)}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary-dim transition-colors flex items-center gap-2 portal-hoverable"
+                  style={{ boxShadow: "var(--portal-shadow-card)" }}
                 >
                   <Upload className="w-4 h-4" />
                   Subir Material
@@ -271,10 +306,13 @@ export function SubjectDetail() {
       </div>
 
       {/* ── Filtros y búsqueda ── */}
-      <div className="mb-6 flex flex-col gap-4">
+      <div className="mb-6 flex flex-col gap-4 portal-fade-up-delay">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Selector principal */}
-          <div className="flex gap-2">
+          <div
+            className="inline-flex items-center gap-1 p-1 self-start"
+            style={{ background: "var(--muted)", borderRadius: "var(--radius-sm)" }}
+          >
             {[
               { key: "tipo", label: "Etiqueta" },
               { key: "extension", label: "Extensión" },
@@ -286,10 +324,10 @@ export function SubjectDetail() {
                   setFilterTipo("all");
                   setFilterExtension("all");
                 }}
-                className={`px-3 py-1 rounded-md ${
+                className={`px-3.5 py-1.5 text-sm font-medium rounded-sm transition-all ${
                   filterMode === key
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-accent"
+                    ? "bg-card text-primary shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {label}
@@ -299,105 +337,149 @@ export function SubjectDetail() {
 
           {/* Barra de búsqueda */}
           <div className="relative w-full md:w-72">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Buscar material por nombre..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full pl-9 pr-4 py-2 border border-border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-shadow"
             />
           </div>
         </div>
 
         {/* Filtro dinámico */}
-        <div className="flex gap-2">
-          {(filterMode === "tipo" ? TIPOS : EXTENSIONES).map((value) => (
-            <button
-              key={value}
-              onClick={() =>
-                filterMode === "tipo"
-                  ? setFilterTipo(value)
-                  : setFilterExtension(value)
-              }
-              className={`px-3 py-1 rounded-md text-sm ${
-                (
+        <div className="flex flex-wrap gap-2">
+          {(filterMode === "tipo" ? TIPOS : EXTENSIONES).map((value) => {
+            const isActive =
+              filterMode === "tipo" ? filterTipo === value : filterExtension === value;
+            const color =
+              value === "all"
+                ? null
+                : filterMode === "tipo"
+                  ? getTipoColor(value)
+                  : getExtensionColor(value);
+
+            return (
+              <button
+                key={value}
+                onClick={() =>
                   filterMode === "tipo"
-                    ? filterTipo === value
-                    : filterExtension === value
-                )
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-accent text-accent-foreground"
-              }`}
-            >
-              {value === "all"
-                ? "Todos"
-                : value.replaceAll("_", " ").toUpperCase()
-              }
-            </button>
-          ))}
+                    ? setFilterTipo(value)
+                    : setFilterExtension(value)
+                }
+                className={`px-3.5 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                  isActive
+                    ? color
+                      ? "border-transparent"
+                      : "bg-primary text-primary-foreground border-transparent"
+                    : "bg-card text-muted-foreground border-border hover:text-foreground hover:border-foreground/20"
+                }`}
+                style={isActive && color ? { background: color.text, color: "#ffffff" } : undefined}
+              >
+                {value === "all"
+                  ? "Todos"
+                  : value.replaceAll("_", " ").toUpperCase()
+                }
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* ── Lista de materiales ── */}
-      <div className="space-y-3">
+      <div className="space-y-3 portal-fade-up-delay">
         {loadingMaterials && (
-          <div className="text-center py-12 text-muted-foreground">Cargando materiales...</div>
+          <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Cargando materiales...
+          </div>
         )}
         {!loadingMaterials && errorMaterials && (
-          <div className="text-center py-12 text-destructive">{errorMaterials}</div>
+          <div className="flex flex-col items-center justify-center gap-2 py-12 text-destructive">
+            <AlertCircle className="w-6 h-6" />
+            <span>{errorMaterials}</span>
+          </div>
         )}
         {!loadingMaterials && !errorMaterials && filteredMaterials.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">No se encontraron materiales.</div>
+          <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
+            <Inbox className="w-8 h-8 opacity-60" />
+            <span>No se encontraron materiales.</span>
+          </div>
         )}
-        {!loadingMaterials && !errorMaterials && filteredMaterials.map((material) => (
-          <div key={material.id} className="bg-card border border-border rounded-lg p-5 hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between">
-              <div className="flex gap-4 flex-1">
-                <div className="w-12 h-12 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-6 h-6 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="mb-2 text-card-foreground">
-                    {material.nombre || `Material ${material.id}`}
-                  </h3>
-                  <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <FileText className="w-4 h-4" />
-                      {material.tipo.replaceAll("_", " ")}
-                      {material.tamanio ? ` • ${material.tamanio}` : ""}
-                    </span>
-                    {material.createdAt && (
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {new Date(material.createdAt).toLocaleDateString("es-ES")}
+        {!loadingMaterials && !errorMaterials && pagedMaterials.map((material) => {
+          const tipoColor = getTipoColor(material.tipo);
+          const extension = getExtension(material.tipoArchivo);
+          const extensionColor = getExtensionColor(extension);
+          const FileIcon = getExtensionIcon(extension);
+          return (
+            <div
+              key={material.id}
+              className="bg-card border border-border rounded-lg p-5 transition-all portal-hoverable"
+              style={{ boxShadow: "var(--portal-shadow-card)" }}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex gap-4 flex-1 min-w-0">
+                  <div
+                    className="w-12 h-12 rounded-md flex items-center justify-center flex-shrink-0"
+                    style={{ background: "var(--muted)" }}
+                  >
+                    <FileIcon className="w-6 h-6" style={{ color: "var(--muted-foreground)" }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="mb-2 text-card-foreground font-medium truncate">
+                      {material.nombre || `Material ${material.id}`}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                      <span
+                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                        style={{ background: tipoColor.bg, color: tipoColor.text }}
+                      >
+                        {material.tipo.replaceAll("_", " ")}
                       </span>
-                    )}
-                    {material.uploadedByEmail && (
-                      <span className="flex items-center gap-1">
-                        <User className="w-4 h-4" />
-                        {material.uploadedByEmail}
+                      <span
+                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium uppercase"
+                        style={{ background: extensionColor.bg, color: extensionColor.text }}
+                      >
+                        {extension}
                       </span>
+                      {material.tamanio ? <span>{material.tamanio}</span> : null}
+                      {material.createdAt && (
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          {new Date(material.createdAt).toLocaleDateString("es-ES")}
+                        </span>
+                      )}
+                      {material.uploadedByEmail && (
+                        <span className="flex items-center gap-1">
+                          <User className="w-4 h-4" />
+                          {material.uploadedByEmail}
+                        </span>
+                      )}
+                    </div>
+                    {material.descripcion && (
+                      <p className="mt-2 text-sm text-muted-foreground">{material.descripcion}</p>
                     )}
                   </div>
-                  {material.descripcion && (
-                    <p className="mt-2 text-sm text-muted-foreground">{material.descripcion}</p>
-                  )}
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => handleDescargar(material.id)}
+                    className="p-2.5 rounded-md bg-primary hover:bg-primary-dim transition-colors portal-hoverable"
+                    title="Descargar material"
+                  >
+                    <Download className="w-5 h-5 text-primary-foreground" />
+                  </button>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleDescargar(material.id)}
-                  className="p-2 rounded-md bg-primary hover:bg-primary/90 transition-colors"
-                  title="Descargar material"
-                >
-                  <Download className="w-5 h-5 text-primary-foreground" />
-                </button>
-              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      {!loadingMaterials && !errorMaterials && (
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+      )}
 
       <UploadMaterialModal
         isOpen={isUploadModalOpen}

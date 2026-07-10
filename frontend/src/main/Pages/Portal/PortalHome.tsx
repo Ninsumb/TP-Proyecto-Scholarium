@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useOutletContext } from "react-router";
-import { Edit2, Loader2 } from "lucide-react";
+import { Edit2, Loader2, GraduationCap } from "lucide-react";
 import type { Block } from "../../Components/PortalHome-blocks/BlockComponents";
 import { renderBlock } from "../../Components/PortalHome-blocks/BlockComponents";
 import { BlockEditor } from "../../Components/PortalHome-blocks/BlockEditor";
@@ -95,7 +95,7 @@ export function HomeWithBlocks() {
       <div className="max-w-6xl mx-auto px-6 py-16">
         <div
           className="bg-destructive/10 border border-destructive/20 text-destructive p-4 mb-6"
-          style={{ borderRadius: 'var(--radius)' }}
+          style={{ borderRadius: 'var(--radius)', boxShadow: 'var(--portal-shadow-card)' }}
         >
           <p className="font-medium">Error</p>
           <p className="text-sm mt-1">{error}</p>
@@ -103,7 +103,7 @@ export function HomeWithBlocks() {
         {isAdmin && (
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors"
+            className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors portal-hoverable"
             style={{ borderRadius: 'var(--radius)' }}
           >
             Reintentar
@@ -144,30 +144,37 @@ export function HomeWithBlocks() {
  return (
     <div className="max-w-6xl mx-auto px-6 py-8">
 
-      {/* Header estático del portal */}
-      <div className="mb-8 px-8 py-10 bg-muted/40 rounded-lg border border-border">
-        <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest mb-3">
+      {/* Header estático del portal — hero band */}
+      <div
+        className="portal-tab relative mb-8 pl-8 pr-8 py-10 sm:pl-12 sm:pr-12 portal-fade-up"
+        style={{
+          borderRadius: 'var(--radius-xl)',
+          background: 'var(--primary)',
+        }}
+      >
+        <GraduationCap className="w-5 h-5 mb-5" style={{ color: 'rgba(255,255,255,.5)' }} />
+        <p className="text-sm font-medium uppercase tracking-widest mb-3" style={{ color: 'rgba(255,255,255,.6)' }}>
           {portal?.universidad}
         </p>
-        <h1 className="text-5xl font-bold text-foreground leading-tight mb-4">
+        <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-4 tracking-tight" style={{ color: '#ffffff', fontFamily: 'Work Sans, sans-serif' }}>
           {portal?.carrera}
         </h1>
         {portal?.descripcion && (
-          <p className="text-lg text-muted-foreground leading-relaxed max-w-3xl">
+          <p className="text-lg leading-relaxed max-w-3xl" style={{ color: 'rgba(255,255,255,.72)' }}>
             {portal.descripcion}
           </p>
         )}
       </div>
 
       {/* Contenedor de bloques */}
-      <div>
+      <div className="portal-fade-up-delay">
         {/* Botón editar — solo admins */}
         {isAdmin && (
           <div className="flex justify-end mb-6">
             <button
               onClick={() => setIsEditing(true)}
-              className="p-2 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm"
-              style={{ borderRadius: 'var(--radius)' }}
+              className="p-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors portal-hoverable"
+              style={{ borderRadius: 'var(--radius-sm)', boxShadow: 'var(--portal-shadow-card)' }}
               title="Editar página"
             >
               <Edit2 className="w-4 h-4" />
@@ -180,13 +187,20 @@ export function HomeWithBlocks() {
 
         {/* Mensaje si no hay bloques */}
         {blocks.length === 0 && (
-          <div className="text-center py-16 text-foreground">
-            <p className="mb-4">Esta página aún no tiene contenido configurado</p>
+          <div
+            className="text-center py-16 px-8 text-foreground"
+            style={{
+              borderRadius: 'var(--radius-lg)',
+              border: '1px dashed var(--border-mid, var(--border))',
+              background: 'var(--muted)',
+            }}
+          >
+            <p className="mb-4 text-muted-foreground">Esta página aún no tiene contenido configurado</p>
             {isAdmin && (
               <button
                 onClick={() => setIsEditing(true)}
-                className="px-6 py-3 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors"
-                style={{ borderRadius: 'var(--radius)' }}
+                className="px-6 py-3 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors portal-hoverable"
+                style={{ borderRadius: 'var(--radius-sm)', boxShadow: 'var(--portal-shadow-card)' }}
               >
                 Configurar Página de Inicio
               </button>

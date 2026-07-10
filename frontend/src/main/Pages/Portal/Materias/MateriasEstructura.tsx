@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useContext } from "react";
+import { useEffect, useState, useContext } from "react";
 import { Link, useParams, useOutletContext } from "react-router";
 import {
     BookOpen,
@@ -6,7 +6,6 @@ import {
     ChevronRight,
     Folder,
     FolderPlus,
-    MoreHorizontal,
     Plus,
     Pencil,
     Trash2,
@@ -15,6 +14,8 @@ import {
     MoveRight,
     UserPlus,
     Lock,
+    FolderTree,
+    AlertTriangle,
 } from "lucide-react";
 import { carpetaService } from "../../../services/Portal/CarpetaService";
 import type { CarpetaArbol } from "../../../types/Portal/Carpeta";
@@ -22,6 +23,8 @@ import { materiaService } from "../../../services/Portal/MateriaService";
 import { adminService } from "../../../services/AdminService";
 import { MainContext } from "../../../types/MainContext";
 import apiClient from "../../../services/apiClient";
+import { Modal } from "../../../Components/common/Modal";
+import { ContextMenu } from "../../../Components/common/ContextMenu";
 
 // ─── Tipos de modal ────────────────────────────────────────────────────────────
 type ModalType =
@@ -77,60 +80,60 @@ function VoteModal({
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div
-                className="bg-card max-w-lg w-full shadow-2xl"
-                style={{ borderRadius: "var(--radius)" }}
-            >
-                <div className="border-b border-border px-6 py-4">
-                    <h2 className="text-card-foreground">{title}</h2>
+        <Modal onClose={handleClose} maxWidth="32rem">
+            <div className="border-b border-border px-6 py-4">
+                <h2
+                    className="text-card-foreground text-lg font-semibold"
+                    style={{ fontFamily: "Work Sans, sans-serif" }}
+                >
+                    {title}
+                </h2>
+            </div>
+            <div className="p-6 space-y-4">
+                <div
+                    className="p-4 bg-primary/5 border border-primary/20"
+                    style={{ borderRadius: "var(--radius)" }}
+                >
+                    <p className="text-sm text-foreground">{description}</p>
                 </div>
-                <div className="p-6 space-y-4">
-                    <div
-                        className="p-4 bg-primary/5 border border-primary/20"
+                <div>
+                    <label className="block mb-2 text-sm font-medium text-foreground">
+                        Motivo de la propuesta{" "}
+                        <span className="text-destructive">*</span>
+                    </label>
+                    <textarea
+                        rows={4}
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        disabled={loading}
+                        className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none disabled:opacity-50 transition-shadow"
+                        style={{ borderRadius: "var(--radius)" }}
+                        placeholder="Explica por qué propones este cambio. Todos los administradores verán este mensaje."
+                    />
+                </div>
+                <div className="flex gap-3 justify-end pt-2">
+                    <button
+                        onClick={handleClose}
+                        disabled={loading}
+                        className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
                         style={{ borderRadius: "var(--radius)" }}
                     >
-                        <p className="text-sm text-foreground">{description}</p>
-                    </div>
-                    <div>
-                        <label className="block mb-2 text-sm font-medium text-foreground">
-                            Motivo de la propuesta{" "}
-                            <span className="text-destructive">*</span>
-                        </label>
-                        <textarea
-                            rows={4}
-                            value={reason}
-                            onChange={(e) => setReason(e.target.value)}
-                            disabled={loading}
-                            className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none disabled:opacity-50"
-                            style={{ borderRadius: "var(--radius)" }}
-                            placeholder="Explica por qué propones este cambio. Todos los administradores verán este mensaje."
-                        />
-                    </div>
-                    <div className="flex gap-3 justify-end pt-2">
-                        <button
-                            onClick={handleClose}
-                            disabled={loading}
-                            className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
-                            style={{ borderRadius: "var(--radius)" }}
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            onClick={handleConfirm}
-                            disabled={!reason.trim() || loading}
-                            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                            style={{ borderRadius: "var(--radius)" }}
-                        >
-                            {loading && (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            )}
-                            Abrir Votación
-                        </button>
-                    </div>
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={handleConfirm}
+                        disabled={!reason.trim() || loading}
+                        className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 portal-hoverable"
+                        style={{ borderRadius: "var(--radius)" }}
+                    >
+                        {loading && (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        )}
+                        Abrir Votación
+                    </button>
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 }
 
@@ -151,8 +154,8 @@ function AccesoDenegado({ portalId }: { portalId: string | undefined }) {
                 </p>
                 <Link
                     to={`/portal/${portalId}/solicitud`}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors"
-                    style={{ borderRadius: "var(--radius)" }}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors portal-hoverable"
+                    style={{ borderRadius: "var(--radius)", boxShadow: "var(--portal-shadow-card)" }}
                 >
                     <UserPlus className="w-5 h-5" />
                     Enviar Solicitud
@@ -179,76 +182,6 @@ function flattenFolders(
     return result;
 }
 
-// ─── Componente de menú contextual "..." ──────────────────────────────────────
-interface ContextMenuProps {
-    items: {
-        label: string;
-        icon: React.ReactNode;
-        onClick: () => void;
-        danger?: boolean;
-    }[];
-}
-
-function ContextMenu({ items }: ContextMenuProps) {
-    const [open, setOpen] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (!open) return;
-        const handler = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                setOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handler);
-        return () => document.removeEventListener("mousedown", handler);
-    }, [open]);
-
-    return (
-        <div className="relative" ref={ref}>
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    setOpen((v) => !v);
-                }}
-                className="p-1.5 hover:bg-surface-container rounded-sm text-muted-foreground hover:text-foreground transition-colors"
-                title="Opciones"
-            >
-                <MoreHorizontal className="w-4 h-4" />
-            </button>
-
-            {open && (
-                <div
-                    className="absolute right-0 top-full mt-1 bg-surface-container-lowest rounded-sm z-50 min-w-[180px] py-1"
-                    style={{
-                        boxShadow: "0 8px 24px rgba(42, 52, 57, 0.14)",
-                        border: "1px solid rgba(169, 180, 185, 0.15)",
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {items.map((item, idx) => (
-                        <button
-                            key={idx}
-                            onClick={() => {
-                                item.onClick();
-                                setOpen(false);
-                            }}
-                            className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-surface-container-low text-left ${
-                                item.danger
-                                    ? "text-destructive hover:text-destructive"
-                                    : "text-foreground"
-                            }`}
-                        >
-                            {item.icon}
-                            {item.label}
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-}
-
 // ─── Selector de carpeta (usado en modales de mover/crear) ────────────────────
 interface FolderSelectorProps {
     options: FolderOption[];
@@ -267,8 +200,8 @@ function FolderSelector({
         <select
             value={value ?? ""}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
-            style={{ border: "2px solid rgba(169, 180, 185, 0.15)" }}
+            className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none transition-shadow"
+            style={{ border: "1px solid var(--border)" }}
         >
             <option value="" disabled>
                 {placeholder ?? "Seleccionar carpeta..."}
@@ -293,25 +226,15 @@ interface ModalShellProps {
 
 function ModalShell({ title, onClose, children }: ModalShellProps) {
     return (
-        <div
-            className="fixed inset-0 bg-foreground/50 flex items-center justify-center z-50 p-4"
-            style={{ backdropFilter: "blur(4px)" }}
-            onClick={onClose}
-        >
-            <div
-                className="bg-surface-container-lowest p-6 rounded-sm max-w-md w-full"
-                style={{ boxShadow: "0 24px 40px rgba(42, 52, 57, 0.15)" }}
-                onClick={(e) => e.stopPropagation()}
+        <Modal onClose={onClose} maxWidth="28rem" className="p-6">
+            <h3
+                className="text-xl font-semibold text-foreground mb-4"
+                style={{ fontFamily: "Work Sans, sans-serif" }}
             >
-                <h3
-                    className="text-xl font-semibold text-foreground mb-4"
-                    style={{ fontFamily: "Work Sans, sans-serif" }}
-                >
-                    {title}
-                </h3>
-                {children}
-            </div>
-        </div>
+                {title}
+            </h3>
+            {children}
+        </Modal>
     );
 }
 
@@ -336,7 +259,7 @@ function ModalActions({
             <button
                 onClick={onConfirm}
                 disabled={confirmDisabled}
-                className="flex-1 px-4 py-2 rounded-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2 rounded-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed portal-hoverable"
                 style={
                     danger
                         ? {
@@ -344,8 +267,7 @@ function ModalActions({
                                 color: "var(--destructive-foreground)",
                         }
                         : {
-                                background:
-                                    "linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)",
+                                background: "var(--primary)",
                                 color: "var(--primary-foreground)",
                         }
                 }
@@ -591,28 +513,23 @@ export function Subjects() {
         const paddingLeft = depth * 24;
 
         return (
-            <div key={item.id}>
+            <div key={item.id} className="border-b border-border last:border-b-0">
                 <div
-                    className="flex items-center gap-2 px-4 py-3 hover:bg-surface-container-low transition-colors group rounded-sm"
+                    className="flex items-center gap-2 px-4 py-3 hover:bg-surface-container-low transition-colors group"
                     style={{ paddingLeft: `${paddingLeft + 16}px` }}
                 >
                     <button
                         onClick={() => toggleFolder(item.id)}
-                        className="flex items-center gap-2 flex-1 text-left"
+                        className="flex items-center gap-2 flex-1 text-left min-w-0"
                     >
                         {isExpanded ? (
-                            <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                            <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 transition-transform" />
                         ) : (
-                            <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                            <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0 transition-transform" />
                         )}
                         <Folder className="w-5 h-5 text-primary flex-shrink-0" />
-                        <span className="font-medium text-foreground">
+                        <span className="font-medium text-foreground truncate">
                             {item.nombre}
-                        </span>
-                        <span className="text-xs text-foreground ml-2">
-                            {(item.subcarpetas?.length || 0) +
-                                (item.materias?.length || 0)}{" "}
-                            elementos
                         </span>
                     </button>
 
@@ -620,7 +537,7 @@ export function Subjects() {
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                             <button
                                 onClick={() => openNewFolderModal(item.id)}
-                                className="p-1.5 hover:bg-surface-container rounded-sm text-muted-foreground hover:text-foreground"
+                                className="p-1.5 hover:bg-surface-container rounded-sm text-muted-foreground hover:text-foreground transition-colors"
                                 title="Crear subcarpeta"
                             >
                                 <FolderPlus className="w-4 h-4" />
@@ -638,17 +555,17 @@ export function Subjects() {
                         {item.materias?.map((materia) => (
                             <div
                                 key={materia.id}
-                                className="flex items-center hover:bg-surface-container-low transition-colors group rounded-sm"
+                                className="flex items-center hover:bg-surface-container-low transition-colors group"
                                 style={{ paddingLeft: `${paddingLeft + 40}px` }}
                             >
                                 <Link
                                     to={`/portal/${portalId}/materias/${materia.id}`}
-                                    className="flex items-center gap-3 px-4 py-3 flex-1"
+                                    className="flex items-center gap-3 px-4 py-3 flex-1 min-w-0"
                                 >
                                     <div className="w-8 h-8 rounded-sm bg-primary/10 flex items-center justify-center flex-shrink-0">
                                         <BookOpen className="w-4 h-4 text-primary" />
                                     </div>
-                                    <span className="text-foreground group-hover:text-primary transition-colors">
+                                    <span className="text-foreground group-hover:text-primary transition-colors truncate">
                                         {materia.nombre}
                                     </span>
                                 </Link>
@@ -694,7 +611,8 @@ export function Subjects() {
     // ── Early returns ───────────────────────────────────────────────────────────
     if (loading)
         return (
-            <div className="p-8 text-muted-foreground">
+            <div className="flex items-center justify-center gap-2 py-24 text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
                 Cargando estructura...
             </div>
         );
@@ -709,30 +627,41 @@ export function Subjects() {
         (targetFolder.materias?.length ?? 0) === 0;
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
             {/* ── Header ── */}
-            <div className="mb-8 flex items-start justify-between">
-                <div>
-                    <h1
-                        className="text-3xl mb-2 text-foreground"
-                        style={{ fontFamily: "Work Sans, sans-serif" }}
+            <div className="mb-8 flex flex-col sm:flex-row sm:items-start justify-between gap-5 portal-fade-up">
+                <div className="flex items-start gap-4">
+                    <div
+                        className="hidden sm:flex w-12 h-12 items-center justify-center flex-shrink-0"
+                        style={{
+                            borderRadius: "var(--radius-sm)",
+                            background: "var(--primary)",
+                            color: "var(--primary-foreground)",
+                        }}
                     >
-                        Materias de la Carrera
-                    </h1>
-                    <p className="text-muted-foreground">
-                        Explora las materias organizadas en carpetas
-                        personalizadas
-                    </p>
+                        <FolderTree className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h1
+                            className="text-2xl sm:text-3xl mb-2 text-foreground font-semibold"
+                            style={{ fontFamily: "Work Sans, sans-serif" }}
+                        >
+                            Materias de la Carrera
+                        </h1>
+                        <p className="text-muted-foreground">
+                            Explora las materias organizadas en carpetas
+                            personalizadas
+                        </p>
+                    </div>
                 </div>
 
                 {isAdmin && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                         <button
                             onClick={() => setActiveModal("createSubject")}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-sm transition-all"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-sm transition-all portal-hoverable"
                             style={{
-                                background:
-                                    "linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)",
+                                background: "var(--primary)",
                                 color: "var(--primary-foreground)",
                             }}
                         >
@@ -741,7 +670,7 @@ export function Subjects() {
                         </button>
                         <button
                             onClick={() => openNewFolderModal(null)}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-sm bg-surface-container-high text-foreground hover:bg-surface-container transition-all"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-sm bg-surface-container-high text-foreground hover:bg-surface-container transition-all portal-hoverable"
                         >
                             <FolderPlus className="w-4 h-4" />
                             Nueva Carpeta
@@ -752,10 +681,17 @@ export function Subjects() {
 
             {/* ── Árbol ── */}
             <div
-                className="bg-surface-container-lowest rounded-sm"
-                style={{ boxShadow: "0 1px 3px rgba(58, 95, 148, 0.06)" }}
+                className="bg-card rounded-lg border border-border overflow-hidden portal-fade-up-delay"
+                style={{ boxShadow: "var(--portal-shadow-card)" }}
             >
-                {folderStructure.map((item) => renderFolder(item))}
+                {folderStructure.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
+                        <FolderTree className="w-8 h-8 opacity-60" />
+                        <span>Todavía no hay carpetas ni materias creadas.</span>
+                    </div>
+                ) : (
+                    folderStructure.map((item) => renderFolder(item))
+                )}
             </div>
 
             {/* ══════════════════════════════════════════════════════════════════════
@@ -774,9 +710,9 @@ export function Subjects() {
                             value={newFolderName}
                             onChange={(e) => setNewFolderName(e.target.value)}
                             placeholder="Ej: Tercer Año, Electivas..."
-                            className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary transition-shadow"
                             style={{
-                                border: "2px solid rgba(169, 180, 185, 0.15)",
+                                border: "1px solid var(--border)",
                             }}
                             autoFocus
                             onKeyDown={(e) =>
@@ -808,7 +744,7 @@ export function Subjects() {
                                 placeholder="Ej: Algoritmos y Estructuras de Datos"
                                 className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary"
                                 style={{
-                                    border: "2px solid rgba(169, 180, 185, 0.15)",
+                                    border: "1px solid var(--border)",
                                 }}
                                 autoFocus
                             />
@@ -827,9 +763,9 @@ export function Subjects() {
                                 value={subjectTag}
                                 onChange={(e) => setSubjectTag(e.target.value)}
                                 placeholder="Ej: AED, MATE1, SO..."
-                                className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary transition-shadow"
                                 style={{
-                                    border: "2px solid rgba(169, 180, 185, 0.15)",
+                                    border: "1px solid var(--border)",
                                 }}
                             />
                         </div>
@@ -842,7 +778,7 @@ export function Subjects() {
                                 <p
                                     className="text-sm text-muted-foreground px-4 py-3 rounded-sm"
                                     style={{
-                                        border: "2px solid rgba(169, 180, 185, 0.15)",
+                                        border: "1px dashed var(--border)",
                                     }}
                                 >
                                     No hay carpetas disponibles. Creá una
@@ -889,9 +825,9 @@ export function Subjects() {
                             onChange={(e) =>
                                 setRenameFolderValue(e.target.value)
                             }
-                            className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary transition-shadow"
                             style={{
-                                border: "2px solid rgba(169, 180, 185, 0.15)",
+                                border: "1px solid var(--border)",
                             }}
                             autoFocus
                             onKeyDown={(e) =>
@@ -928,14 +864,10 @@ export function Subjects() {
                     ) : (
                         <>
                             <div
-                                className="flex items-start gap-3 p-4 rounded-sm mb-6"
-                                style={{
-                                    background:
-                                        "rgba(var(--destructive-rgb, 220 38 38) / 0.08)",
-                                    border: "1px solid rgba(var(--destructive-rgb, 220 38 38) / 0.2)",
-                                }}
+                                className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 mb-6"
+                                style={{ borderRadius: "var(--radius-sm)" }}
                             >
-                                <Trash2 className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                                <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
                                 <div>
                                     <p className="text-sm font-medium text-destructive mb-1">
                                         No se puede eliminar esta carpeta
@@ -981,16 +913,17 @@ export function Subjects() {
                             <button
                                 type="button"
                                 onClick={() => setMoveFolderTarget(null)}
-                                className={`w-full text-left px-4 py-2 rounded-sm text-sm transition-colors ${
+                                className={`w-full flex items-center gap-2 text-left px-4 py-2 rounded-sm text-sm transition-colors ${
                                     moveFolderTarget === null
                                         ? "bg-primary/10 text-primary font-medium"
                                         : "hover:bg-surface-container-low text-foreground"
                                 }`}
                                 style={{
-                                    border: "2px solid rgba(169, 180, 185, 0.15)",
+                                    border: "1px solid var(--border)",
                                 }}
                             >
-                                📁 Raíz (sin carpeta padre)
+                                <Folder className="w-4 h-4 flex-shrink-0" />
+                                Raíz (sin carpeta padre)
                             </button>
                         </div>
                         <FolderSelector

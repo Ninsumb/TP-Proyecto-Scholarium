@@ -21,6 +21,7 @@ import {
     Rocket,
     Cpu,
     Terminal,
+    SlidersHorizontal,
     type LucideIcon,
 } from "lucide-react";
 import { adminService } from "../../../services/AdminService";
@@ -84,8 +85,12 @@ function ConfirmModal({
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div
-                className="bg-card max-w-lg w-full shadow-2xl"
-                style={{ borderRadius: "var(--radius)" }}
+                className="bg-card max-w-lg w-full"
+                style={{
+                    borderRadius: "var(--radius-lg)",
+                    boxShadow: "var(--portal-shadow-modal)",
+                    border: "1px solid var(--border)",
+                }}
             >
                 <div className="border-b border-border px-6 py-4">
                     <h2 className="text-card-foreground">{title}</h2>
@@ -96,7 +101,7 @@ function ConfirmModal({
                         <button
                             onClick={onClose}
                             disabled={loading}
-                            className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
+                            className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50 portal-hoverable"
                             style={{ borderRadius: "var(--radius)" }}
                         >
                             Cancelar
@@ -106,7 +111,7 @@ function ConfirmModal({
                                 onConfirm();
                             }}
                             disabled={loading}
-                            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 disabled:opacity-50"
+                            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
                             style={{ borderRadius: "var(--radius)" }}
                         >
                             {loading && (
@@ -151,8 +156,12 @@ function VoteModal({
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div
-                className="bg-card max-w-lg w-full shadow-2xl"
-                style={{ borderRadius: "var(--radius)" }}
+                className="bg-card max-w-lg w-full"
+                style={{
+                    borderRadius: "var(--radius-lg)",
+                    boxShadow: "var(--portal-shadow-modal)",
+                    border: "1px solid var(--border)",
+                }}
             >
                 <div className="border-b border-border px-6 py-4">
                     <h2 className="text-card-foreground">{title}</h2>
@@ -174,7 +183,7 @@ function VoteModal({
                             value={reason}
                             onChange={(e) => setReason(e.target.value)}
                             disabled={loading}
-                            className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none disabled:opacity-50"
+                            className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none disabled:opacity-50 transition-shadow"
                             style={{ borderRadius: "var(--radius)" }}
                             placeholder="Explica por qué propones este cambio. Todos los administradores verán este mensaje."
                         />
@@ -183,7 +192,7 @@ function VoteModal({
                         <button
                             onClick={handleClose}
                             disabled={loading}
-                            className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
+                            className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50 portal-hoverable"
                             style={{ borderRadius: "var(--radius)" }}
                         >
                             Cancelar
@@ -191,7 +200,7 @@ function VoteModal({
                         <button
                             onClick={handleConfirm}
                             disabled={!reason.trim() || loading}
-                            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 portal-hoverable"
                             style={{ borderRadius: "var(--radius)" }}
                         >
                             {loading && (
@@ -575,24 +584,39 @@ export function PortalConfig() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-            <div className="mb-8">
-                <h1 className="text-foreground mb-2">
-                    Configuración del Portal
-                </h1>
-                <p className="text-on-surface-variant">
-                    Administra la identidad, acceso y configuración general del
-                    portal
-                </p>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 portal-scope portal-fade-up">
+            <div className="mb-10 flex items-start sm:items-center gap-4">
+                <div
+                    className="w-12 h-12 flex items-center justify-center flex-shrink-0"
+                    style={{
+                        borderRadius: "var(--radius-md)",
+                        background: "var(--primary)",
+                        color: "var(--primary-foreground)",
+                    }}
+                >
+                    <SlidersHorizontal className="w-6 h-6" />
+                </div>
+                <div>
+                    <h1 className="text-foreground mb-1.5">
+                        Configuración del Portal
+                    </h1>
+                    <p className="text-on-surface-variant">
+                        Administra la identidad, acceso y configuración general
+                        del portal
+                    </p>
+                </div>
             </div>
 
             {/* Feedback global */}
 
-            <div className="space-y-6">
+            <div className="space-y-6 sm:space-y-8">
                 {/* ── Identidad del Portal ── */}
                 <section
-                    className="bg-surface-container-lowest p-6 shadow-sm"
-                    style={{ borderRadius: "var(--radius)" }}
+                    className="bg-card p-6 sm:p-7 border border-border"
+                    style={{
+                        borderRadius: "var(--radius-lg)",
+                        boxShadow: "var(--portal-shadow-card)",
+                    }}
                 >
                     <div className="flex items-center gap-3 mb-6">
                         <div
@@ -627,17 +651,31 @@ export function PortalConfig() {
                                 />
                                 <button
                                     onClick={handleProposeUniversityChange}
-                                    className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm whitespace-nowrap"
-                                    style={{ borderRadius: "var(--radius)" }}
+                                    className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors whitespace-nowrap portal-hoverable"
+                                    style={{
+                                        borderRadius: "var(--radius)",
+                                        boxShadow: "var(--portal-shadow-card)",
+                                    }}
                                 >
                                     Proponer Cambio
                                 </button>
                             </div>
-                            <p className="text-xs text-on-surface-variant mt-1.5 flex items-center gap-1">
-                                <AlertTriangle className="w-3.5 h-3.5" />
-                                Cambiar el nombre de la universidad requiere
-                                votación de todos los administradores
-                            </p>
+                            <div
+                                className="mt-2.5 px-3 py-2 flex items-center gap-2 text-xs"
+                                style={{
+                                    borderRadius: "var(--radius-sm)",
+                                    background: "var(--portal-amber-soft)",
+                                    border: "1px solid var(--portal-amber-border)",
+                                    color: "var(--portal-amber-dim)",
+                                }}
+                            >
+                                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                                <span>
+                                    Cambiar el nombre de la universidad
+                                    requiere votación de todos los
+                                    administradores
+                                </span>
+                            </div>
                         </div>
 
                         {/* Carrera */}
@@ -660,17 +698,30 @@ export function PortalConfig() {
                                 />
                                 <button
                                     onClick={handleProposeCareerChange}
-                                    className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm whitespace-nowrap"
-                                    style={{ borderRadius: "var(--radius)" }}
+                                    className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors whitespace-nowrap portal-hoverable"
+                                    style={{
+                                        borderRadius: "var(--radius)",
+                                        boxShadow: "var(--portal-shadow-card)",
+                                    }}
                                 >
                                     Proponer Cambio
                                 </button>
                             </div>
-                            <p className="text-xs text-on-surface-variant mt-1.5 flex items-center gap-1">
-                                <AlertTriangle className="w-3.5 h-3.5" />
-                                Cambiar el nombre de la carrera requiere
-                                votación de todos los administradores
-                            </p>
+                            <div
+                                className="mt-2.5 px-3 py-2 flex items-center gap-2 text-xs"
+                                style={{
+                                    borderRadius: "var(--radius-sm)",
+                                    background: "var(--portal-amber-soft)",
+                                    border: "1px solid var(--portal-amber-border)",
+                                    color: "var(--portal-amber-dim)",
+                                }}
+                            >
+                                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                                <span>
+                                    Cambiar el nombre de la carrera requiere
+                                    votación de todos los administradores
+                                </span>
+                            </div>
                         </div>
 
                         {/* Unidad Académica */}
@@ -720,8 +771,11 @@ export function PortalConfig() {
                         <button
                             onClick={handleSaveDescription}
                             disabled={loadingDescription}
-                            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
-                            style={{ borderRadius: "var(--radius)" }}
+                            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
+                            style={{
+                                borderRadius: "var(--radius)",
+                                boxShadow: "var(--portal-shadow-card)",
+                            }}
                         >
                             {loadingDescription && (
                                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -734,8 +788,11 @@ export function PortalConfig() {
                 {/* ── Identidad Visual ── */}
 
                 <section
-                    className="bg-surface-container-lowest p-6 shadow-sm"
-                    style={{ borderRadius: "var(--radius)" }}
+                    className="bg-card p-6 sm:p-7 border border-border"
+                    style={{
+                        borderRadius: "var(--radius-lg)",
+                        boxShadow: "var(--portal-shadow-card)",
+                    }}
                 >
                     <div className="flex items-center gap-3 mb-6">
                         <div
@@ -752,7 +809,7 @@ export function PortalConfig() {
                         <div
                             className="grid grid-cols-2 gap-2 p-1"
                             style={{
-                                background: "rgba(169, 180, 185, 0.1)",
+                                background: "var(--muted)",
                                 borderRadius: "var(--radius)",
                             }}
                         >
@@ -1041,8 +1098,11 @@ export function PortalConfig() {
                         <button
                             onClick={handleSaveVisualIdentity}
                             disabled={loadingVisual}
-                            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
-                            style={{ borderRadius: "var(--radius)" }}
+                            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
+                            style={{
+                                borderRadius: "var(--radius)",
+                                boxShadow: "var(--portal-shadow-card)",
+                            }}
                         >
                             {loadingVisual && (
                                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -1054,8 +1114,11 @@ export function PortalConfig() {
 
                 {/* ── Control de Acceso ── */}
                 <section
-                    className="bg-surface-container-lowest p-6 shadow-sm"
-                    style={{ borderRadius: "var(--radius)" }}
+                    className="bg-card p-6 sm:p-7 border border-border"
+                    style={{
+                        borderRadius: "var(--radius-lg)",
+                        boxShadow: "var(--portal-shadow-card)",
+                    }}
                 >
                     <div className="flex items-center gap-3 mb-6">
                         <div
@@ -1084,7 +1147,7 @@ export function PortalConfig() {
                                 </div>
                                 <button
                                     onClick={handleProposePortalAccessChange}
-                                    className={`px-4 py-2 transition-colors ${
+                                    className={`px-4 py-2 transition-colors portal-hoverable ${
                                         isPortalOpen
                                             ? "bg-green-600 text-white hover:bg-green-700"
                                             : "bg-surface-container text-foreground hover:bg-accent"
@@ -1094,11 +1157,21 @@ export function PortalConfig() {
                                     {isPortalOpen ? "Abierto" : "Cerrado"}
                                 </button>
                             </div>
-                            <p className="text-xs text-on-surface-variant flex items-center gap-1">
-                                <AlertTriangle className="w-3.5 h-3.5" />
-                                Cambiar el acceso al portal requiere votación de
-                                todos los administradores
-                            </p>
+                            <div
+                                className="px-3 py-2 flex items-center gap-2 text-xs"
+                                style={{
+                                    borderRadius: "var(--radius-sm)",
+                                    background: "var(--portal-amber-soft)",
+                                    border: "1px solid var(--portal-amber-border)",
+                                    color: "var(--portal-amber-dim)",
+                                }}
+                            >
+                                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                                <span>
+                                    Cambiar el acceso al portal requiere
+                                    votación de todos los administradores
+                                </span>
+                            </div>
                         </div>
 
                         <div className="h-px bg-border" />
@@ -1119,7 +1192,7 @@ export function PortalConfig() {
                                 <button
                                     onClick={handleToggleRequests}
                                     disabled={loadingToggleRequest}
-                                    className={`px-4 py-2 transition-colors flex items-center gap-2 disabled:opacity-50 ${
+                                    className={`px-4 py-2 transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable ${
                                         accessData.areRequestsOpen
                                             ? "bg-green-600 text-white hover:bg-green-700"
                                             : "bg-surface-container text-foreground hover:bg-accent"
@@ -1165,8 +1238,11 @@ export function PortalConfig() {
                         <button
                             onClick={handleSaveRequirements}
                             disabled={loadingRequirements}
-                            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
-                            style={{ borderRadius: "var(--radius)" }}
+                            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
+                            style={{
+                                borderRadius: "var(--radius)",
+                                boxShadow: "var(--portal-shadow-card)",
+                            }}
                         >
                             {loadingRequirements && (
                                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -1178,8 +1254,11 @@ export function PortalConfig() {
 
                 {/* ── Zona Peligrosa ── */}
                 <section
-                    className="bg-surface-container-lowest p-6 border-2 border-destructive/20 shadow-sm"
-                    style={{ borderRadius: "var(--radius)" }}
+                    className="bg-card p-6 sm:p-7 border-2 border-destructive/20"
+                    style={{
+                        borderRadius: "var(--radius-lg)",
+                        boxShadow: "var(--portal-shadow-card)",
+                    }}
                 >
                     <div className="flex items-center gap-3 mb-6">
                         <div
@@ -1211,7 +1290,7 @@ export function PortalConfig() {
                                 ? handleProposeActivate
                                 : handleProposeArchive
                         }
-                        className="px-5 py-2.5 border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                        className="px-5 py-2.5 border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors portal-hoverable"
                         style={{ borderRadius: "var(--radius)" }}
                     >
                         {isArchived

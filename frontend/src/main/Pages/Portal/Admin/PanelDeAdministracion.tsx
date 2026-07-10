@@ -4,6 +4,8 @@ import {
   ChevronUp, ChevronDown, Check, X, Clock, Loader2,
   BlocksIcon,
   Lock,
+  ShieldCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { adminService } from "../../../services/AdminService";
 import { authService } from "../../../services/AuthService";
@@ -54,7 +56,7 @@ function ActionMenu({ member, currentUserId, onAction, bloqueado}: ActionMenuPro
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="p-1.5 hover:bg-accent transition-colors"
-        style={{ borderRadius: "var(--radius)" }}
+        style={{ borderRadius: "var(--radius-sm)" }}
       >
         <MoreVertical className="w-4 h-4 text-on-surface-variant" />
       </button>
@@ -62,8 +64,8 @@ function ActionMenu({ member, currentUserId, onAction, bloqueado}: ActionMenuPro
         <>
           <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
           <div
-            className="absolute right-0 top-full mt-1 bg-surface-container-low shadow-lg border border-border z-20 min-w-[200px]"
-            style={{ borderRadius: "var(--radius)" }}
+            className="absolute right-0 top-full mt-1.5 bg-surface-container-low border border-border z-20 min-w-[200px] overflow-hidden"
+            style={{ borderRadius: "var(--radius)", boxShadow: "var(--portal-shadow-lift)" }}
           >
             {actions.map((action) => (
               <button
@@ -72,7 +74,7 @@ function ActionMenu({ member, currentUserId, onAction, bloqueado}: ActionMenuPro
                   onAction(action.value, member);
                   setIsOpen(false);
                 }}
-                className="w-full text-left px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors first:rounded-t-sm last:rounded-b-sm"
+                className="w-full text-left px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
               >
                 {action.label}
               </button>
@@ -111,18 +113,27 @@ function MemberActionConfirmModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card max-w-lg w-full shadow-2xl" style={{ borderRadius: "var(--radius)" }}>
-        <div className="border-b border-border px-6 py-4">
-          <h2 className="text-card-foreground">{info.title}</h2>
+      <div
+        className="bg-card max-w-lg w-full overflow-hidden"
+        style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-modal)" }}
+      >
+        <div className="border-b border-border px-6 py-4 flex items-center gap-3">
+          <div
+            className="w-9 h-9 flex items-center justify-center shrink-0 bg-primary/10 text-primary"
+            style={{ borderRadius: "var(--radius-sm)" }}
+          >
+            <ShieldCheck className="w-4.5 h-4.5" />
+          </div>
+          <h2 className="text-card-foreground font-medium">{info.title}</h2>
         </div>
         <div className="p-6">
-          <p className="text-sm text-foreground mb-6">{info.text}</p>
+          <p className="text-sm text-foreground mb-6 leading-relaxed">{info.text}</p>
           <div className="flex gap-3 justify-end">
             <button
               onClick={onClose}
               disabled={loading}
               className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
-              style={{ borderRadius: "var(--radius)" }}
+              style={{ borderRadius: "var(--radius-sm)" }}
             >
               Cancelar
             </button>
@@ -130,7 +141,7 @@ function MemberActionConfirmModal({
               onClick={onConfirm}
               disabled={loading}
               className={`px-5 py-2.5 transition-colors flex items-center gap-2 disabled:opacity-50 ${info.btnClass}`}
-              style={{ borderRadius: "var(--radius)" }}
+              style={{ borderRadius: "var(--radius-sm)", boxShadow: "var(--portal-shadow-card)" }}
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               Confirmar
@@ -175,12 +186,24 @@ function VoteModal({ isOpen, onClose, onConfirm, title, actionDescription, loadi
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card max-w-lg w-full shadow-2xl" style={{ borderRadius: "var(--radius)" }}>
-        <div className="border-b border-border px-6 py-4">
-          <h2 className="text-card-foreground">{title}</h2>
+      <div
+        className="bg-card max-w-lg w-full overflow-hidden"
+        style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-modal)" }}
+      >
+        <div className="border-b border-border px-6 py-4 flex items-center gap-3">
+          <div
+            className="w-9 h-9 flex items-center justify-center shrink-0 bg-primary/10 text-primary"
+            style={{ borderRadius: "var(--radius-sm)" }}
+          >
+            <Vote className="w-4.5 h-4.5" />
+          </div>
+          <h2 className="text-card-foreground font-medium">{title}</h2>
         </div>
         <div className="p-6 space-y-4">
-          <div className="p-4 bg-primary/5 border border-primary/20" style={{ borderRadius: "var(--radius)" }}>
+          <div
+            className="p-4 bg-primary/5 border border-primary/20"
+            style={{ borderRadius: "var(--radius)" }}
+          >
             <p className="text-sm text-foreground">
               <span className="font-medium">Acción propuesta:</span> {actionDescription}
             </p>
@@ -197,8 +220,8 @@ function VoteModal({ isOpen, onClose, onConfirm, title, actionDescription, loadi
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               disabled={loading}
-              className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none disabled:opacity-50"
-              style={{ borderRadius: "var(--radius)" }}
+              className="w-full px-4 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none disabled:opacity-50 transition-shadow"
+              style={{ borderRadius: "var(--radius-sm)" }}
               placeholder="Explica por qué propones esta acción. Todos los administradores verán este mensaje."
             />
           </div>
@@ -207,7 +230,7 @@ function VoteModal({ isOpen, onClose, onConfirm, title, actionDescription, loadi
               onClick={handleClose}
               disabled={loading}
               className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
-              style={{ borderRadius: "var(--radius)" }}
+              style={{ borderRadius: "var(--radius-sm)" }}
             >
               Cancelar
             </button>
@@ -215,7 +238,7 @@ function VoteModal({ isOpen, onClose, onConfirm, title, actionDescription, loadi
               onClick={handleConfirm}
               disabled={!reason.trim() || loading}
               className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              style={{ borderRadius: "var(--radius)" }}
+              style={{ borderRadius: "var(--radius-sm)", boxShadow: "var(--portal-shadow-card)" }}
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               Abrir Votación
@@ -245,9 +268,22 @@ function VoteConfirmModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card max-w-lg w-full shadow-2xl" style={{ borderRadius: "var(--radius)" }}>
-        <div className="border-b border-border px-6 py-4">
-          <h2 className="text-card-foreground">
+      <div
+        className="bg-card max-w-lg w-full overflow-hidden"
+        style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-modal)" }}
+      >
+        <div className="border-b border-border px-6 py-4 flex items-center gap-3">
+          <div
+            className={`w-9 h-9 flex items-center justify-center shrink-0 ${
+              voteType === "approve"
+                ? "bg-green-600/10 text-green-700 dark:text-green-400"
+                : "bg-destructive/10 text-destructive"
+            }`}
+            style={{ borderRadius: "var(--radius-sm)" }}
+          >
+            {voteType === "approve" ? <Check className="w-4.5 h-4.5" /> : <X className="w-4.5 h-4.5" />}
+          </div>
+          <h2 className="text-card-foreground font-medium">
             {voteType === "approve" ? "Aprobar Votación" : "Rechazar Votación"}
           </h2>
         </div>
@@ -264,14 +300,20 @@ function VoteConfirmModal({
               <span className="font-medium">Acción propuesta:</span> {actionDescription}
             </p>
             {voteType === "approve" ? (
-              <p className="text-sm text-foreground">
-                ⚠️ Si con tu voto se alcanza la mayoría necesaria,{" "}
-                <span className="font-medium">la acción se ejecutará de inmediato</span> y no podrá revertirse.
+              <p className="text-sm text-foreground flex items-start gap-1.5">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-yellow-600 dark:text-yellow-400" />
+                <span>
+                  Si con tu voto se alcanza la mayoría necesaria,{" "}
+                  <span className="font-medium">la acción se ejecutará de inmediato</span> y no podrá revertirse.
+                </span>
               </p>
             ) : (
-              <p className="text-sm text-foreground">
-                ⚠️ Una vez que rechaces esta votación,{" "}
-                <span className="font-medium">no podrás cambiar tu voto</span>.
+              <p className="text-sm text-foreground flex items-start gap-1.5">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-yellow-600 dark:text-yellow-400" />
+                <span>
+                  Una vez que rechaces esta votación,{" "}
+                  <span className="font-medium">no podrás cambiar tu voto</span>.
+                </span>
               </p>
             )}
           </div>
@@ -283,7 +325,7 @@ function VoteConfirmModal({
               onClick={onClose}
               disabled={loading}
               className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
-              style={{ borderRadius: "var(--radius)" }}
+              style={{ borderRadius: "var(--radius-sm)" }}
             >
               Cancelar
             </button>
@@ -295,7 +337,7 @@ function VoteConfirmModal({
                   ? "bg-green-600 text-white hover:bg-green-700"
                   : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
               }`}
-              style={{ borderRadius: "var(--radius)" }}
+              style={{ borderRadius: "var(--radius-sm)", boxShadow: "var(--portal-shadow-card)" }}
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               Confirmar {voteType === "approve" ? "Aprobación" : "Rechazo"}
@@ -518,8 +560,8 @@ function AccionCard({ accion, cfg, pillCls, initials }: AccionCardProps) {
  
   return (
     <div
-      className="border border-border bg-card overflow-hidden transition-colors"
-      style={{ borderRadius: "var(--radius)" }}
+      className="portal-hoverable border border-border bg-card overflow-hidden"
+      style={{ borderRadius: "var(--radius-sm)", boxShadow: "var(--portal-shadow-card)" }}
     >
       {/* Header — siempre visible, clickeable */}
       <button
@@ -529,7 +571,7 @@ function AccionCard({ accion, cfg, pillCls, initials }: AccionCardProps) {
         {/* Ícono de acción */}
         <div
           className={`w-8 h-8 flex items-center justify-center shrink-0 ${iconContainerCls}`}
-          style={{ borderRadius: "var(--radius)" }}
+          style={{ borderRadius: "var(--radius-sm)" }}
         >
           <AuditIcon tipo={accion.tipo} />
         </div>
@@ -584,7 +626,7 @@ function AccionCard({ accion, cfg, pillCls, initials }: AccionCardProps) {
               {/* Recuadro destacado para el motivo */}
               <div
                 className="flex-1 px-2.5 py-1.5 bg-surface-container border border-border text-foreground italic leading-relaxed"
-                style={{ borderRadius: "var(--radius)" }}
+                style={{ borderRadius: "var(--radius-sm)" }}
               >
                 {accion.motivo}
               </div>
@@ -1053,19 +1095,29 @@ export function AdminPanel() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="mb-8">
-        <h1 className="text-foreground mb-2">Panel de Administración</h1>
-        <p className="text-on-surface-variant">
-          Gestiona miembros, revisa el historial de acciones y participa en votaciones
-        </p>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 portal-fade-up">
+      <div className="mb-8 flex items-center gap-4">
+        <div
+          className="w-11 h-11 flex items-center justify-center shrink-0 bg-primary/10 text-primary"
+          style={{ borderRadius: "var(--radius-sm)" }}
+        >
+          <ShieldCheck className="w-5 h-5" />
+        </div>
+        <div>
+          <h1 className="text-foreground mb-1" style={{ fontFamily: "Work Sans, sans-serif" }}>
+            Panel de Administración
+          </h1>
+          <p className="text-on-surface-variant text-sm">
+            Gestiona miembros, revisa el historial de acciones y participa en votaciones
+          </p>
+        </div>
       </div>
 
       {/* Feedback global */}
 
       {/* Tabs */}
       <div className="mb-6 border-b border-border">
-        <div className="flex gap-1">
+        <div className="flex gap-1 flex-wrap">
           {[
             { key: "members", icon: Users,   label: "Miembros",            badge: null },
             { key: "history", icon: History, label: "Historial",           badge: null },
@@ -1075,11 +1127,12 @@ export function AdminPanel() {
             <button
               key={key}
               onClick={() => setActiveTab(key as typeof activeTab)}
-              className={`px-6 py-3 relative transition-colors ${
+              className={`px-5 py-3 relative transition-colors duration-150 ${
                 activeTab === key
                   ? "text-primary font-medium"
-                  : "text-on-surface-variant hover:text-foreground"
+                  : "text-on-surface-variant hover:text-foreground hover:bg-accent/40"
               }`}
+              style={{ borderRadius: "var(--radius-sm) var(--radius-sm) 0 0" }}
             >
               <div className="flex items-center gap-2">
                 <Icon className="w-4 h-4" />
@@ -1087,14 +1140,14 @@ export function AdminPanel() {
                 {badge !== null && (
                   <span
                     className="px-2 py-0.5 bg-primary text-primary-foreground text-xs font-medium"
-                    style={{ borderRadius: "var(--radius)" }}
+                    style={{ borderRadius: "var(--radius-sm)" }}
                   >
                     {badge}
                   </span>
                 )}
               </div>
               {activeTab === key && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary transition-all duration-200" />
               )}
             </button>
           ))}
@@ -1136,12 +1189,12 @@ export function AdminPanel() {
           <button
             key={key}
             onClick={() => setHistorialFiltro(key)}
-            className={`text-xs px-3 py-1.5 transition-colors ${
+            className={`text-xs px-3 py-1.5 transition-colors duration-150 ${
               historialFiltro === key
-                ? 'bg-surface-container text-foreground border border-border font-medium'
-                : 'text-on-surface-variant hover:text-foreground border border-transparent'
+                ? 'bg-primary/10 text-primary border border-primary/25 font-medium'
+                : 'text-on-surface-variant hover:text-foreground hover:bg-accent/50 border border-transparent'
             }`}
-            style={{ borderRadius: 'var(--radius)' }}
+            style={{ borderRadius: 'var(--radius-sm)' }}
           >
             {label}
             {count > 0 && (
@@ -1223,7 +1276,7 @@ export function AdminPanel() {
               onClick={() => fetchHistorial(historialPage + 1)}
               disabled={loadingHistorial}
               className="px-5 py-2 border border-border text-sm text-on-surface-variant hover:text-foreground hover:bg-accent transition-colors flex items-center gap-2 disabled:opacity-50"
-              style={{ borderRadius: 'var(--radius)' }}
+              style={{ borderRadius: 'var(--radius-sm)', boxShadow: 'var(--portal-shadow-card)' }}
             >
               {loadingHistorial
                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1252,7 +1305,7 @@ export function AdminPanel() {
               <div className="text-center py-12">
                 <div
                   className="w-16 h-16 bg-surface-container-low mx-auto mb-4 flex items-center justify-center"
-                  style={{ borderRadius: "var(--radius)" }}
+                  style={{ borderRadius: "var(--radius-lg)" }}
                 >
                   <Vote className="w-8 h-8 text-on-surface-variant" />
                 </div>
@@ -1270,8 +1323,12 @@ export function AdminPanel() {
                   return (
                     <div
                       key={vote.id}
-                      className="bg-surface-container-lowest p-5 shadow-sm border-l-4 border-primary"
-                      style={{ borderRadius: "var(--radius)" }}
+                      className="bg-card border border-border p-5"
+                      style={{
+                        borderRadius: "var(--radius-md)",
+                        boxShadow: "var(--portal-shadow-card)",
+                        borderLeft: "3px solid var(--primary)",
+                      }}
                     >
                       <div className="flex items-start justify-between gap-4 mb-3">
                         <div className="flex-1">
@@ -1293,7 +1350,7 @@ export function AdminPanel() {
 
                       <div
                         className="p-3 bg-surface-container mb-4"
-                        style={{ borderRadius: "var(--radius)" }}
+                        style={{ borderRadius: "var(--radius-sm)" }}
                       >
                         <p className="text-sm text-foreground">
                           <span className="font-medium">Motivo:</span> {vote.motivo}
@@ -1318,7 +1375,7 @@ export function AdminPanel() {
                         </div>
                         <div
                           className="w-full h-2 bg-surface-container overflow-hidden"
-                          style={{ borderRadius: "var(--radius)" }}
+                          style={{ borderRadius: "var(--radius-sm)" }}
                         >
                           <div
                             className="h-full bg-primary transition-all"
@@ -1353,7 +1410,7 @@ export function AdminPanel() {
                             onClick={() => handleVote(vote.id, "approve")}
                             disabled={isVoting}
                             className="flex-1 px-4 py-2.5 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                            style={{ borderRadius: "var(--radius)" }}
+                            style={{ borderRadius: "var(--radius-sm)", boxShadow: "var(--portal-shadow-card)" }}
                           >
                             {isVoting ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
@@ -1366,7 +1423,7 @@ export function AdminPanel() {
                             onClick={() => handleVote(vote.id, "reject")}
                             disabled={isVoting}
                             className="flex-1 px-4 py-2.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                            style={{ borderRadius: "var(--radius)" }}
+                            style={{ borderRadius: "var(--radius-sm)", boxShadow: "var(--portal-shadow-card)" }}
                           >
                             {isVoting ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
@@ -1390,6 +1447,7 @@ export function AdminPanel() {
               onClick={handleToggleClosedVotes}
               className="flex items-center gap-2 text-foreground hover:text-primary transition-colors mb-4"
             >
+              <History className="w-4 h-4 text-on-surface-variant" />
               <span className="font-medium">Votaciones Cerradas</span>
               {showClosedVotes ? (
                 <ChevronUp className="w-4 h-4" />
@@ -1436,8 +1494,11 @@ export function AdminPanel() {
                       return (
                         <div
                           key={vote.id}
-                          className={`bg-surface-container-lowest p-5 shadow-sm border-l-4 ${borderColor}`}
-                          style={{ borderRadius: "var(--radius)" }}
+                          className={`bg-card p-5 border-l-4 ${borderColor}`}
+                          style={{
+                            borderRadius: "var(--radius-md)",
+                            boxShadow: "var(--portal-shadow-card)",
+                          }}
                         >
                           <div className="flex items-start justify-between gap-4 mb-3">
                             <div className="flex-1">
@@ -1453,7 +1514,7 @@ export function AdminPanel() {
                             </div>
                             <span
                               className={`px-3 py-1 text-xs font-medium border ${badgeClass}`}
-                              style={{ borderRadius: "var(--radius)" }}
+                              style={{ borderRadius: "var(--radius-sm)" }}
                             >
                               {badgeLabel}
                             </span>
@@ -1461,7 +1522,7 @@ export function AdminPanel() {
 
                           <div
                             className="p-3 bg-surface-container mb-3"
-                            style={{ borderRadius: "var(--radius)" }}
+                            style={{ borderRadius: "var(--radius-sm)" }}
                           >
                             <p className="text-sm text-foreground">
                               <span className="font-medium">Motivo:</span> {vote.motivo}
@@ -1520,9 +1581,9 @@ export function AdminPanel() {
             <div className="text-center py-12">
               <div
                 className="w-16 h-16 bg-surface-container-low mx-auto mb-4 flex items-center justify-center"
-                style={{ borderRadius: "var(--radius)" }}
+                style={{ borderRadius: "var(--radius-lg)" }}
               >
-                <Vote className="w-8 h-8 text-on-surface-variant" />
+                <Lock className="w-8 h-8 text-on-surface-variant" />
               </div>
               <h3 className="text-foreground mb-2">No hay miembros bloqueados</h3>
               <p className="text-on-surface-variant text-sm max-w-md mx-auto">
@@ -1530,7 +1591,7 @@ export function AdminPanel() {
               </p>
             </div>
           ) : (
-            <div>{listaMiembros(blockedMembers, true)}</div>
+            <div className="space-y-3">{listaMiembros(blockedMembers, true)}</div>
           )
           }
         </div>
@@ -1577,8 +1638,8 @@ export function AdminPanel() {
     return members.map((member) => (
       <div
         key={member.membresiaId}
-        className="bg-surface-container-lowest p-4 shadow-sm flex items-center justify-between"
-        style={{ borderRadius: "var(--radius)" }}
+        className="bg-card border border-border p-4 flex items-center justify-between transition-shadow"
+        style={{ borderRadius: "var(--radius)", boxShadow: "var(--portal-shadow-card)" }}
       >
         <div className="flex items-center gap-3 flex-1">
           <AdminAvatar
@@ -1592,8 +1653,8 @@ export function AdminPanel() {
               { bloqueados ? (
                 <>
                 <span
-                className={`px-2 py-0.5 text-xs font-medium bg-surface-container text-on-surface-variant`}
-                style={{ borderRadius: "var(--radius)" }}
+                className={`px-2 py-0.5 text-xs font-medium bg-surface-container text-on-surface-variant border border-border`}
+                style={{ borderRadius: "var(--radius-sm)" }}
               >
                 Bloqueado
               </span>
@@ -1609,7 +1670,7 @@ export function AdminPanel() {
                 className={`px-2 py-0.5 text-xs font-medium ${member.rol === "ADMIN"
                     ? "bg-destructive/10 text-destructive border border-destructive/20"
                     : "bg-surface-container text-on-surface-variant"}`}
-                style={{ borderRadius: "var(--radius)" }}
+                style={{ borderRadius: "var(--radius-sm)" }}
               >
                 {rolLabel(member.rol)}
               </span>

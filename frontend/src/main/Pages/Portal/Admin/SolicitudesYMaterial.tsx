@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   UserPlus, FileText, Check, X, Download, Calendar, User, Loader2,
+  Inbox, CheckCircle2, AlertCircle,
 } from "lucide-react";
 import { adminService } from "../../../services/AdminService";
 import { usePortalContext } from "../../../hooks/usePortalContext";
@@ -49,7 +50,14 @@ function ConfirmModal({ isOpen, onClose, onConfirm, title, message, loading }: C
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card max-w-lg w-full shadow-2xl" style={{ borderRadius: "var(--radius)" }}>
+      <div
+        className="bg-card max-w-lg w-full"
+        style={{
+          borderRadius: "var(--radius-lg)",
+          boxShadow: "var(--portal-shadow-modal)",
+          border: "1px solid var(--border)",
+        }}
+      >
         <div className="border-b border-border px-6 py-4">
           <h2 className="text-card-foreground">{title}</h2>
         </div>
@@ -59,7 +67,7 @@ function ConfirmModal({ isOpen, onClose, onConfirm, title, message, loading }: C
             <button
               onClick={onClose}
               disabled={loading}
-              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
+              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50 portal-hoverable"
               style={{ borderRadius: "var(--radius)" }}
             >
               Cancelar
@@ -67,7 +75,7 @@ function ConfirmModal({ isOpen, onClose, onConfirm, title, message, loading }: C
             <button
               onClick={() => { onConfirm(); }}
               disabled={loading}
-              className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
               style={{ borderRadius: "var(--radius)" }}
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -98,7 +106,14 @@ function RejectModal({ isOpen, onClose, onConfirm, title, itemName, loading }: R
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card max-w-lg w-full shadow-2xl" style={{ borderRadius: "var(--radius)" }}>
+      <div
+        className="bg-card max-w-lg w-full"
+        style={{
+          borderRadius: "var(--radius-lg)",
+          boxShadow: "var(--portal-shadow-modal)",
+          border: "1px solid var(--border)",
+        }}
+      >
         <div className="border-b border-border px-6 py-4">
           <h2 className="text-card-foreground">{title}</h2>
         </div>
@@ -129,7 +144,7 @@ function RejectModal({ isOpen, onClose, onConfirm, title, itemName, loading }: R
             <button
               onClick={handleClose}
               disabled={loading}
-              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
+              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50 portal-hoverable"
               style={{ borderRadius: "var(--radius)" }}
             >
               Cancelar
@@ -137,7 +152,7 @@ function RejectModal({ isOpen, onClose, onConfirm, title, itemName, loading }: R
             <button
               onClick={handleConfirm}
               disabled={!reason.trim() || loading}
-              className="px-5 py-2.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-5 py-2.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 portal-hoverable"
               style={{ borderRadius: "var(--radius)" }}
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -164,7 +179,14 @@ function RequestDetailModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card max-w-2xl w-full shadow-2xl" style={{ borderRadius: "var(--radius)" }}>
+      <div
+        className="bg-card max-w-2xl w-full"
+        style={{
+          borderRadius: "var(--radius-lg)",
+          boxShadow: "var(--portal-shadow-modal)",
+          border: "1px solid var(--border)",
+        }}
+      >
         <div className="border-b border-border px-6 py-4">
           <h2 className="text-card-foreground">Solicitud de Membresía</h2>
         </div>
@@ -205,7 +227,7 @@ function RequestDetailModal({
             <button
               onClick={onClose}
               disabled={loading}
-              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
+              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50 portal-hoverable"
               style={{ borderRadius: "var(--radius)" }}
             >
               Cerrar
@@ -213,7 +235,7 @@ function RequestDetailModal({
             <button
               onClick={() => { onReject(); onClose(); }}
               disabled={loading}
-              className="px-5 py-2.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="px-5 py-2.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
               style={{ borderRadius: "var(--radius)" }}
             >
               <X className="w-4 h-4" />
@@ -222,7 +244,7 @@ function RequestDetailModal({
             <button
               onClick={() => { onApprove(); onClose(); }}
               disabled={loading}
-              className="px-5 py-2.5 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="px-5 py-2.5 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
               style={{ borderRadius: "var(--radius)" }}
             >
               <Check className="w-4 h-4" />
@@ -258,7 +280,14 @@ function MaterialDetailModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card max-w-2xl w-full shadow-2xl" style={{ borderRadius: "var(--radius)" }}>
+      <div
+        className="bg-card max-w-2xl w-full"
+        style={{
+          borderRadius: "var(--radius-lg)",
+          boxShadow: "var(--portal-shadow-modal)",
+          border: "1px solid var(--border)",
+        }}
+      >
         <div className="border-b border-border px-6 py-4">
           <h2 className="text-card-foreground">Detalle del Material</h2>
         </div>
@@ -309,7 +338,7 @@ function MaterialDetailModal({
             <button
               onClick={onClose}
               disabled={loading}
-              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50"
+              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors disabled:opacity-50 portal-hoverable"
               style={{ borderRadius: "var(--radius)" }}
             >
               Cerrar
@@ -317,7 +346,7 @@ function MaterialDetailModal({
             <button
               onClick={() => { onDownload(); onClose(); }}
               disabled={loading}
-              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="px-5 py-2.5 border border-border hover:bg-accent transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
               style={{ borderRadius: "var(--radius)" }}
             >
               <Download className="w-4 h-4" />
@@ -326,7 +355,7 @@ function MaterialDetailModal({
             <button
               onClick={() => { onReject(); onClose(); }}
               disabled={loading}
-              className="px-5 py-2.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="px-5 py-2.5 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
               style={{ borderRadius: "var(--radius)" }}
             >
               <X className="w-4 h-4" />
@@ -335,7 +364,7 @@ function MaterialDetailModal({
             <button
               onClick={() => { onApprove(); onClose(); }}
               disabled={loading}
-              className="px-5 py-2.5 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="px-5 py-2.5 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
               style={{ borderRadius: "var(--radius)" }}
             >
               <Check className="w-4 h-4" />
@@ -528,42 +557,56 @@ export function RequestsAndMaterial() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="mb-8">
-        <h1 className="text-foreground mb-2">Solicitudes y Material</h1>
-        <p className="text-on-surface-variant">
-          Gestiona las solicitudes de membresía y modera el material de estudio subido por los miembros
-        </p>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 portal-scope portal-fade-up">
+      <div className="mb-10 flex items-start sm:items-center gap-4">
+        <div
+          className="w-12 h-12 flex items-center justify-center flex-shrink-0"
+          style={{
+            borderRadius: "var(--radius-md)",
+            background: "var(--primary)",
+            color: "var(--primary-foreground)",
+          }}
+        >
+          <Inbox className="w-6 h-6" />
+        </div>
+        <div>
+          <h1 className="text-foreground mb-1.5">Solicitudes y Material</h1>
+          <p className="text-on-surface-variant">
+            Gestiona las solicitudes de membresía y modera el material de estudio subido por los miembros
+          </p>
+        </div>
       </div>
 
       {/* Feedback global */}
       {error && (
         <div
-          className="mb-4 p-4 bg-destructive/10 border border-destructive/30 text-destructive text-sm"
+          className="mb-4 p-4 bg-destructive/10 border border-destructive/30 text-destructive text-sm flex items-center gap-2"
           style={{ borderRadius: "var(--radius)" }}
         >
-          {error}
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span className="flex-1">{error}</span>
           <button className="ml-2 underline" onClick={() => setError(null)}>Cerrar</button>
         </div>
       )}
       {successMsg && (
         <div
-          className="mb-4 p-4 bg-green-600/10 border border-green-600/30 text-green-700 text-sm"
+          className="mb-4 p-4 bg-green-600/10 border border-green-600/30 text-green-700 text-sm flex items-center gap-2"
           style={{ borderRadius: "var(--radius)" }}
         >
-          {successMsg}
+          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+          <span>{successMsg}</span>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="mb-6 border-b border-border">
+      <div className="mb-8 border-b border-border">
         <div className="flex gap-1">
           <button
             onClick={() => setActiveTab("requests")}
-            className={`px-6 py-3 relative transition-colors ${
+            className={`px-6 py-3 relative transition-colors rounded-t-sm ${
               activeTab === "requests"
                 ? "text-primary font-medium"
-                : "text-on-surface-variant hover:text-foreground"
+                : "text-on-surface-variant hover:text-foreground hover:bg-muted/60"
             }`}
           >
             <div className="flex items-center gap-2">
@@ -571,23 +614,27 @@ export function RequestsAndMaterial() {
               <span>Solicitudes</span>
               {requests.length > 0 && (
                 <span
-                  className="px-2 py-0.5 bg-primary text-primary-foreground text-xs font-medium"
-                  style={{ borderRadius: "var(--radius)" }}
+                  className="px-2 py-0.5 text-xs font-medium"
+                  style={{
+                    borderRadius: "var(--radius-sm)",
+                    background: "var(--portal-amber)",
+                    color: "#ffffff",
+                  }}
                 >
                   {requests.length}
                 </span>
               )}
             </div>
             {activeTab === "requests" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-full" />
             )}
           </button>
           <button
             onClick={() => setActiveTab("material")}
-            className={`px-6 py-3 relative transition-colors ${
+            className={`px-6 py-3 relative transition-colors rounded-t-sm ${
               activeTab === "material"
                 ? "text-primary font-medium"
-                : "text-on-surface-variant hover:text-foreground"
+                : "text-on-surface-variant hover:text-foreground hover:bg-muted/60"
             }`}
           >
             <div className="flex items-center gap-2">
@@ -595,15 +642,19 @@ export function RequestsAndMaterial() {
               <span>Material</span>
               {materials.length > 0 && (
                 <span
-                  className="px-2 py-0.5 bg-primary text-primary-foreground text-xs font-medium"
-                  style={{ borderRadius: "var(--radius)" }}
+                  className="px-2 py-0.5 text-xs font-medium"
+                  style={{
+                    borderRadius: "var(--radius-sm)",
+                    background: "var(--portal-amber)",
+                    color: "#ffffff",
+                  }}
                 >
                   {materials.length}
                 </span>
               )}
             </div>
             {activeTab === "material" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-full" />
             )}
           </button>
         </div>
@@ -619,7 +670,14 @@ export function RequestsAndMaterial() {
           ) : requestsError ? (
             <div className="text-center py-12 text-destructive text-sm">{requestsError}</div>
           ) : requests.length === 0 ? (
-            <div className="text-center py-16">
+            <div
+              className="text-center py-16 px-8"
+              style={{
+                borderRadius: "var(--radius-lg)",
+                border: "1px dashed var(--border)",
+                background: "var(--muted)",
+              }}
+            >
               <div
                 className="w-16 h-16 bg-surface-container-low mx-auto mb-4 flex items-center justify-center"
                 style={{ borderRadius: "var(--radius)" }}
@@ -647,8 +705,11 @@ export function RequestsAndMaterial() {
                   <div
                     key={request.id}
                     onClick={() => setRequestDetailModal({ isOpen: true, request })}
-                    className="bg-surface-container-lowest p-5 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                    style={{ borderRadius: "var(--radius)" }}
+                    className="bg-card p-5 border border-border cursor-pointer portal-hoverable"
+                    style={{
+                      borderRadius: "var(--radius-lg)",
+                      boxShadow: "var(--portal-shadow-card)",
+                    }}
                   >
                     <div className="flex gap-4">
                       <div
@@ -677,7 +738,7 @@ export function RequestsAndMaterial() {
                           <button
                             onClick={() => handleApproveRequest(request.id)}
                             disabled={isProcessing}
-                            className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                            className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
                             style={{ borderRadius: "var(--radius)" }}
                           >
                             {isProcessing ? (
@@ -690,7 +751,7 @@ export function RequestsAndMaterial() {
                           <button
                             onClick={() => handleRejectRequest(request.id, request.usuario.nombre)}
                             disabled={isProcessing}
-                            className="px-4 py-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors flex items-center gap-2 disabled:opacity-50"
+                            className="px-4 py-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
                             style={{ borderRadius: "var(--radius)" }}
                           >
                             <X className="w-4 h-4" />
@@ -717,7 +778,14 @@ export function RequestsAndMaterial() {
           ) : materialsError ? (
             <div className="text-center py-12 text-destructive text-sm">{materialsError}</div>
           ) : materials.length === 0 ? (
-            <div className="text-center py-16">
+            <div
+              className="text-center py-16 px-8"
+              style={{
+                borderRadius: "var(--radius-lg)",
+                border: "1px dashed var(--border)",
+                background: "var(--muted)",
+              }}
+            >
               <div
                 className="w-16 h-16 bg-surface-container-low mx-auto mb-4 flex items-center justify-center"
                 style={{ borderRadius: "var(--radius)" }}
@@ -738,8 +806,11 @@ export function RequestsAndMaterial() {
                   <div
                     key={material.id}
                     onClick={() => setMaterialDetailModal({ isOpen: true, material })}
-                    className="bg-surface-container-lowest p-5 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                    style={{ borderRadius: "var(--radius)" }}
+                    className="bg-card p-5 border border-border cursor-pointer portal-hoverable"
+                    style={{
+                      borderRadius: "var(--radius-lg)",
+                      boxShadow: "var(--portal-shadow-card)",
+                    }}
                   >
                     <div className="flex items-start justify-between gap-4 mb-3">
                       <div className="flex-1">
@@ -772,7 +843,7 @@ export function RequestsAndMaterial() {
                       <button
                         onClick={() => handleDownloadMaterial(material)}
                         disabled={isProcessing}
-                        className="px-4 py-2 border border-border hover:bg-accent transition-colors flex items-center gap-2 disabled:opacity-50"
+                        className="px-4 py-2 border border-border hover:bg-accent transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
                         style={{ borderRadius: "var(--radius)" }}
                       >
                         <Download className="w-4 h-4" />
@@ -781,7 +852,7 @@ export function RequestsAndMaterial() {
                       <button
                         onClick={() => handleApproveMaterial(material.id)}
                         disabled={isProcessing}
-                        className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                        className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
                         style={{ borderRadius: "var(--radius)" }}
                       >
                         {isProcessing ? (
@@ -794,7 +865,7 @@ export function RequestsAndMaterial() {
                       <button
                         onClick={() => handleRejectMaterial(material.id, material.nombre)}
                         disabled={isProcessing}
-                        className="px-4 py-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors flex items-center gap-2 disabled:opacity-50"
+                        className="px-4 py-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
                         style={{ borderRadius: "var(--radius)" }}
                       >
                         <X className="w-4 h-4" />

@@ -33,8 +33,8 @@ export function PortalLayout() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="text-center">
+            <div className="min-h-screen bg-background portal-scope flex items-center justify-center">
+                <div className="text-center portal-fade-up">
                     <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
                     <p className="text-muted-foreground">Cargando portal...</p>
                 </div>
@@ -44,8 +44,16 @@ export function PortalLayout() {
 
     if (error || !portal) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="text-center max-w-md px-4">
+            <div className="min-h-screen bg-background portal-scope flex items-center justify-center">
+                <div
+                    className="text-center max-w-md px-8 py-10 mx-4 portal-fade-up"
+                    style={{
+                        borderRadius: "var(--radius-lg)",
+                        background: "var(--card)",
+                        boxShadow: "var(--portal-shadow-card)",
+                        border: "1px solid var(--border)",
+                    }}
+                >
                     <div className="text-destructive mb-4 text-5xl">⚠️</div>
                     <h2 className="text-2xl font-bold text-foreground mb-2">
                         Error
@@ -55,11 +63,13 @@ export function PortalLayout() {
                     </p>
                     <button
                         onClick={() => navigate("/")}
-                        className="px-6 py-3 rounded-sm transition-all"
+                        className="px-6 py-3 transition-all portal-hoverable"
                         style={{
+                            borderRadius: "var(--radius-sm)",
                             background:
                                 "linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)",
                             color: "var(--primary-foreground)",
+                            boxShadow: "var(--portal-shadow-card)",
                         }}
                     >
                         Volver al inicio
@@ -73,8 +83,16 @@ export function PortalLayout() {
 
     if (isArchived && !isAdmin) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="text-center max-w-md px-4">
+            <div className="min-h-screen bg-background portal-scope flex items-center justify-center">
+                <div
+                    className="text-center max-w-md px-8 py-10 mx-4 portal-fade-up"
+                    style={{
+                        borderRadius: "var(--radius-lg)",
+                        background: "var(--card)",
+                        boxShadow: "var(--portal-shadow-card)",
+                        border: "1px solid var(--border)",
+                    }}
+                >
                     <div className="text-5xl mb-4">📦</div>
                     <h2 className="text-2xl font-bold text-foreground mb-2">
                         Portal archivado
@@ -85,11 +103,13 @@ export function PortalLayout() {
                     </p>
                     <button
                         onClick={() => navigate("/")}
-                        className="px-6 py-3 rounded-sm transition-all"
+                        className="px-6 py-3 transition-all portal-hoverable"
                         style={{
+                            borderRadius: "var(--radius-sm)",
                             background:
                                 "linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%)",
                             color: "var(--primary-foreground)",
+                            boxShadow: "var(--portal-shadow-card)",
                         }}
                     >
                         Volver al inicio
@@ -102,26 +122,31 @@ export function PortalLayout() {
     const portalName = portal.carrera;
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background portal-scope">
             <div className="flex">
                 <aside
-                    className={`bg-sidebar-border h-screen sticky top-0 overflow-y-auto transition-all duration-300 ${
+                    className={`h-screen sticky top-0 overflow-y-auto transition-all duration-300 ${
                         isSidebarCollapsed ? "w-16" : "w-64"
                     }`}
+                    style={{
+                        background: "var(--card)",
+                        borderRight: "1px solid var(--border)",
+                        boxShadow: "var(--portal-shadow-card)",
+                    }}
                 >
                     <div
-                        className={`${isSidebarCollapsed ? "p-2" : "p-6"} transition-all duration-300`}
+                        className={`${isSidebarCollapsed ? "p-2" : "p-5"} transition-all duration-300`}
                     >
                         {/* Colapsar/expandir */}
                         <div
-                            className={`flex ${isSidebarCollapsed ? "justify-center mb-4" : "justify-end mb-6"}`}
+                            className={`flex ${isSidebarCollapsed ? "justify-center mb-4" : "justify-end mb-5"}`}
                         >
                             <button
                                 onClick={() =>
                                     setIsSidebarCollapsed(!isSidebarCollapsed)
                                 }
                                 className="p-2 hover:bg-surface-container-low transition-colors"
-                                style={{ borderRadius: "var(--radius)" }}
+                                style={{ borderRadius: "var(--radius-sm)" }}
                                 title={
                                     isSidebarCollapsed
                                         ? "Expandir sidebar"
@@ -139,24 +164,36 @@ export function PortalLayout() {
                         {/* Título */}
                         {!isSidebarCollapsed &&
                             !isActive(`/portal/${portalId}`) && (
-                                <div className="mb-8">
+                                <div
+                                    className="mb-7 pb-5"
+                                    style={{
+                                        borderBottom:
+                                            "1px solid var(--border)",
+                                    }}
+                                >
                                     <h2
-                                        className="text-lg font-semibold text-foreground mb-1"
+                                        className="text-lg font-semibold text-foreground mb-1 leading-snug"
                                         style={{
                                             fontFamily: "Work Sans, sans-serif",
                                         }}
                                     >
                                         {portalName}
                                     </h2>
-                                    <p className="text-xs text-foreground uppercase tracking-wide">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wide">
                                         {portal.universidad}
                                     </p>
                                 </div>
                             )}
                         {!isSidebarCollapsed &&
                             isActive(`/portal/${portalId}`) && (
-                                <div className="mb-8">
-                                    <p className="text-xs text-foreground uppercase tracking-wide">
+                                <div
+                                    className="mb-7 pb-5"
+                                    style={{
+                                        borderBottom:
+                                            "1px solid var(--border)",
+                                    }}
+                                >
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wide">
                                         Portal Académico
                                     </p>
                                 </div>
@@ -166,20 +203,15 @@ export function PortalLayout() {
                             {/* Inicio — visible para todos */}
                             <Link
                                 to={`/portal/${portalId}`}
-                                className={`flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "gap-3 px-4"} py-2.5 rounded-sm transition-all relative ${
+                                className={`flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "gap-3 px-3.5"} py-2.5 transition-all ${
                                     isActive(`/portal/${portalId}`)
-                                        ? "text-foreground"
+                                        ? "text-primary font-medium bg-primary/10"
                                         : "text-muted-foreground hover:text-foreground hover:bg-surface-container-low"
                                 }`}
+                                style={{ borderRadius: "var(--radius-sm)" }}
                                 title={isSidebarCollapsed ? "Inicio" : ""}
                             >
-                                {isActive(`/portal/${portalId}`) &&
-                                    !isSidebarCollapsed && (
-                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-sm" />
-                                    )}
-                                <Home
-                                    className={`w-5 h-5 ${isSidebarCollapsed && isActive(`/portal/${portalId}`) ? "text-primary" : ""}`}
-                                />
+                                <Home className="w-5 h-5" />
                                 {!isSidebarCollapsed && <span>Inicio</span>}
                             </Link>
 
@@ -188,26 +220,19 @@ export function PortalLayout() {
                                 <>
                                     <Link
                                         to={`/portal/${portalId}/materias`}
-                                        className={`flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "gap-3 px-4"} py-2.5 rounded-sm transition-all relative ${
+                                        className={`flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "gap-3 px-3.5"} py-2.5 transition-all ${
                                             location.pathname.startsWith(
                                                 `/portal/${portalId}/materias`,
                                             )
-                                                ? "text-foreground"
+                                                ? "text-primary font-medium bg-primary/10"
                                                 : "text-muted-foreground hover:text-foreground hover:bg-surface-container-low"
                                         }`}
+                                        style={{ borderRadius: "var(--radius-sm)" }}
                                         title={
                                             isSidebarCollapsed ? "Materias" : ""
                                         }
                                     >
-                                        {location.pathname.startsWith(
-                                            `/portal/${portalId}/materias`,
-                                        ) &&
-                                            !isSidebarCollapsed && (
-                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-sm" />
-                                            )}
-                                        <BookOpen
-                                            className={`w-5 h-5 ${isSidebarCollapsed && location.pathname.startsWith(`/portal/${portalId}/materias`) ? "text-primary" : ""}`}
-                                        />
+                                        <BookOpen className="w-5 h-5" />
                                         {!isSidebarCollapsed && (
                                             <span>Materias</span>
                                         )}
@@ -215,24 +240,17 @@ export function PortalLayout() {
 
                                     <Link
                                         to={`/portal/${portalId}/foro`}
-                                        className={`flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "gap-3 px-4"} py-2.5 rounded-sm transition-all relative ${
+                                        className={`flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "gap-3 px-3.5"} py-2.5 transition-all ${
                                             location.pathname.startsWith(
                                                 `/portal/${portalId}/foro`,
                                             )
-                                                ? "text-foreground"
+                                                ? "text-primary font-medium bg-primary/10"
                                                 : "text-muted-foreground hover:text-foreground hover:bg-surface-container-low"
                                         }`}
+                                        style={{ borderRadius: "var(--radius-sm)" }}
                                         title={isSidebarCollapsed ? "Foro" : ""}
                                     >
-                                        {location.pathname.startsWith(
-                                            `/portal/${portalId}/foro`,
-                                        ) &&
-                                            !isSidebarCollapsed && (
-                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-sm" />
-                                            )}
-                                        <MessageSquare
-                                            className={`w-5 h-5 ${isSidebarCollapsed && location.pathname.startsWith(`/portal/${portalId}/foro`) ? "text-primary" : ""}`}
-                                        />
+                                        <MessageSquare className="w-5 h-5" />
                                         {!isSidebarCollapsed && (
                                             <span>Foro</span>
                                         )}
@@ -244,24 +262,17 @@ export function PortalLayout() {
                             {isGuest && (
                                 <Link
                                     to={`/portal/${portalId}/solicitud`}
-                                    className={`flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "gap-3 px-4"} py-2.5 rounded-sm transition-all relative ${
+                                    className={`flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "gap-3 px-3.5"} py-2.5 transition-all ${
                                         location.pathname.includes(
                                             `/portal/${portalId}/solicitud`,
                                         )
-                                            ? "text-foreground"
+                                            ? "text-primary font-medium bg-primary/10"
                                             : "text-muted-foreground hover:text-foreground hover:bg-surface-container-low"
                                     }`}
+                                    style={{ borderRadius: "var(--radius-sm)" }}
                                     title={isSidebarCollapsed ? "Unirse" : ""}
                                 >
-                                    {location.pathname.includes(
-                                        `/portal/${portalId}/solicitud`,
-                                    ) &&
-                                        !isSidebarCollapsed && (
-                                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-sm" />
-                                        )}
-                                    <UserPlus
-                                        className={`w-5 h-5 ${isSidebarCollapsed && location.pathname.includes(`/portal/${portalId}/solicitud`) ? "text-primary" : ""}`}
-                                    />
+                                    <UserPlus className="w-5 h-5" />
                                     {!isSidebarCollapsed && <span>Unirse</span>}
                                 </Link>
                             )}
@@ -269,9 +280,13 @@ export function PortalLayout() {
                             {/* Admin — solo admins, sin cambios */}
                             {isAdmin && (
                                 <>
-                                    <div className="my-4">
-                                        <div className="h-px bg-border mb-3" />
-                                    </div>
+                                    <div
+                                        className="my-4"
+                                        style={{
+                                            borderTop:
+                                                "1px solid var(--border)",
+                                        }}
+                                    />
 
                                     {!isSidebarCollapsed && (
                                         <button
@@ -280,7 +295,8 @@ export function PortalLayout() {
                                                     !isAdminExpanded,
                                                 )
                                             }
-                                            className="w-full flex items-center justify-between px-4 py-2 text-on-surface-variant hover:text-foreground hover:bg-surface-container-low rounded-sm transition-colors"
+                                            className="w-full flex items-center justify-between px-3.5 py-2 text-on-surface-variant hover:text-foreground hover:bg-surface-container-low transition-colors"
+                                            style={{ borderRadius: "var(--radius-sm)" }}
                                         >
                                             <span className="text-xs uppercase tracking-wide font-medium">
                                                 Admin
@@ -298,28 +314,21 @@ export function PortalLayout() {
                                         <>
                                             <Link
                                                 to={`/portal/${portalId}/admin/solicitudes`}
-                                                className={`flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "gap-3 px-4"} py-2.5 rounded-sm transition-all relative ${
+                                                className={`flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "gap-3 px-3.5"} py-2.5 transition-all ${
                                                     location.pathname.includes(
                                                         `/portal/${portalId}/admin/solicitudes`,
                                                     )
-                                                        ? "text-foreground"
+                                                        ? "text-primary font-medium bg-primary/10"
                                                         : "text-muted-foreground hover:text-foreground hover:bg-surface-container-low"
                                                 }`}
+                                                style={{ borderRadius: "var(--radius-sm)" }}
                                                 title={
                                                     isSidebarCollapsed
                                                         ? "Solicitudes y Material"
                                                         : ""
                                                 }
                                             >
-                                                {location.pathname.includes(
-                                                    `/portal/${portalId}/admin/solicitudes`,
-                                                ) &&
-                                                    !isSidebarCollapsed && (
-                                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-sm" />
-                                                    )}
-                                                <FileText
-                                                    className={`w-5 h-5 ${isSidebarCollapsed && location.pathname.includes(`/portal/${portalId}/admin/solicitudes`) ? "text-primary" : ""}`}
-                                                />
+                                                <FileText className="w-5 h-5" />
                                                 {!isSidebarCollapsed && (
                                                     <span>
                                                         Solicitudes y Material
@@ -329,28 +338,21 @@ export function PortalLayout() {
 
                                             <Link
                                                 to={`/portal/${portalId}/admin/panel`}
-                                                className={`flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "gap-3 px-4"} py-2.5 rounded-sm transition-all relative ${
+                                                className={`flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "gap-3 px-3.5"} py-2.5 transition-all ${
                                                     location.pathname.includes(
                                                         `/portal/${portalId}/admin/panel`,
                                                     )
-                                                        ? "text-foreground"
+                                                        ? "text-primary font-medium bg-primary/10"
                                                         : "text-muted-foreground hover:text-foreground hover:bg-surface-container-low"
                                                 }`}
+                                                style={{ borderRadius: "var(--radius-sm)" }}
                                                 title={
                                                     isSidebarCollapsed
                                                         ? "Panel de Administración"
                                                         : ""
                                                 }
                                             >
-                                                {location.pathname.includes(
-                                                    `/portal/${portalId}/admin/panel`,
-                                                ) &&
-                                                    !isSidebarCollapsed && (
-                                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-sm" />
-                                                    )}
-                                                <Users
-                                                    className={`w-5 h-5 ${isSidebarCollapsed && location.pathname.includes(`/portal/${portalId}/admin/panel`) ? "text-primary" : ""}`}
-                                                />
+                                                <Users className="w-5 h-5" />
                                                 {!isSidebarCollapsed && (
                                                     <span>
                                                         Panel de Administración
@@ -360,28 +362,21 @@ export function PortalLayout() {
 
                                             <Link
                                                 to={`/portal/${portalId}/admin/configuracion`}
-                                                className={`flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "gap-3 px-4"} py-2.5 rounded-sm transition-all relative ${
+                                                className={`flex items-center ${isSidebarCollapsed ? "justify-center px-2" : "gap-3 px-3.5"} py-2.5 transition-all ${
                                                     location.pathname.includes(
                                                         `/portal/${portalId}/admin/configuracion`,
                                                     )
-                                                        ? "text-foreground"
+                                                        ? "text-primary font-medium bg-primary/10"
                                                         : "text-muted-foreground hover:text-foreground hover:bg-surface-container-low"
                                                 }`}
+                                                style={{ borderRadius: "var(--radius-sm)" }}
                                                 title={
                                                     isSidebarCollapsed
                                                         ? "Configuración"
                                                         : ""
                                                 }
                                             >
-                                                {location.pathname.includes(
-                                                    `/portal/${portalId}/admin/configuracion`,
-                                                ) &&
-                                                    !isSidebarCollapsed && (
-                                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-sm" />
-                                                    )}
-                                                <Settings
-                                                    className={`w-5 h-5 ${isSidebarCollapsed && location.pathname.includes(`/portal/${portalId}/admin/configuracion`) ? "text-primary" : ""}`}
-                                                />
+                                                <Settings className="w-5 h-5" />
                                                 {!isSidebarCollapsed && (
                                                     <span>Configuración</span>
                                                 )}
@@ -395,24 +390,26 @@ export function PortalLayout() {
                         {/* Estado */}
                         {!isSidebarCollapsed && (
                             <div
-                                className="mt-8 pt-6"
+                                className="mt-6 pt-5"
                                 style={{
-                                    borderTop:
-                                        "1px solid rgba(169, 180, 185, 0.15)",
+                                    borderTop: "1px solid var(--border)",
                                 }}
                             >
-                                <div className="text-xs text-foreground uppercase tracking-wide mb-2">
+                                <div className="text-xs text-muted-foreground uppercase tracking-wide mb-2.5">
                                     Estado
                                 </div>
                                 {isAdmin ? (
                                     <>
-                                        <div className="flex items-center gap-2 mb-2">
+                                        <div className="flex items-center gap-2 mb-2.5">
                                             <div className="w-2 h-2 rounded-full bg-primary" />
                                             <span className="text-sm text-foreground">
                                                 Miembro activo
                                             </span>
                                         </div>
-                                        <div className="mt-2 px-2 py-1 bg-destructive/10 text-destructive rounded-sm text-xs inline-block border border-destructive/20">
+                                        <div
+                                            className="px-2.5 py-1 bg-destructive/10 text-destructive text-xs inline-block border border-destructive/20 font-medium"
+                                            style={{ borderRadius: "var(--radius-sm)" }}
+                                        >
                                             Administrador
                                         </div>
                                     </>
@@ -425,7 +422,7 @@ export function PortalLayout() {
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                                        <div className="w-2 h-2 rounded-full" style={{ background: "var(--portal-amber)" }} />
                                         <span className="text-sm text-foreground">
                                             {isOpen
                                                 ? "Visitante (portal abierto)"
@@ -439,7 +436,13 @@ export function PortalLayout() {
                         {isSidebarCollapsed && (
                             <div className="mt-4 flex justify-center">
                                 <div
-                                    className={`w-2 h-2 rounded-full ${isMember || isAdmin ? "bg-primary" : "bg-yellow-500"}`}
+                                    className="w-2 h-2 rounded-full"
+                                    style={{
+                                        background:
+                                            isMember || isAdmin
+                                                ? "var(--primary)"
+                                                : "var(--portal-amber)",
+                                    }}
                                     title={
                                         isMember || isAdmin
                                             ? "Miembro activo"
@@ -453,12 +456,18 @@ export function PortalLayout() {
                     </div>
                 </aside>
 
-                <main className="flex-1">
+                <main className="flex-1 portal-fade-up">
                     <Outlet
                         context={{ portal, isMember, isAdmin, isGuest, isOpen }}
                     />
                 </main>
             </div>
+
+            {/* Portal target for modals/dropdowns — stays inside .portal-scope (and
+                the .dark wrapper above it) so tokens and theme still apply, but
+                outside any ancestor that clips via overflow or shifts the
+                containing block via transform. */}
+            <div id="portal-overlay-root" />
         </div>
     );
 }
