@@ -6,6 +6,10 @@ import {
 import { adminService } from "../../../services/AdminService";
 import { usePortalContext } from "../../../hooks/usePortalContext";
 import type { SolicitudResponse, MaterialPendienteDTO } from "../../../types/Admin/Admin";
+import { Modal } from "../../../Components/common/Modal";
+import { Pagination } from "../../../Components/common/Pagination";
+import { getTipoColor } from "../../../Utils/tagColors";
+import { getExtensionIcon, getFileExtension } from "../../../Utils/materialIcons";
 
 // ─── Modales ──────────────────────────────────────────────────────────────────
 
@@ -49,15 +53,7 @@ interface MaterialDetailModalProps {
 function ConfirmModal({ isOpen, onClose, onConfirm, title, message, loading }: ConfirmModalProps) {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div
-        className="bg-card max-w-lg w-full"
-        style={{
-          borderRadius: "var(--radius-lg)",
-          boxShadow: "var(--portal-shadow-modal)",
-          border: "1px solid var(--border)",
-        }}
-      >
+    <Modal onClose={onClose} maxWidth="32rem">
         <div className="border-b border-border px-6 py-4">
           <h2 className="text-card-foreground">{title}</h2>
         </div>
@@ -83,8 +79,7 @@ function ConfirmModal({ isOpen, onClose, onConfirm, title, message, loading }: C
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -105,15 +100,7 @@ function RejectModal({ isOpen, onClose, onConfirm, title, itemName, loading }: R
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div
-        className="bg-card max-w-lg w-full"
-        style={{
-          borderRadius: "var(--radius-lg)",
-          boxShadow: "var(--portal-shadow-modal)",
-          border: "1px solid var(--border)",
-        }}
-      >
+    <Modal onClose={handleClose} maxWidth="32rem">
         <div className="border-b border-border px-6 py-4">
           <h2 className="text-card-foreground">{title}</h2>
         </div>
@@ -160,8 +147,7 @@ function RejectModal({ isOpen, onClose, onConfirm, title, itemName, loading }: R
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -178,15 +164,7 @@ function RequestDetailModal({
     .join("");
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div
-        className="bg-card max-w-2xl w-full"
-        style={{
-          borderRadius: "var(--radius-lg)",
-          boxShadow: "var(--portal-shadow-modal)",
-          border: "1px solid var(--border)",
-        }}
-      >
+    <Modal onClose={onClose} maxWidth="42rem">
         <div className="border-b border-border px-6 py-4">
           <h2 className="text-card-foreground">Solicitud de Membresía</h2>
         </div>
@@ -244,16 +222,15 @@ function RequestDetailModal({
             <button
               onClick={() => { onApprove(); onClose(); }}
               disabled={loading}
-              className="px-5 py-2.5 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
-              style={{ borderRadius: "var(--radius)" }}
+              className="px-5 py-2.5 text-white hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50 portal-hoverable"
+              style={{ borderRadius: "var(--radius)", background: "var(--portal-teal)" }}
             >
               <Check className="w-4 h-4" />
               <span>Aprobar</span>
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -278,28 +255,32 @@ function MaterialDetailModal({
 }: MaterialDetailModalProps) {
   if (!isOpen || !material) return null;
 
+  const tipoColor = getTipoColor(material.tipo);
+  const extension = getFileExtension(material.tipoArchivo);
+  const ExtIcon = getExtensionIcon(extension);
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div
-        className="bg-card max-w-2xl w-full"
-        style={{
-          borderRadius: "var(--radius-lg)",
-          boxShadow: "var(--portal-shadow-modal)",
-          border: "1px solid var(--border)",
-        }}
-      >
+    <Modal onClose={onClose} maxWidth="42rem">
         <div className="border-b border-border px-6 py-4">
           <h2 className="text-card-foreground">Detalle del Material</h2>
         </div>
         <div className="p-6">
           <div className="mb-5">
-            <div className="flex items-start justify-between gap-4 mb-3">
-              <h3 className="text-foreground font-medium text-lg">{material.nombre}</h3>
+            <div className="flex items-start gap-4 mb-3">
               <div
-                className="px-3 py-1 bg-primary/10 text-primary text-xs font-medium whitespace-nowrap"
-                style={{ borderRadius: "var(--radius)" }}
+                className="w-12 h-12 rounded-md flex items-center justify-center flex-shrink-0"
+                style={{ background: "var(--muted)" }}
               >
-                {TIPO_LABEL[material.tipo] ?? material.tipo}
+                <ExtIcon className="w-6 h-6" style={{ color: "var(--muted-foreground)" }} />
+              </div>
+              <div className="flex-1 flex items-start justify-between gap-4">
+                <h3 className="text-foreground font-medium text-lg">{material.nombre}</h3>
+                <span
+                  className="px-3 py-1 text-xs font-medium whitespace-nowrap"
+                  style={{ borderRadius: "var(--radius)", background: tipoColor.bg, color: tipoColor.text }}
+                >
+                  {TIPO_LABEL[material.tipo] ?? material.tipo}
+                </span>
               </div>
             </div>
             <p className="text-sm text-on-surface-variant mb-3">
@@ -329,7 +310,7 @@ function MaterialDetailModal({
               </div>
               <div>
                 <div className="text-xs text-on-surface-variant mb-1">Tipo de archivo</div>
-                <div className="text-sm text-foreground font-medium">{material.tipoArchivo}</div>
+                <div className="text-sm text-foreground font-medium uppercase">{extension}</div>
               </div>
             </div>
           </div>
@@ -364,16 +345,15 @@ function MaterialDetailModal({
             <button
               onClick={() => { onApprove(); onClose(); }}
               disabled={loading}
-              className="px-5 py-2.5 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
-              style={{ borderRadius: "var(--radius)" }}
+              className="px-5 py-2.5 text-white hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50 portal-hoverable"
+              style={{ borderRadius: "var(--radius)", background: "var(--portal-teal)" }}
             >
               <Check className="w-4 h-4" />
               <span>Aprobar</span>
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -384,6 +364,9 @@ export function RequestsAndMaterial() {
   const portalId = portal?.id as number;
 
   const [activeTab, setActiveTab] = useState<"requests" | "material">("requests");
+  const PAGE_SIZE = 6;
+  const [requestsPage, setRequestsPage] = useState(1);
+  const [materialsPage, setMaterialsPage] = useState(1);
 
   // ── Estado de solicitudes ─────────────────────────────────────────────────
   const [requests, setRequests]             = useState<SolicitudResponse[]>([]);
@@ -466,6 +449,14 @@ export function RequestsAndMaterial() {
     if (activeTab === "requests") fetchRequests();
     if (activeTab === "material") fetchMaterials();
   }, [activeTab, fetchRequests, fetchMaterials]);
+
+  useEffect(() => {
+    setRequestsPage(1);
+  }, [requests.length]);
+
+  useEffect(() => {
+    setMaterialsPage(1);
+  }, [materials.length]);
 
   // ── Acciones sobre solicitudes ────────────────────────────────────────────
 
@@ -590,8 +581,13 @@ export function RequestsAndMaterial() {
       )}
       {successMsg && (
         <div
-          className="mb-4 p-4 bg-green-600/10 border border-green-600/30 text-green-700 text-sm flex items-center gap-2"
-          style={{ borderRadius: "var(--radius)" }}
+          className="mb-4 p-4 text-sm flex items-center gap-2"
+          style={{
+            borderRadius: "var(--radius)",
+            background: "var(--portal-teal-soft)",
+            border: "1px solid var(--portal-teal-border)",
+            color: "var(--portal-teal-dim)",
+          }}
         >
           <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
           <span>{successMsg}</span>
@@ -614,9 +610,8 @@ export function RequestsAndMaterial() {
               <span>Solicitudes</span>
               {requests.length > 0 && (
                 <span
-                  className="px-2 py-0.5 text-xs font-medium"
+                  className="min-w-[1.25rem] px-1.5 py-0.5 rounded-full text-xs font-medium text-center tabular-nums"
                   style={{
-                    borderRadius: "var(--radius-sm)",
                     background: "var(--portal-amber)",
                     color: "#ffffff",
                   }}
@@ -642,9 +637,8 @@ export function RequestsAndMaterial() {
               <span>Material</span>
               {materials.length > 0 && (
                 <span
-                  className="px-2 py-0.5 text-xs font-medium"
+                  className="min-w-[1.25rem] px-1.5 py-0.5 rounded-full text-xs font-medium text-center tabular-nums"
                   style={{
-                    borderRadius: "var(--radius-sm)",
                     background: "var(--portal-amber)",
                     color: "#ffffff",
                   }}
@@ -692,7 +686,7 @@ export function RequestsAndMaterial() {
             </div>
           ) : (
             <div className="space-y-4">
-              {requests.map((request) => {
+              {requests.slice((requestsPage - 1) * PAGE_SIZE, requestsPage * PAGE_SIZE).map((request) => {
                 const isProcessing = processingId === request.id;
                 const displayName  = request.nombreCompleto ?? request.usuario.nombre;
                 const initials     = displayName
@@ -738,8 +732,8 @@ export function RequestsAndMaterial() {
                           <button
                             onClick={() => handleApproveRequest(request.id)}
                             disabled={isProcessing}
-                            className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
-                            style={{ borderRadius: "var(--radius)" }}
+                            className="px-4 py-2 text-white hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50 portal-hoverable"
+                            style={{ borderRadius: "var(--radius)", background: "var(--portal-teal)" }}
                           >
                             {isProcessing ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
@@ -763,6 +757,11 @@ export function RequestsAndMaterial() {
                   </div>
                 );
               })}
+              <Pagination
+                page={requestsPage}
+                totalPages={Math.max(1, Math.ceil(requests.length / PAGE_SIZE))}
+                onPageChange={setRequestsPage}
+              />
             </div>
           )}
         </div>
@@ -800,8 +799,11 @@ export function RequestsAndMaterial() {
             </div>
           ) : (
             <div className="space-y-4">
-              {materials.map((material) => {
+              {materials.slice((materialsPage - 1) * PAGE_SIZE, materialsPage * PAGE_SIZE).map((material) => {
                 const isProcessing = processingId === material.id;
+                const tipoColor = getTipoColor(material.tipo);
+                const extension = getFileExtension(material.tipoArchivo);
+                const ExtIcon = getExtensionIcon(extension);
                 return (
                   <div
                     key={material.id}
@@ -812,18 +814,26 @@ export function RequestsAndMaterial() {
                       boxShadow: "var(--portal-shadow-card)",
                     }}
                   >
-                    <div className="flex items-start justify-between gap-4 mb-3">
-                      <div className="flex-1">
-                        <h3 className="text-foreground font-medium mb-1">{material.nombre}</h3>
-                        <p className="text-sm text-on-surface-variant">
-                          {material.materia.nombre} — {material.materia.carpeta}
-                        </p>
-                      </div>
+                    <div className="flex items-start gap-4 mb-3">
                       <div
-                        className="px-3 py-1 bg-primary/10 text-primary text-xs font-medium whitespace-nowrap"
-                        style={{ borderRadius: "var(--radius)" }}
+                        className="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0"
+                        style={{ background: "var(--muted)" }}
                       >
-                        {TIPO_LABEL[material.tipo] ?? material.tipo}
+                        <ExtIcon className="w-5 h-5" style={{ color: "var(--muted-foreground)" }} />
+                      </div>
+                      <div className="flex-1 flex items-start justify-between gap-4">
+                        <div>
+                          <h3 className="text-foreground font-medium mb-1">{material.nombre}</h3>
+                          <p className="text-sm text-on-surface-variant">
+                            {material.materia.nombre} — {material.materia.carpeta}
+                          </p>
+                        </div>
+                        <span
+                          className="px-3 py-1 text-xs font-medium whitespace-nowrap"
+                          style={{ borderRadius: "var(--radius)", background: tipoColor.bg, color: tipoColor.text }}
+                        >
+                          {TIPO_LABEL[material.tipo] ?? material.tipo}
+                        </span>
                       </div>
                     </div>
 
@@ -852,8 +862,8 @@ export function RequestsAndMaterial() {
                       <button
                         onClick={() => handleApproveMaterial(material.id)}
                         disabled={isProcessing}
-                        className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 portal-hoverable"
-                        style={{ borderRadius: "var(--radius)" }}
+                        className="px-4 py-2 text-white hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50 portal-hoverable"
+                        style={{ borderRadius: "var(--radius)", background: "var(--portal-teal)" }}
                       >
                         {isProcessing ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -875,6 +885,11 @@ export function RequestsAndMaterial() {
                   </div>
                 );
               })}
+              <Pagination
+                page={materialsPage}
+                totalPages={Math.max(1, Math.ceil(materials.length / PAGE_SIZE))}
+                onPageChange={setMaterialsPage}
+              />
             </div>
           )}
         </div>

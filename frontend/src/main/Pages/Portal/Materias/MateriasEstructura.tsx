@@ -642,10 +642,7 @@ export function Subjects() {
                         <FolderTree className="w-6 h-6" />
                     </div>
                     <div>
-                        <h1
-                            className="text-2xl sm:text-3xl mb-2 text-foreground font-semibold"
-                            style={{ fontFamily: "Work Sans, sans-serif" }}
-                        >
+                        <h1 className="text-foreground mb-1.5">
                             Materias de la Carrera
                         </h1>
                         <p className="text-muted-foreground">

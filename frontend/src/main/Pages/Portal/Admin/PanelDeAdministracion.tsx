@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Users, History, Vote, MoreVertical,
+  Users, History, Vote,
   ChevronUp, ChevronDown, Check, X, Clock, Loader2,
   BlocksIcon,
   Lock,
+  Unlock,
+  UserMinus,
   ShieldCheck,
   AlertTriangle,
 } from "lucide-react";
@@ -12,6 +14,9 @@ import { authService } from "../../../services/AuthService";
 import { usePortalContext } from "../../../hooks/usePortalContext";
 import { useToast } from "../../../hooks/useToast";
 import { Toast } from "../../../Components/common/Toast";
+import { Modal } from "../../../Components/common/Modal";
+import { ContextMenu } from "../../../Components/common/ContextMenu";
+import { Pagination } from "../../../Components/common/Pagination";
 import type { AccionAdminResponse, PageAccionAdminResponse } from "../../../types/Admin/Admin";
 
 import type {
@@ -31,8 +36,6 @@ interface ActionMenuProps {
 }
 
 function ActionMenu({ member, currentUserId, onAction, bloqueado}: ActionMenuProps) {
-  const [isOpen, setIsOpen] = useState(false);
-
   // El admin no ve las opciones de degradar/remover/bloquear sobre sí mismo
   if (member.usuarioId === currentUserId) return null;
 
@@ -51,38 +54,23 @@ function ActionMenu({ member, currentUserId, onAction, bloqueado}: ActionMenuPro
           { label: "Bloquear",                 value: "ban" },
         ];
 
+  const actionIcon: Record<string, React.ReactNode> = {
+    promote: <ChevronUp className="w-4 h-4 text-primary" />,
+    demote: <ChevronDown className="w-4 h-4" />,
+    kick: <UserMinus className="w-4 h-4" />,
+    ban: <Lock className="w-4 h-4" />,
+    unblock: <Unlock className="w-4 h-4 text-primary" />,
+  };
+
   return (
-    <div className="relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="p-1.5 hover:bg-accent transition-colors"
-        style={{ borderRadius: "var(--radius-sm)" }}
-      >
-        <MoreVertical className="w-4 h-4 text-on-surface-variant" />
-      </button>
-      {isOpen && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-          <div
-            className="absolute right-0 top-full mt-1.5 bg-surface-container-low border border-border z-20 min-w-[200px] overflow-hidden"
-            style={{ borderRadius: "var(--radius)", boxShadow: "var(--portal-shadow-lift)" }}
-          >
-            {actions.map((action) => (
-              <button
-                key={action.value}
-                onClick={() => {
-                  onAction(action.value, member);
-                  setIsOpen(false);
-                }}
-                className="w-full text-left px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
-              >
-                {action.label}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+    <ContextMenu
+      items={actions.map((action) => ({
+        label: action.label,
+        icon: actionIcon[action.value],
+        onClick: () => onAction(action.value, member),
+        danger: action.value === "kick" || action.value === "ban",
+      }))}
+    />
   );
 }
 
@@ -112,11 +100,7 @@ function MemberActionConfirmModal({
   }[action] || { title: "Confirmar Acción", text: "¿Estás seguro?", btnClass: "bg-primary" };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div
-        className="bg-card max-w-lg w-full overflow-hidden"
-        style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-modal)" }}
-      >
+    <Modal onClose={onClose} maxWidth="32rem">
         <div className="border-b border-border px-6 py-4 flex items-center gap-3">
           <div
             className="w-9 h-9 flex items-center justify-center shrink-0 bg-primary/10 text-primary"
@@ -148,8 +132,7 @@ function MemberActionConfirmModal({
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -185,11 +168,7 @@ function VoteModal({ isOpen, onClose, onConfirm, title, actionDescription, loadi
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div
-        className="bg-card max-w-lg w-full overflow-hidden"
-        style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-modal)" }}
-      >
+    <Modal onClose={handleClose} maxWidth="32rem">
         <div className="border-b border-border px-6 py-4 flex items-center gap-3">
           <div
             className="w-9 h-9 flex items-center justify-center shrink-0 bg-primary/10 text-primary"
@@ -245,8 +224,7 @@ function VoteModal({ isOpen, onClose, onConfirm, title, actionDescription, loadi
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -267,21 +245,21 @@ function VoteConfirmModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div
-        className="bg-card max-w-lg w-full overflow-hidden"
-        style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-modal)" }}
-      >
+    <Modal onClose={onClose} maxWidth="32rem">
         <div className="border-b border-border px-6 py-4 flex items-center gap-3">
           <div
-            className={`w-9 h-9 flex items-center justify-center shrink-0 ${
-              voteType === "approve"
-                ? "bg-green-600/10 text-green-700 dark:text-green-400"
-                : "bg-destructive/10 text-destructive"
-            }`}
-            style={{ borderRadius: "var(--radius-sm)" }}
+            className="w-9 h-9 flex items-center justify-center shrink-0"
+            style={{
+              borderRadius: "var(--radius-sm)",
+              background: voteType === "approve" ? "var(--portal-teal-soft)" : undefined,
+              color: voteType === "approve" ? "var(--portal-teal-dim)" : undefined,
+            }}
           >
-            {voteType === "approve" ? <Check className="w-4.5 h-4.5" /> : <X className="w-4.5 h-4.5" />}
+            {voteType === "approve" ? (
+              <Check className="w-4.5 h-4.5" />
+            ) : (
+              <X className="w-4.5 h-4.5 text-destructive" />
+            )}
           </div>
           <h2 className="text-card-foreground font-medium">
             {voteType === "approve" ? "Aprobar Votación" : "Rechazar Votación"}
@@ -289,19 +267,19 @@ function VoteConfirmModal({
         </div>
         <div className="p-6">
           <div
-            className={`p-4 border mb-4 ${
+            className={`p-4 border mb-4 ${voteType === "approve" ? "" : "bg-destructive/5 border-destructive/20"}`}
+            style={
               voteType === "approve"
-                ? "bg-green-600/5 border-green-600/20"
-                : "bg-destructive/5 border-destructive/20"
-            }`}
-            style={{ borderRadius: "var(--radius)" }}
+                ? { background: "var(--portal-teal-soft)", borderColor: "var(--portal-teal-border)" }
+                : undefined
+            }
           >
             <p className="text-sm text-foreground mb-2">
               <span className="font-medium">Acción propuesta:</span> {actionDescription}
             </p>
             {voteType === "approve" ? (
               <p className="text-sm text-foreground flex items-start gap-1.5">
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-yellow-600 dark:text-yellow-400" />
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "var(--portal-amber)" }} />
                 <span>
                   Si con tu voto se alcanza la mayoría necesaria,{" "}
                   <span className="font-medium">la acción se ejecutará de inmediato</span> y no podrá revertirse.
@@ -309,7 +287,7 @@ function VoteConfirmModal({
               </p>
             ) : (
               <p className="text-sm text-foreground flex items-start gap-1.5">
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-yellow-600 dark:text-yellow-400" />
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "var(--portal-amber)" }} />
                 <span>
                   Una vez que rechaces esta votación,{" "}
                   <span className="font-medium">no podrás cambiar tu voto</span>.
@@ -334,18 +312,21 @@ function VoteConfirmModal({
               disabled={loading}
               className={`px-5 py-2.5 transition-colors flex items-center gap-2 disabled:opacity-50 ${
                 voteType === "approve"
-                  ? "bg-green-600 text-white hover:bg-green-700"
+                  ? "text-white hover:opacity-90"
                   : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
               }`}
-              style={{ borderRadius: "var(--radius-sm)", boxShadow: "var(--portal-shadow-card)" }}
+              style={{
+                borderRadius: "var(--radius-sm)",
+                boxShadow: "var(--portal-shadow-card)",
+                background: voteType === "approve" ? "var(--portal-teal)" : undefined,
+              }}
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               Confirmar {voteType === "approve" ? "Aprobación" : "Rechazo"}
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -482,14 +463,6 @@ const ACCION_CFG: Record<string, {
   VOTACION_CERRADA:                { label: 'Votación cerrada',              pillClass: 'neutral', icon: 'neutral',        grupo: 'votaciones'   }
 };
 
-const PILL_STYLES: Record<string, string> = {
-  success: 'bg-green-600/10 text-green-700 border border-green-600/25 dark:text-green-400',
-  danger:  'bg-destructive/10 text-destructive border border-destructive/25',
-  warning: 'bg-yellow-500/10 text-yellow-700 border border-yellow-500/25 dark:text-yellow-400',
-  info:    'bg-primary/10 text-primary border border-primary/25',
-  neutral: 'bg-surface-container text-on-surface-variant border border-border',
-};
-
 const ACCION_GRUPOS = [
   { key: 'all',        label: 'Todas'       },
   { key: 'miembros',   label: 'Miembros'    },
@@ -523,7 +496,6 @@ function absTime(isoString: string): string {
 interface AccionCardProps {
   accion: AccionAdminResponse;
   cfg: { label: string; pillClass: string; icon?: string; grupo: string };
-  pillCls: string;
   initials: string;
 }
 
@@ -540,18 +512,25 @@ function absTimeStr(isoString: string): string {
   });
 }
 
-// Color del icono container según pillClass
+// Color del icono container según pillClass — success/warning usan los acentos
+// teal/amber del sistema, así que van como estilo inline (no son utilities de Tailwind).
 const ICON_CONTAINER_CLS: Record<string, string> = {
-  success: 'bg-green-600/10 text-green-700 dark:text-green-400',
+  success: '',
   danger:  'bg-destructive/10 text-destructive',
-  warning: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400',
+  warning: '',
   info:    'bg-primary/10 text-primary',
   neutral: 'bg-surface-container text-on-surface-variant',
 };
 
-function AccionCard({ accion, cfg, pillCls, initials }: AccionCardProps) {
+const ICON_CONTAINER_STYLE: Partial<Record<string, React.CSSProperties>> = {
+  success: { background: "var(--portal-teal-soft)", color: "var(--portal-teal-dim)" },
+  warning: { background: "var(--portal-amber-soft)", color: "var(--portal-amber-dim)" },
+};
+
+function AccionCard({ accion, cfg, initials }: AccionCardProps) {
   const [open, setOpen] = useState(false);
   const iconContainerCls = ICON_CONTAINER_CLS[cfg.pillClass] ?? ICON_CONTAINER_CLS.neutral;
+  const iconContainerStyle = ICON_CONTAINER_STYLE[cfg.pillClass];
  
   // Detectar hex de color en entidadDescripcion (para cambios de color de portal)
   const hexColors = accion.entidadDescripcion
@@ -571,7 +550,7 @@ function AccionCard({ accion, cfg, pillCls, initials }: AccionCardProps) {
         {/* Ícono de acción */}
         <div
           className={`w-8 h-8 flex items-center justify-center shrink-0 ${iconContainerCls}`}
-          style={{ borderRadius: "var(--radius-sm)" }}
+          style={{ borderRadius: "var(--radius-sm)", ...iconContainerStyle }}
         >
           <AuditIcon tipo={accion.tipo} />
         </div>
@@ -750,6 +729,11 @@ export function AdminPanel() {
   const currentUserId = authService.getUserId();
 
   const [activeTab, setActiveTab] = useState<"members" | "history" | "votes" | "blocks">("members");
+  const PAGE_SIZE = 6;
+  const [membersPage, setMembersPage] = useState(1);
+  const [blockedPage, setBlockedPage] = useState(1);
+  const [votesPage, setVotesPage] = useState(1);
+  const [closedVotesPage, setClosedVotesPage] = useState(1);
 
   // ── Estado de miembros ────────────────────────────────────────────────────
   const [members, setMembers]         = useState<MiembroResponse[]>([]);
@@ -829,6 +813,10 @@ export function AdminPanel() {
     if (activeTab === "members") fetchMembers();
   }, [activeTab, fetchMembers]);
 
+  useEffect(() => {
+    setMembersPage(1);
+  }, [members.length]);
+
   // ── Carga de miembros bloqueados ──────────────────────────────────────────
 
   const fetchBlockedMembers = useCallback(async () => {
@@ -850,6 +838,10 @@ export function AdminPanel() {
   useEffect(() => {
     if (activeTab === "blocks") fetchBlockedMembers();
   }, [activeTab, fetchBlockedMembers])
+
+  useEffect(() => {
+    setBlockedPage(1);
+  }, [blockedMembers.length]);
 
   // ── Carga de historial ────────────────────────────────────────────────────────
 
@@ -896,6 +888,14 @@ export function AdminPanel() {
   useEffect(() => {
     if (activeTab === "votes") fetchVotes();
   }, [activeTab, fetchVotes]);
+
+  useEffect(() => {
+    setVotesPage(1);
+  }, [votes.length]);
+
+  useEffect(() => {
+    setClosedVotesPage(1);
+  }, [closedVotes.length]);
 
   // ── Carga de votaciones cerradas (lazy) ───────────────────────────────────
 
@@ -1104,7 +1104,7 @@ export function AdminPanel() {
           <ShieldCheck className="w-5 h-5" />
         </div>
         <div>
-          <h1 className="text-foreground mb-1" style={{ fontFamily: "Work Sans, sans-serif" }}>
+          <h1 className="text-foreground mb-1.5">
             Panel de Administración
           </h1>
           <p className="text-on-surface-variant text-sm">
@@ -1139,15 +1139,15 @@ export function AdminPanel() {
                 <span>{label}</span>
                 {badge !== null && (
                   <span
-                    className="px-2 py-0.5 bg-primary text-primary-foreground text-xs font-medium"
-                    style={{ borderRadius: "var(--radius-sm)" }}
+                    className="min-w-[1.25rem] px-1.5 py-0.5 rounded-full text-xs font-medium text-center tabular-nums"
+                    style={{ background: "var(--portal-amber)", color: "#ffffff" }}
                   >
                     {badge}
                   </span>
                 )}
               </div>
               {activeTab === key && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary transition-all duration-200" />
+                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-full" />
               )}
             </button>
           ))}
@@ -1165,12 +1165,17 @@ export function AdminPanel() {
             <div className="text-center py-12 text-destructive text-sm">{membersError}</div>
           ) : (
             <div className="space-y-3">
-              {listaMiembros(members, false)}
+              {listaMiembros(members.slice((membersPage - 1) * PAGE_SIZE, membersPage * PAGE_SIZE), false)}
               {members.length === 0 && (
                 <p className="text-center py-10 text-on-surface-variant text-sm">
                   No hay miembros en este portal todavía.
                 </p>
               )}
+              <Pagination
+                page={membersPage}
+                totalPages={Math.max(1, Math.ceil(members.length / PAGE_SIZE))}
+                onPageChange={setMembersPage}
+              />
             </div>
           )}
         </div>
@@ -1249,7 +1254,6 @@ export function AdminPanel() {
               icon: 'dots',
               grupo: 'portal' as const,
             };
-            const pillCls = PILL_STYLES[cfg.pillClass] ?? PILL_STYLES.neutral;
             const initials = accion.adminNombre
               .split(' ')
               .slice(0, 2)
@@ -1261,7 +1265,6 @@ export function AdminPanel() {
                 key={accion.id}
                 accion={accion}
                 cfg={cfg}
-                pillCls={pillCls}
                 initials={initials}
               />
             );
@@ -1316,7 +1319,7 @@ export function AdminPanel() {
               </div>
             ) : (
               <div className="space-y-4">
-                {votes.map((vote) => {
+                {votes.slice((votesPage - 1) * PAGE_SIZE, votesPage * PAGE_SIZE).map((vote) => {
                   const isVoting = votingId === vote.id;
                   const hasVoted = vote.usuarioYaVoto;
 
@@ -1390,7 +1393,7 @@ export function AdminPanel() {
                         </div>
                         <div className="flex items-center justify-between text-xs text-on-surface-variant mt-2">
                           <span className="flex items-center gap-1">
-                            <Check className="w-3.5 h-3.5 text-green-600" />
+                            <Check className="w-3.5 h-3.5" style={{ color: "var(--portal-teal)" }} />
                             {vote.votosAFavor} a favor
                           </span>
                           <span className="flex items-center gap-1">
@@ -1409,8 +1412,8 @@ export function AdminPanel() {
                           <button
                             onClick={() => handleVote(vote.id, "approve")}
                             disabled={isVoting}
-                            className="flex-1 px-4 py-2.5 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                            style={{ borderRadius: "var(--radius-sm)", boxShadow: "var(--portal-shadow-card)" }}
+                            className="flex-1 px-4 py-2.5 text-white hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+                            style={{ borderRadius: "var(--radius-sm)", boxShadow: "var(--portal-shadow-card)", background: "var(--portal-teal)" }}
                           >
                             {isVoting ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
@@ -1439,6 +1442,11 @@ export function AdminPanel() {
                 })}
               </div>
             )}
+            <Pagination
+              page={votesPage}
+              totalPages={Math.max(1, Math.ceil(votes.length / PAGE_SIZE))}
+              onPageChange={setVotesPage}
+            />
           </div>
 
           {/* Votaciones Cerradas */}
@@ -1469,20 +1477,20 @@ export function AdminPanel() {
                         No hay votaciones cerradas todavía.
                       </p>
                     )}
-                    {closedVotes.map((vote) => {
+                    {closedVotes.slice((closedVotesPage - 1) * PAGE_SIZE, closedVotesPage * PAGE_SIZE).map((vote) => {
                       const borderColor =
                         vote.estado === "APROBADA"
-                          ? "border-green-600"
+                          ? "var(--portal-teal)"
                           : vote.estado === "RECHAZADA"
-                          ? "border-destructive"
-                          : "border-yellow-600";
+                          ? "var(--destructive)"
+                          : "var(--portal-amber)";
 
-                      const badgeClass =
+                      const badgeStyle =
                         vote.estado === "APROBADA"
-                          ? "bg-green-600/10 text-green-600 border-green-600/20"
+                          ? { background: "var(--portal-teal-soft)", color: "var(--portal-teal-dim)", borderColor: "var(--portal-teal-border)" }
                           : vote.estado === "RECHAZADA"
-                          ? "bg-destructive/10 text-destructive border-destructive/20"
-                          : "bg-yellow-600/10 text-yellow-600 border-yellow-600/20";
+                          ? undefined
+                          : { background: "var(--portal-amber-soft)", color: "var(--portal-amber-dim)", borderColor: "var(--portal-amber-border)" };
 
                       const badgeLabel =
                         vote.estado === "APROBADA"
@@ -1494,10 +1502,11 @@ export function AdminPanel() {
                       return (
                         <div
                           key={vote.id}
-                          className={`bg-card p-5 border-l-4 ${borderColor}`}
+                          className="bg-card p-5 border-l-4"
                           style={{
                             borderRadius: "var(--radius-md)",
                             boxShadow: "var(--portal-shadow-card)",
+                            borderLeftColor: borderColor,
                           }}
                         >
                           <div className="flex items-start justify-between gap-4 mb-3">
@@ -1513,8 +1522,8 @@ export function AdminPanel() {
                               </p>
                             </div>
                             <span
-                              className={`px-3 py-1 text-xs font-medium border ${badgeClass}`}
-                              style={{ borderRadius: "var(--radius-sm)" }}
+                              className={`px-3 py-1 text-xs font-medium border ${badgeStyle ? "" : "bg-destructive/10 text-destructive border-destructive/20"}`}
+                              style={{ borderRadius: "var(--radius-sm)", ...badgeStyle }}
                             >
                               {badgeLabel}
                             </span>
@@ -1540,7 +1549,7 @@ export function AdminPanel() {
                           <div className="flex items-center justify-between text-xs text-on-surface-variant">
                             <span className="flex items-center gap-3">
                               <span className="flex items-center gap-1">
-                                <Check className="w-3.5 h-3.5 text-green-600" />
+                                <Check className="w-3.5 h-3.5" style={{ color: "var(--portal-teal)" }} />
                                 {vote.votosAFavor} a favor
                               </span>
                               <span className="flex items-center gap-1">
@@ -1558,6 +1567,11 @@ export function AdminPanel() {
                         </div>
                       );
                     })}
+                    <Pagination
+                      page={closedVotesPage}
+                      totalPages={Math.max(1, Math.ceil(closedVotes.length / PAGE_SIZE))}
+                      onPageChange={setClosedVotesPage}
+                    />
                   </div>
                 )}
               </>
@@ -1591,7 +1605,14 @@ export function AdminPanel() {
               </p>
             </div>
           ) : (
-            <div className="space-y-3">{listaMiembros(blockedMembers, true)}</div>
+            <div className="space-y-3">
+              {listaMiembros(blockedMembers.slice((blockedPage - 1) * PAGE_SIZE, blockedPage * PAGE_SIZE), true)}
+              <Pagination
+                page={blockedPage}
+                totalPages={Math.max(1, Math.ceil(blockedMembers.length / PAGE_SIZE))}
+                onPageChange={setBlockedPage}
+              />
+            </div>
           )
           }
         </div>

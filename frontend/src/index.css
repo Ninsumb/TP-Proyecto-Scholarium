@@ -113,11 +113,13 @@
   --sidebar-accent-foreground: #e8edf1;
   --sidebar-border: rgba(169, 180, 185, 0.2);
   --sidebar-ring: #5d8cc7;
-  /* Surface Hierarchy */
-  --surface-container-lowest: #283950;
-  --surface-container-low: #2e4b70;
-  --surface-container: #3267ac;
-  --surface-container-high: #2d78da;
+  /* Surface Hierarchy — subtle dark-slate steps, consistent with --card/--muted
+     (previously a saturated blue ramp left over from an earlier pass, which
+     read as a jarring bright-blue box wherever bg-surface-container was used). */
+  --surface-container-lowest: #20262b;
+  --surface-container-low: #262e33;
+  --surface-container: #2d363c;
+  --surface-container-high: #3a4449;
 }
 
 @theme inline {

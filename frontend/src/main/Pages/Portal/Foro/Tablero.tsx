@@ -28,6 +28,7 @@ import { adminService } from "../../../services/AdminService";
 import { CategoryBadge } from "../../../Components/common/CategoryBadge";
 import { Modal } from "../../../Components/common/Modal";
 import { ContextMenu } from "../../../Components/common/ContextMenu";
+import { Pagination } from "../../../Components/common/Pagination";
 import type {
   PostResponse,
   CrearPostRequest,
@@ -645,6 +646,8 @@ function PostItem({
   const [respuestas, setRespuestas] = useState<PostResponse[]>([]);
   const [cargandoRespuestas, setCargandoRespuestas] = useState(false);
   const [errorRespuestas, setErrorRespuestas] = useState<string | null>(null);
+  const [respuestasPage, setRespuestasPage] = useState(1);
+  const REPLIES_PAGE_SIZE = 5;
 
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [contenidoRespuesta, setContenidoRespuesta] = useState("");
@@ -691,6 +694,7 @@ function PostItem({
       setErrorRespuesta(null);
       const nueva = await foroService.responderPost(post.id, { contenido: contenidoRespuesta.trim() });
       setRespuestas((prev) => [...prev, nueva]);
+      setRespuestasPage(Math.max(1, Math.ceil((respuestas.length + 1) / REPLIES_PAGE_SIZE)));
       setContenidoRespuesta("");
       setShowReplyForm(false);
       setExpandido(true);
@@ -1011,7 +1015,9 @@ function PostItem({
               </div>
             )}
             {!cargandoRespuestas &&
-              respuestas.map((r) => {
+              respuestas
+                .slice((respuestasPage - 1) * REPLIES_PAGE_SIZE, respuestasPage * REPLIES_PAGE_SIZE)
+                .map((r) => {
                 const autorPadreNombre =
                   r.postPadreId !== post.id
                     ? (respuestas.find((x) => x.id === r.postPadreId)?.autor?.nombre ?? null)
@@ -1042,6 +1048,7 @@ function PostItem({
                     }
                     onNuevaRespuesta={(nueva) => {
                       setRespuestas((prev) => [...prev, nueva]);
+                      setRespuestasPage(Math.max(1, Math.ceil((respuestas.length + 1) / REPLIES_PAGE_SIZE)));
                       setExpandido(true);
                     }}
                   />
@@ -1054,6 +1061,16 @@ function PostItem({
                   Todavía no hay respuestas. ¡Sé el primero!
                 </p>
               )}
+            {!cargandoRespuestas && respuestas.length > REPLIES_PAGE_SIZE && (
+              <Pagination
+                variant="compact"
+                page={respuestasPage}
+                totalPages={Math.max(1, Math.ceil(respuestas.length / REPLIES_PAGE_SIZE))}
+                onPageChange={setRespuestasPage}
+                totalItems={respuestas.length}
+                pageSize={REPLIES_PAGE_SIZE}
+              />
+            )}
           </div>
         )}
       </div>
@@ -1430,6 +1447,13 @@ export function ForumBoardView() {
   const [errorBusqueda, setErrorBusqueda] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [postsPage, setPostsPage] = useState(1);
+  const POSTS_PAGE_SIZE = 6;
+
+  useEffect(() => {
+    setPostsPage(1);
+  }, [searchQuery, tableroId]);
+
   const isSearchActive = searchQuery.trim().length > 0;
 
   useEffect(() => {
@@ -1502,7 +1526,12 @@ export function ForumBoardView() {
     return <AccesoDenegado portalId={portalId} />;
   }
 
-  const postsAMostrar = isSearchActive ? searchResults : posts;
+  const postsAMostrar = (isSearchActive ? searchResults : posts).filter((p) => !p.eliminado);
+  const postsTotalPages = Math.max(1, Math.ceil(postsAMostrar.length / POSTS_PAGE_SIZE));
+  const pagedPosts = postsAMostrar.slice(
+    (postsPage - 1) * POSTS_PAGE_SIZE,
+    postsPage * POSTS_PAGE_SIZE,
+  );
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 portal-fade-up">
@@ -1650,14 +1679,13 @@ export function ForumBoardView() {
       )}
 
       {/* Lista de posts */}
-      {!cargando && !error && postsAMostrar.filter((p) => !p.eliminado).length > 0 && (
-        <div
-          className="bg-card border border-border"
-          style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-card)" }}
-        >
-          {postsAMostrar
-            .filter((p) => !p.eliminado)
-            .map((post, index, arr) => (
+      {!cargando && !error && postsAMostrar.length > 0 && (
+        <>
+          <div
+            className="bg-card border border-border"
+            style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-card)" }}
+          >
+            {pagedPosts.map((post, index, arr) => (
               <PostItem
                 key={post.id}
                 post={post}
@@ -1670,7 +1698,11 @@ export function ForumBoardView() {
                 onEditado={handlePostEditado}
               />
             ))}
-        </div>
+          </div>
+          <div className="mt-4">
+            <Pagination page={postsPage} totalPages={postsTotalPages} onPageChange={setPostsPage} />
+          </div>
+        </>
       )}
 
       <NewPostModal

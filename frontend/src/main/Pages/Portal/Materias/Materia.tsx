@@ -11,7 +11,7 @@ import { materiaService } from "../../../services/Portal/MateriaService";
 import type { MaterialResponse } from "../../../types/Material/Material";
 import type { MateriaResponse } from "../../../types/Portal/Materia";
 import { getTipoColor, getExtensionColor } from "../../../Utils/tagColors";
-import { getExtensionIcon } from "../../../Utils/materialIcons";
+import { getExtensionIcon, getFileExtension } from "../../../Utils/materialIcons";
 import { Pagination } from "../../../Components/common/Pagination";
 
 interface PortalContext {
@@ -151,20 +151,7 @@ export function SubjectDetail() {
       return <AccesoDenegado portalId={portalId} />;
   }
 
-  const getExtension = (tipoArchivo: string) => {
-    const mime = tipoArchivo.toLowerCase();
-
-    if (mime.includes("wordprocessingml")) return "docx";
-    if (mime.includes("presentationml")) return "pptx";
-    if (mime.includes("pdf")) return "pdf";
-
-    if (mime.includes("jpeg")) return "jpg";
-    if (mime.includes("png")) return "png";
-    if (mime.includes("gif")) return "gif";
-    if (mime.includes("webp")) return "webp";
-
-    return mime;
-  };
+  const getExtension = getFileExtension;
 
   const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
 
@@ -245,10 +232,7 @@ export function SubjectDetail() {
                   </>
                 ) : (
                   <>
-                    <h1
-                      className="text-2xl sm:text-3xl font-semibold mb-2 text-card-foreground"
-                      style={{ fontFamily: "Work Sans, sans-serif" }}
-                    >
+                    <h1 className="text-card-foreground mb-1.5">
                       {materia?.nombre ?? "Materia"}
                     </h1>
                     {materia?.descripcion && (

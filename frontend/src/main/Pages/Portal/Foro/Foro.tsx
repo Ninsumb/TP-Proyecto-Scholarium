@@ -6,6 +6,7 @@ import { foroService } from "../../../services/Portal/ForoService";
 import type { TableroResponse, CrearTableroRequest } from "../../../types/Portal/Foro";
 import { CategoryBadge } from "../../../Components/common/CategoryBadge";
 import { Modal } from "../../../Components/common/Modal";
+import { Pagination } from "../../../Components/common/Pagination";
 
 // ── Modal Crear Tablero ───────────────────────────────────────────────────────
 
@@ -190,6 +191,8 @@ export function ForumBoardsList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 6;
 
   useEffect(() => {
     const cargar = async () => {
@@ -219,6 +222,13 @@ export function ForumBoardsList() {
       selectedCategory === "Todos" || tablero.etiqueta.nombre === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filteredBoards.length / PAGE_SIZE));
+  const pagedBoards = filteredBoards.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, selectedCategory]);
 
   const handleTableroCreado = (nuevo: TableroResponse) => {
     setTableros((prev) => [nuevo, ...prev]);
@@ -323,7 +333,7 @@ export function ForumBoardsList() {
 
           {!cargando && !error && (
             <div className="space-y-3">
-              {filteredBoards.map((tablero) => (
+              {pagedBoards.map((tablero) => (
                 <Link
                   key={tablero.id}
                   to={`/portal/${portalId}/foro/${tablero.id}`}
@@ -378,6 +388,8 @@ export function ForumBoardsList() {
                   <p className="text-on-surface-variant">No se encontraron tableros</p>
                 </div>
               )}
+
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
             </div>
           )}
         </main>
