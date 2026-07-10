@@ -9,7 +9,6 @@ import {
   MessageCircle,
   Loader2,
   AlertCircle,
-  MoreHorizontal,
   Pencil,
   Trash2,
   Flag,
@@ -26,6 +25,9 @@ import { foroService } from "../../../services/Portal/ForoService";
 import { usuarioService } from "../../../services/UsuarioService";
 import { authService } from "../../../services/AuthService";
 import { adminService } from "../../../services/AdminService";
+import { CategoryBadge } from "../../../Components/common/CategoryBadge";
+import { Modal } from "../../../Components/common/Modal";
+import { ContextMenu } from "../../../Components/common/ContextMenu";
 import type {
   PostResponse,
   CrearPostRequest,
@@ -138,87 +140,31 @@ function PostMenu({
   onOcultar,
   onDevelar,
 }: PostMenuProps) {
-  const [abierto, setAbierto] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const items = esPropio
+    ? [
+        { label: "Editar", icon: <Pencil className="w-4 h-4 text-primary" />, onClick: onEditar },
+        { label: "Eliminar", icon: <Trash2 className="w-4 h-4" />, onClick: onEliminar, danger: true },
+      ]
+    : rolUsuario === "ADMIN"
+      ? !ocultado
+        ? [
+            {
+              label: "Marcar como inapropiado",
+              icon: <ShieldAlert className="w-4 h-4" />,
+              onClick: onOcultar,
+              danger: true,
+            },
+          ]
+        : [
+            {
+              label: "Develar post",
+              icon: <Eye className="w-4 h-4 text-primary" />,
+              onClick: onDevelar,
+            },
+          ]
+      : [{ label: "Denunciar", icon: <Flag className="w-4 h-4" />, onClick: () => {} }];
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setAbierto(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={() => setAbierto((v) => !v)}
-        className="p-1.5 rounded hover:bg-accent transition-colors text-on-surface-variant hover:text-foreground"
-        aria-label="Opciones"
-      >
-        <MoreHorizontal className="w-4 h-4" />
-      </button>
-
-      {abierto && (
-        <div
-          className="absolute right-0 top-full mt-1 z-50 bg-card border border-border min-w-[180px] py-1"
-          style={{ borderRadius: "var(--radius-md)", boxShadow: "var(--portal-shadow-lift)" }}
-        >
-          {esPropio ? (
-            // ── Opciones para el propio autor ──
-            <>
-              <button
-                onClick={() => { setAbierto(false); onEditar(); }}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left"
-              >
-                <Pencil className="w-4 h-4 text-primary" />
-                Editar
-              </button>
-              <button
-                onClick={() => { setAbierto(false); onEliminar(); }}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors text-left"
-              >
-                <Trash2 className="w-4 h-4" />
-                Eliminar
-              </button>
-            </>
-          ) : rolUsuario === "ADMIN" ? (
-            // ── Opciones de admin (nunca es su propio post) ──
-            <>
-              {!ocultado ? (
-                <button
-                  onClick={() => { setAbierto(false); onOcultar(); }}
-                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors text-left"
-                >
-                  <ShieldAlert className="w-4 h-4" />
-                  Marcar como inapropiado
-                </button>
-              ) : (
-                <button
-                  onClick={() => { setAbierto(false); onDevelar(); }}
-                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left"
-                >
-                  <Eye className="w-4 h-4 text-primary" />
-                  Develar post
-                </button>
-              )}
-            </>
-          ) : (
-            // ── Opción para miembros comunes ──
-            <button
-              onClick={() => setAbierto(false)}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-on-surface-variant hover:bg-accent transition-colors text-left"
-            >
-              <Flag className="w-4 h-4" />
-              Denunciar
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
+  return <ContextMenu items={items} />;
 }
 
 // ── Modal de confirmación de eliminación ──────────────────────────────────────
@@ -233,11 +179,7 @@ interface ConfirmDeleteModalProps {
 function ConfirmDeleteModal({ isOpen, esRespuesta, onConfirmar, onCancelar }: ConfirmDeleteModalProps) {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div
-        className="bg-card max-w-sm w-full p-6"
-        style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-modal)" }}
-      >
+    <Modal onClose={onCancelar} maxWidth="24rem" className="p-6">
         <h3 className="text-foreground mb-2">
           Eliminar {esRespuesta ? "respuesta" : "publicación"}
         </h3>
@@ -263,8 +205,7 @@ function ConfirmDeleteModal({ isOpen, esRespuesta, onConfirmar, onCancelar }: Co
             Eliminar
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -289,11 +230,7 @@ function OcultarPostModal({ isOpen, onConfirmar, onCancelar }: OcultarPostModalP
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div
-        className="bg-card max-w-sm w-full p-6"
-        style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-modal)" }}
-      >
+    <Modal onClose={onCancelar} maxWidth="24rem" className="p-6">
         <h3 className="text-foreground mb-2">Marcar como inapropiado</h3>
         <p className="text-sm text-on-surface-variant mb-4">
           Este contenido quedará oculto para los miembros. Escribí el motivo para
@@ -329,8 +266,7 @@ function OcultarPostModal({ isOpen, onConfirmar, onCancelar }: OcultarPostModalP
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -1167,11 +1103,7 @@ function NewPostModal({ isOpen, tableroId, onClose, onCreado }: NewPostModalProp
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div
-        className="bg-card max-w-2xl w-full"
-        style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-modal)" }}
-      >
+    <Modal onClose={onClose} maxWidth="42rem">
         <div className="border-b border-border px-6 py-4 flex items-center justify-between">
           <h2 className="text-card-foreground">Nueva Publicación</h2>
           <button
@@ -1234,8 +1166,7 @@ function NewPostModal({ isOpen, tableroId, onClose, onCreado }: NewPostModalProp
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -1256,8 +1187,6 @@ function TableroAdminMenu({
   descripcion,
   onActualizado,
 }: TableroAdminMenuProps) {
-  const [abierto, setAbierto] = useState(false);
-
   // Modal de votación para eliminar
   const [voteModal, setVoteModal] = useState(false);
   const [motivo, setMotivo] = useState("");
@@ -1271,18 +1200,6 @@ function TableroAdminMenu({
   const [nuevaDescripcion, setNuevaDescripcion] = useState(descripcion ?? "");
   const [guardandoEdicion, setGuardandoEdicion] = useState(false);
   const [errorEdicion, setErrorEdicion] = useState<string | null>(null);
-
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setAbierto(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
 
   const handleGuardarEdicion = async () => {
     if (!nuevoNombre.trim()) return;
@@ -1326,11 +1243,7 @@ function TableroAdminMenu({
     <>
       {/* Modal de edición */}
       {editando && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div
-            className="bg-card max-w-lg w-full"
-            style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-modal)" }}
-          >
+        <Modal onClose={() => { setEditando(false); setErrorEdicion(null); }} maxWidth="32rem">
             <div className="border-b border-border px-6 py-4">
               <h2 className="text-card-foreground">Editar tablero</h2>
             </div>
@@ -1380,17 +1293,12 @@ function TableroAdminMenu({
                 </button>
               </div>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Modal de votación para eliminar */}
       {voteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div
-            className="bg-card max-w-lg w-full"
-            style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-modal)" }}
-          >
+        <Modal onClose={() => { setVoteModal(false); setMotivo(""); setErrorVote(null); }} maxWidth="32rem">
             <div className="border-b border-border px-6 py-4">
               <h2 className="text-card-foreground">Proponer Eliminación de Tablero</h2>
             </div>
@@ -1398,8 +1306,13 @@ function TableroAdminMenu({
               {successVote ? (
                 <>
                   <div
-                    className="p-4 bg-green-600/10 border border-green-600/20 text-green-700 text-sm"
-                    style={{ borderRadius: "var(--radius)" }}
+                    className="p-4 text-sm"
+                    style={{
+                      borderRadius: "var(--radius)",
+                      background: "var(--portal-teal-soft)",
+                      border: "1px solid var(--portal-teal-border)",
+                      color: "var(--portal-teal-dim)",
+                    }}
                   >
                     Votación abierta correctamente. Los administradores serán notificados.
                   </div>
@@ -1463,49 +1376,30 @@ function TableroAdminMenu({
                 </>
               )}
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Botón de tres puntos */}
-      <div className="relative" ref={ref}>
-        <button
-          onClick={() => setAbierto((v) => !v)}
-          className="p-2 hover:bg-accent transition-colors text-on-surface-variant hover:text-foreground"
-          style={{ borderRadius: "var(--radius-sm)" }}
-          aria-label="Opciones del tablero"
-        >
-          <MoreHorizontal className="w-5 h-5" />
-        </button>
-
-        {abierto && (
-          <div
-            className="absolute right-0 top-full mt-1 z-50 bg-card border border-border min-w-[180px] py-1"
-            style={{ borderRadius: "var(--radius-md)", boxShadow: "var(--portal-shadow-lift)" }}
-          >
-            <button
-              onClick={() => {
-                setAbierto(false);
-                setNuevoNombre(nombre);
-                setNuevaDescripcion(descripcion ?? "");
-                setErrorEdicion(null);
-                setEditando(true);
-              }}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left"
-            >
-              <Pencil className="w-4 h-4 text-primary" />
-              Editar tablero
-            </button>
-            <button
-              onClick={() => { setAbierto(false); setVoteModal(true); }}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors text-left"
-            >
-              <Trash2 className="w-4 h-4" />
-              Proponer eliminación
-            </button>
-          </div>
-        )}
-      </div>
+      <ContextMenu
+        items={[
+          {
+            label: "Editar tablero",
+            icon: <Pencil className="w-4 h-4 text-primary" />,
+            onClick: () => {
+              setNuevoNombre(nombre);
+              setNuevaDescripcion(descripcion ?? "");
+              setErrorEdicion(null);
+              setEditando(true);
+            },
+          },
+          {
+            label: "Proponer eliminación",
+            icon: <Trash2 className="w-4 h-4" />,
+            onClick: () => setVoteModal(true),
+            danger: true,
+          },
+        ]}
+      />
     </>
   );
 }
@@ -1635,17 +1529,7 @@ export function ForumBoardView() {
               <>
                 <div className="flex items-center gap-3 mb-1.5 flex-wrap">
                   <h1 className="text-foreground">{tablero.nombre}</h1>
-                  <span
-                    className="px-2.5 py-1 text-xs font-medium"
-                    style={{
-                      borderRadius: "var(--radius-sm)",
-                      background: "var(--portal-amber-soft)",
-                      color: "var(--portal-amber-dim)",
-                      border: "1px solid var(--portal-amber-border)",
-                    }}
-                  >
-                    {tablero.etiqueta.nombre}
-                  </span>
+                  <CategoryBadge label={tablero.etiqueta.nombre} />
                 </div>
                 {tablero.descripcion && (
                   <p className="text-on-surface-variant text-sm max-w-2xl">

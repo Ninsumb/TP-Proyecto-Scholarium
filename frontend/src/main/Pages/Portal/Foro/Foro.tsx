@@ -4,6 +4,8 @@ import { MessageSquare, Search, Plus, ChevronRight, MessageCircle, Loader2, User
 import { Link, useOutletContext, useParams } from "react-router";
 import { foroService } from "../../../services/Portal/ForoService";
 import type { TableroResponse, CrearTableroRequest } from "../../../types/Portal/Foro";
+import { CategoryBadge } from "../../../Components/common/CategoryBadge";
+import { Modal } from "../../../Components/common/Modal";
 
 // ── Modal Crear Tablero ───────────────────────────────────────────────────────
 
@@ -90,11 +92,7 @@ function CreateBoardModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div
-        className="bg-card max-w-2xl w-full"
-        style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-modal)" }}
-      >
+    <Modal onClose={onClose} maxWidth="42rem">
         <div className="border-b border-border px-6 py-4 flex items-center justify-between">
           <h2 className="text-card-foreground">Crear Nuevo Tablero</h2>
           <button onClick={onClose} className="p-2 hover:bg-accent transition-colors" style={{ borderRadius: "var(--radius-sm)" }}>
@@ -168,8 +166,7 @@ function CreateBoardModal({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -348,17 +345,7 @@ export function ForumBoardsList() {
                           {tablero.nombre}
                           <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </h4>
-                        <span
-                          className="px-2.5 py-1 text-xs whitespace-nowrap font-medium"
-                          style={{
-                            borderRadius: "var(--radius-sm)",
-                            background: "var(--portal-amber-soft)",
-                            color: "var(--portal-amber-dim)",
-                            border: "1px solid var(--portal-amber-border)",
-                          }}
-                        >
-                          {tablero.etiqueta.nombre}
-                        </span>
+                        <CategoryBadge label={tablero.etiqueta.nombre} />
                       </div>
 
                       {tablero.descripcion && (
