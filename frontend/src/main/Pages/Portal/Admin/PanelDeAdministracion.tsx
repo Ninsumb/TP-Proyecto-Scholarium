@@ -882,7 +882,7 @@ export function AdminPanel() {
     if (action === "promote") {
       // Ascender sigue siendo la única acción directa
       setMemberActionModal({ isOpen: true, action, member });
-    } else if (action === "kick" || action === "ban" || action === "demote") {
+    } else if (action === "kick" || action === "ban" || action === "demote" || action === "unblock") {
       // Degradar, Expulsar y Bloquear ahora abren el modal de votación solicitando el motivo
       let description = "";
       let title = "";
@@ -896,6 +896,9 @@ export function AdminPanel() {
       } else if (action === "demote") {
         description = `Degradar administrador a miembro: ${member.nombre}`;
         title = "Proponer Degradar Administrador";
+      } else if (action === "unblock") {
+        description = `Quitar bloqueo a usuario: ${member.nombre}`;
+        title = "Proponer Desbloqueo de Usuario";
       }
       
       setVoteModal({
@@ -953,6 +956,9 @@ export function AdminPanel() {
     } else if (action === "demote") {
       tipoVotacion = "DEGRADAR_ADMIN";
       actionLabel = "degradar";
+    } else if (action === "unblock") {
+      tipoVotacion = "LEVANTAR_BLOQUEO";
+      actionLabel = "desbloquear";
     }
 
     try {
@@ -1620,14 +1626,10 @@ export function AdminPanel() {
               </span>
               </>
               )}
-              
-              
             </div>
           </div>
         </div>
-        {
 
-        }
         <ActionMenu
           member={member}
           currentUserId={currentUserId}
