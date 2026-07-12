@@ -9,7 +9,6 @@ import {
   MessageCircle,
   Loader2,
   AlertCircle,
-  MoreHorizontal,
   Pencil,
   Trash2,
   Flag,
@@ -26,6 +25,10 @@ import { foroService } from "../../../services/Portal/ForoService";
 import { usuarioService } from "../../../services/UsuarioService";
 import { authService } from "../../../services/AuthService";
 import { adminService } from "../../../services/AdminService";
+import { CategoryBadge } from "../../../Components/common/CategoryBadge";
+import { Modal } from "../../../Components/common/Modal";
+import { ContextMenu } from "../../../Components/common/ContextMenu";
+import { Pagination } from "../../../Components/common/Pagination";
 import type {
   PostResponse,
   CrearPostRequest,
@@ -77,8 +80,11 @@ function highlightText(text: string, query: string): React.ReactNode {
 function AccesoDenegado({ portalId }: { portalId: string | undefined }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
-      <div className="max-w-md">
-        <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center mx-auto mb-6">
+      <div className="max-w-md portal-fade-up">
+        <div
+          className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center mx-auto mb-6"
+          style={{ boxShadow: "var(--portal-shadow-card)" }}
+        >
           <Lock className="w-8 h-8 text-muted-foreground" />
         </div>
         <h2 className="text-2xl font-semibold text-foreground mb-3">
@@ -90,8 +96,8 @@ function AccesoDenegado({ portalId }: { portalId: string | undefined }) {
         </p>
         <Link
           to={`/portal/${portalId}/solicitud`}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors"
-          style={{ borderRadius: "var(--radius)" }}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors portal-hoverable"
+          style={{ borderRadius: "var(--radius)", boxShadow: "var(--portal-shadow-card)" }}
         >
           <UserPlus className="w-5 h-5" />
           Enviar Solicitud
@@ -135,87 +141,31 @@ function PostMenu({
   onOcultar,
   onDevelar,
 }: PostMenuProps) {
-  const [abierto, setAbierto] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const items = esPropio
+    ? [
+        { label: "Editar", icon: <Pencil className="w-4 h-4 text-primary" />, onClick: onEditar },
+        { label: "Eliminar", icon: <Trash2 className="w-4 h-4" />, onClick: onEliminar, danger: true },
+      ]
+    : rolUsuario === "ADMIN"
+      ? !ocultado
+        ? [
+            {
+              label: "Marcar como inapropiado",
+              icon: <ShieldAlert className="w-4 h-4" />,
+              onClick: onOcultar,
+              danger: true,
+            },
+          ]
+        : [
+            {
+              label: "Develar post",
+              icon: <Eye className="w-4 h-4 text-primary" />,
+              onClick: onDevelar,
+            },
+          ]
+      : [{ label: "Denunciar", icon: <Flag className="w-4 h-4" />, onClick: () => {} }];
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setAbierto(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={() => setAbierto((v) => !v)}
-        className="p-1.5 rounded hover:bg-accent transition-colors text-on-surface-variant hover:text-foreground"
-        aria-label="Opciones"
-      >
-        <MoreHorizontal className="w-4 h-4" />
-      </button>
-
-      {abierto && (
-        <div
-          className="absolute right-0 top-full mt-1 z-50 bg-card border border-border shadow-lg min-w-[180px] py-1"
-          style={{ borderRadius: "var(--radius)" }}
-        >
-          {esPropio ? (
-            // ── Opciones para el propio autor ──
-            <>
-              <button
-                onClick={() => { setAbierto(false); onEditar(); }}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left"
-              >
-                <Pencil className="w-4 h-4 text-primary" />
-                Editar
-              </button>
-              <button
-                onClick={() => { setAbierto(false); onEliminar(); }}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors text-left"
-              >
-                <Trash2 className="w-4 h-4" />
-                Eliminar
-              </button>
-            </>
-          ) : rolUsuario === "ADMIN" ? (
-            // ── Opciones de admin (nunca es su propio post) ──
-            <>
-              {!ocultado ? (
-                <button
-                  onClick={() => { setAbierto(false); onOcultar(); }}
-                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors text-left"
-                >
-                  <ShieldAlert className="w-4 h-4" />
-                  Marcar como inapropiado
-                </button>
-              ) : (
-                <button
-                  onClick={() => { setAbierto(false); onDevelar(); }}
-                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left"
-                >
-                  <Eye className="w-4 h-4 text-primary" />
-                  Develar post
-                </button>
-              )}
-            </>
-          ) : (
-            // ── Opción para miembros comunes ──
-            <button
-              onClick={() => setAbierto(false)}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-on-surface-variant hover:bg-accent transition-colors text-left"
-            >
-              <Flag className="w-4 h-4" />
-              Denunciar
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
+  return <ContextMenu items={items} />;
 }
 
 // ── Modal de confirmación de eliminación ──────────────────────────────────────
@@ -230,11 +180,7 @@ interface ConfirmDeleteModalProps {
 function ConfirmDeleteModal({ isOpen, esRespuesta, onConfirmar, onCancelar }: ConfirmDeleteModalProps) {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div
-        className="bg-card max-w-sm w-full shadow-2xl p-6"
-        style={{ borderRadius: "var(--radius)" }}
-      >
+    <Modal onClose={onCancelar} maxWidth="24rem" className="p-6">
         <h3 className="text-foreground mb-2">
           Eliminar {esRespuesta ? "respuesta" : "publicación"}
         </h3>
@@ -253,15 +199,14 @@ function ConfirmDeleteModal({ isOpen, esRespuesta, onConfirmar, onCancelar }: Co
           </button>
           <button
             onClick={onConfirmar}
-            className="px-4 py-2 bg-destructive text-white hover:bg-destructive/90 transition-colors text-sm flex items-center gap-2"
+            className="px-4 py-2 bg-destructive text-white hover:bg-destructive/90 transition-colors text-sm flex items-center gap-2 portal-hoverable"
             style={{ borderRadius: "var(--radius)" }}
           >
             <Trash2 className="w-4 h-4" />
             Eliminar
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -286,11 +231,7 @@ function OcultarPostModal({ isOpen, onConfirmar, onCancelar }: OcultarPostModalP
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div
-        className="bg-card max-w-sm w-full shadow-2xl p-6"
-        style={{ borderRadius: "var(--radius)" }}
-      >
+    <Modal onClose={onCancelar} maxWidth="24rem" className="p-6">
         <h3 className="text-foreground mb-2">Marcar como inapropiado</h3>
         <p className="text-sm text-on-surface-variant mb-4">
           Este contenido quedará oculto para los miembros. Escribí el motivo para
@@ -318,7 +259,7 @@ function OcultarPostModal({ isOpen, onConfirmar, onCancelar }: OcultarPostModalP
             <button
               type="submit"
               disabled={!motivo.trim()}
-              className="px-4 py-2 bg-destructive text-white hover:bg-destructive/90 transition-colors text-sm flex items-center gap-2 disabled:opacity-60"
+              className="px-4 py-2 bg-destructive text-white hover:bg-destructive/90 transition-colors text-sm flex items-center gap-2 disabled:opacity-60 portal-hoverable"
               style={{ borderRadius: "var(--radius)" }}
             >
               <ShieldAlert className="w-4 h-4" />
@@ -326,8 +267,7 @@ function OcultarPostModal({ isOpen, onConfirmar, onCancelar }: OcultarPostModalP
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -483,7 +423,7 @@ function ReplyItem({
       >
         <div
           className="flex flex-col items-center justify-center gap-2 py-4 px-4 border border-dashed border-destructive/40 bg-destructive/5 text-center"
-          style={{ borderRadius: "var(--radius)" }}
+          style={{ borderRadius: "var(--radius-md)" }}
         >
           <ShieldAlert className="w-5 h-5 text-destructive/60" />
           <div>
@@ -497,7 +437,7 @@ function ReplyItem({
           <button
             onClick={() => setRevelado(true)}
             className="flex items-center gap-1.5 px-3 py-1 text-xs border border-destructive/30 text-destructive/70 hover:bg-destructive/10 transition-colors"
-            style={{ borderRadius: "var(--radius)" }}
+            style={{ borderRadius: "var(--radius-sm)" }}
           >
             <Eye className="w-3 h-3" />
             Ver respuesta
@@ -706,6 +646,8 @@ function PostItem({
   const [respuestas, setRespuestas] = useState<PostResponse[]>([]);
   const [cargandoRespuestas, setCargandoRespuestas] = useState(false);
   const [errorRespuestas, setErrorRespuestas] = useState<string | null>(null);
+  const [respuestasPage, setRespuestasPage] = useState(1);
+  const REPLIES_PAGE_SIZE = 5;
 
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [contenidoRespuesta, setContenidoRespuesta] = useState("");
@@ -752,6 +694,7 @@ function PostItem({
       setErrorRespuesta(null);
       const nueva = await foroService.responderPost(post.id, { contenido: contenidoRespuesta.trim() });
       setRespuestas((prev) => [...prev, nueva]);
+      setRespuestasPage(Math.max(1, Math.ceil((respuestas.length + 1) / REPLIES_PAGE_SIZE)));
       setContenidoRespuesta("");
       setShowReplyForm(false);
       setExpandido(true);
@@ -843,7 +786,7 @@ function PostItem({
         <div className="py-5 px-5">
           <div
             className="flex flex-col items-center justify-center gap-3 py-6 px-4 border border-dashed border-destructive/40 bg-destructive/5 text-center"
-            style={{ borderRadius: "var(--radius)" }}
+            style={{ borderRadius: "var(--radius-md)" }}
           >
             <ShieldAlert className="w-6 h-6 text-destructive/60" />
             <div>
@@ -857,7 +800,7 @@ function PostItem({
             <button
               onClick={() => setRevelado(true)}
               className="flex items-center gap-1.5 px-4 py-1.5 text-xs border border-destructive/30 text-destructive/70 hover:bg-destructive/10 transition-colors"
-              style={{ borderRadius: "var(--radius)" }}
+              style={{ borderRadius: "var(--radius-sm)" }}
             >
               <Eye className="w-3.5 h-3.5" />
               Ver post
@@ -1072,7 +1015,9 @@ function PostItem({
               </div>
             )}
             {!cargandoRespuestas &&
-              respuestas.map((r) => {
+              respuestas
+                .slice((respuestasPage - 1) * REPLIES_PAGE_SIZE, respuestasPage * REPLIES_PAGE_SIZE)
+                .map((r) => {
                 const autorPadreNombre =
                   r.postPadreId !== post.id
                     ? (respuestas.find((x) => x.id === r.postPadreId)?.autor?.nombre ?? null)
@@ -1103,6 +1048,7 @@ function PostItem({
                     }
                     onNuevaRespuesta={(nueva) => {
                       setRespuestas((prev) => [...prev, nueva]);
+                      setRespuestasPage(Math.max(1, Math.ceil((respuestas.length + 1) / REPLIES_PAGE_SIZE)));
                       setExpandido(true);
                     }}
                   />
@@ -1115,6 +1061,16 @@ function PostItem({
                   Todavía no hay respuestas. ¡Sé el primero!
                 </p>
               )}
+            {!cargandoRespuestas && respuestas.length > REPLIES_PAGE_SIZE && (
+              <Pagination
+                variant="compact"
+                page={respuestasPage}
+                totalPages={Math.max(1, Math.ceil(respuestas.length / REPLIES_PAGE_SIZE))}
+                onPageChange={setRespuestasPage}
+                totalItems={respuestas.length}
+                pageSize={REPLIES_PAGE_SIZE}
+              />
+            )}
           </div>
         )}
       </div>
@@ -1164,17 +1120,13 @@ function NewPostModal({ isOpen, tableroId, onClose, onCreado }: NewPostModalProp
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div
-        className="bg-card max-w-2xl w-full shadow-2xl"
-        style={{ borderRadius: "var(--radius)" }}
-      >
+    <Modal onClose={onClose} maxWidth="42rem">
         <div className="border-b border-border px-6 py-4 flex items-center justify-between">
           <h2 className="text-card-foreground">Nueva Publicación</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-accent transition-colors"
-            style={{ borderRadius: "var(--radius)" }}
+            style={{ borderRadius: "var(--radius-sm)" }}
           >
             <Plus className="w-5 h-5 rotate-45 text-muted-foreground" />
           </button>
@@ -1223,16 +1175,15 @@ function NewPostModal({ isOpen, tableroId, onClose, onCreado }: NewPostModalProp
             <button
               type="submit"
               disabled={cargando || !contenido.trim()}
-              className="px-6 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm flex items-center gap-2 disabled:opacity-60"
-              style={{ borderRadius: "var(--radius)" }}
+              className="px-6 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 disabled:opacity-60 portal-hoverable"
+              style={{ borderRadius: "var(--radius)", boxShadow: "var(--portal-shadow-card)" }}
             >
               {cargando && <Loader2 className="w-4 h-4 animate-spin" />}
               Publicar
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -1253,8 +1204,6 @@ function TableroAdminMenu({
   descripcion,
   onActualizado,
 }: TableroAdminMenuProps) {
-  const [abierto, setAbierto] = useState(false);
-
   // Modal de votación para eliminar
   const [voteModal, setVoteModal] = useState(false);
   const [motivo, setMotivo] = useState("");
@@ -1268,18 +1217,6 @@ function TableroAdminMenu({
   const [nuevaDescripcion, setNuevaDescripcion] = useState(descripcion ?? "");
   const [guardandoEdicion, setGuardandoEdicion] = useState(false);
   const [errorEdicion, setErrorEdicion] = useState<string | null>(null);
-
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setAbierto(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
 
   const handleGuardarEdicion = async () => {
     if (!nuevoNombre.trim()) return;
@@ -1323,11 +1260,7 @@ function TableroAdminMenu({
     <>
       {/* Modal de edición */}
       {editando && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div
-            className="bg-card max-w-lg w-full shadow-2xl"
-            style={{ borderRadius: "var(--radius)" }}
-          >
+        <Modal onClose={() => { setEditando(false); setErrorEdicion(null); }} maxWidth="32rem">
             <div className="border-b border-border px-6 py-4">
               <h2 className="text-card-foreground">Editar tablero</h2>
             </div>
@@ -1369,25 +1302,20 @@ function TableroAdminMenu({
                 <button
                   onClick={handleGuardarEdicion}
                   disabled={guardandoEdicion || !nuevoNombre.trim()}
-                  className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors disabled:opacity-50 flex items-center gap-2"
-                  style={{ borderRadius: "var(--radius)" }}
+                  className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors disabled:opacity-50 flex items-center gap-2 portal-hoverable"
+                  style={{ borderRadius: "var(--radius)", boxShadow: "var(--portal-shadow-card)" }}
                 >
                   {guardandoEdicion && <Loader2 className="w-4 h-4 animate-spin" />}
                   Guardar
                 </button>
               </div>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Modal de votación para eliminar */}
       {voteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div
-            className="bg-card max-w-lg w-full shadow-2xl"
-            style={{ borderRadius: "var(--radius)" }}
-          >
+        <Modal onClose={() => { setVoteModal(false); setMotivo(""); setErrorVote(null); }} maxWidth="32rem">
             <div className="border-b border-border px-6 py-4">
               <h2 className="text-card-foreground">Proponer Eliminación de Tablero</h2>
             </div>
@@ -1395,8 +1323,13 @@ function TableroAdminMenu({
               {successVote ? (
                 <>
                   <div
-                    className="p-4 bg-green-600/10 border border-green-600/20 text-green-700 text-sm"
-                    style={{ borderRadius: "var(--radius)" }}
+                    className="p-4 text-sm"
+                    style={{
+                      borderRadius: "var(--radius)",
+                      background: "var(--portal-teal-soft)",
+                      border: "1px solid var(--portal-teal-border)",
+                      color: "var(--portal-teal-dim)",
+                    }}
                   >
                     Votación abierta correctamente. Los administradores serán notificados.
                   </div>
@@ -1450,8 +1383,8 @@ function TableroAdminMenu({
                     <button
                       onClick={handleProponerEliminacion}
                       disabled={!motivo.trim() || enviando}
-                      className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                      style={{ borderRadius: "var(--radius)" }}
+                      className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 portal-hoverable"
+                      style={{ borderRadius: "var(--radius)", boxShadow: "var(--portal-shadow-card)" }}
                     >
                       {enviando && <Loader2 className="w-4 h-4 animate-spin" />}
                       Abrir Votación
@@ -1460,49 +1393,30 @@ function TableroAdminMenu({
                 </>
               )}
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Botón de tres puntos */}
-      <div className="relative" ref={ref}>
-        <button
-          onClick={() => setAbierto((v) => !v)}
-          className="p-2 hover:bg-accent transition-colors text-on-surface-variant hover:text-foreground"
-          style={{ borderRadius: "var(--radius)" }}
-          aria-label="Opciones del tablero"
-        >
-          <MoreHorizontal className="w-5 h-5" />
-        </button>
-
-        {abierto && (
-          <div
-            className="absolute right-0 top-full mt-1 z-50 bg-card border border-border shadow-lg min-w-[180px] py-1"
-            style={{ borderRadius: "var(--radius)" }}
-          >
-            <button
-              onClick={() => {
-                setAbierto(false);
-                setNuevoNombre(nombre);
-                setNuevaDescripcion(descripcion ?? "");
-                setErrorEdicion(null);
-                setEditando(true);
-              }}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors text-left"
-            >
-              <Pencil className="w-4 h-4 text-primary" />
-              Editar tablero
-            </button>
-            <button
-              onClick={() => { setAbierto(false); setVoteModal(true); }}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors text-left"
-            >
-              <Trash2 className="w-4 h-4" />
-              Proponer eliminación
-            </button>
-          </div>
-        )}
-      </div>
+      <ContextMenu
+        items={[
+          {
+            label: "Editar tablero",
+            icon: <Pencil className="w-4 h-4 text-primary" />,
+            onClick: () => {
+              setNuevoNombre(nombre);
+              setNuevaDescripcion(descripcion ?? "");
+              setErrorEdicion(null);
+              setEditando(true);
+            },
+          },
+          {
+            label: "Proponer eliminación",
+            icon: <Trash2 className="w-4 h-4" />,
+            onClick: () => setVoteModal(true),
+            danger: true,
+          },
+        ]}
+      />
     </>
   );
 }
@@ -1532,6 +1446,13 @@ export function ForumBoardView() {
   const [buscando, setBuscando] = useState(false);
   const [errorBusqueda, setErrorBusqueda] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [postsPage, setPostsPage] = useState(1);
+  const POSTS_PAGE_SIZE = 6;
+
+  useEffect(() => {
+    setPostsPage(1);
+  }, [searchQuery, tableroId]);
 
   const isSearchActive = searchQuery.trim().length > 0;
 
@@ -1605,10 +1526,15 @@ export function ForumBoardView() {
     return <AccesoDenegado portalId={portalId} />;
   }
 
-  const postsAMostrar = isSearchActive ? searchResults : posts;
+  const postsAMostrar = (isSearchActive ? searchResults : posts).filter((p) => !p.eliminado);
+  const postsTotalPages = Math.max(1, Math.ceil(postsAMostrar.length / POSTS_PAGE_SIZE));
+  const pagedPosts = postsAMostrar.slice(
+    (postsPage - 1) * POSTS_PAGE_SIZE,
+    postsPage * POSTS_PAGE_SIZE,
+  );
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 portal-fade-up">
       {/* Breadcrumb */}
       <nav className="mb-6 flex items-center gap-2 text-sm text-on-surface-variant">
         <Link to={`/portal/${portalId}/foro`} className="hover:text-primary transition-colors">
@@ -1620,27 +1546,30 @@ export function ForumBoardView() {
 
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          {tablero ? (
-            <>
-              <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-foreground">{tablero.nombre}</h1>
-                <span
-                  className="px-2.5 py-1 bg-accent text-accent-foreground text-xs"
-                  style={{ borderRadius: "var(--radius)" }}
-                >
-                  {tablero.etiqueta.nombre}
-                </span>
-              </div>
-              {tablero.descripcion && (
-                <p className="text-on-surface-variant text-sm max-w-2xl">
-                  {tablero.descripcion}
-                </p>
-              )}
-            </>
-          ) : (
-            <h1 className="text-foreground">Publicaciones</h1>
-          )}
+        <div className="flex items-start gap-4">
+          <div
+            className="hidden sm:flex w-11 h-11 flex-shrink-0 items-center justify-center bg-primary/10 text-primary"
+            style={{ borderRadius: "var(--radius-md)" }}
+          >
+            <MessageCircle className="w-5 h-5" />
+          </div>
+          <div>
+            {tablero ? (
+              <>
+                <div className="flex items-center gap-3 mb-1.5 flex-wrap">
+                  <h1 className="text-foreground">{tablero.nombre}</h1>
+                  <CategoryBadge label={tablero.etiqueta.nombre} />
+                </div>
+                {tablero.descripcion && (
+                  <p className="text-on-surface-variant text-sm max-w-2xl">
+                    {tablero.descripcion}
+                  </p>
+                )}
+              </>
+            ) : (
+              <h1 className="text-foreground">Publicaciones</h1>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {isAdmin && tablero && (
@@ -1655,8 +1584,8 @@ export function ForumBoardView() {
           {canInteract && (
             <button
               onClick={() => setShowNewPostModal(true)}
-              className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap"
-              style={{ borderRadius: "var(--radius)" }}
+              className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 whitespace-nowrap portal-hoverable"
+              style={{ borderRadius: "var(--radius)", boxShadow: "var(--portal-shadow-card)" }}
             >
               <Plus className="w-5 h-5" />
               Nueva Publicación
@@ -1676,7 +1605,7 @@ export function ForumBoardView() {
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Buscar en este tablero..."
               className="w-full pl-10 pr-10 py-2.5 border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all text-sm"
-              style={{ borderRadius: "var(--radius)" }}
+              style={{ borderRadius: "var(--radius)", boxShadow: "var(--portal-shadow-card)" }}
             />
             {searchInput && (
               <button
@@ -1731,7 +1660,7 @@ export function ForumBoardView() {
           <p className="text-destructive">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 border border-border hover:bg-accent transition-colors text-sm"
+            className="mt-4 px-4 py-2 border border-border hover:bg-accent transition-colors text-sm portal-hoverable"
             style={{ borderRadius: "var(--radius)" }}
           >
             Reintentar
@@ -1750,14 +1679,13 @@ export function ForumBoardView() {
       )}
 
       {/* Lista de posts */}
-      {!cargando && !error && postsAMostrar.filter((p) => !p.eliminado).length > 0 && (
-        <div
-          className="bg-surface-container-lowest shadow-sm"
-          style={{ borderRadius: "var(--radius)" }}
-        >
-          {postsAMostrar
-            .filter((p) => !p.eliminado)
-            .map((post, index, arr) => (
+      {!cargando && !error && postsAMostrar.length > 0 && (
+        <>
+          <div
+            className="bg-card border border-border"
+            style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-card)" }}
+          >
+            {pagedPosts.map((post, index, arr) => (
               <PostItem
                 key={post.id}
                 post={post}
@@ -1770,7 +1698,11 @@ export function ForumBoardView() {
                 onEditado={handlePostEditado}
               />
             ))}
-        </div>
+          </div>
+          <div className="mt-4">
+            <Pagination page={postsPage} totalPages={postsTotalPages} onPageChange={setPostsPage} />
+          </div>
+        </>
       )}
 
       <NewPostModal

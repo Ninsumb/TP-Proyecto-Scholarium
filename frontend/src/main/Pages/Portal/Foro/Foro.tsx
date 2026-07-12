@@ -4,6 +4,9 @@ import { MessageSquare, Search, Plus, ChevronRight, MessageCircle, Loader2, User
 import { Link, useOutletContext, useParams } from "react-router";
 import { foroService } from "../../../services/Portal/ForoService";
 import type { TableroResponse, CrearTableroRequest } from "../../../types/Portal/Foro";
+import { CategoryBadge } from "../../../Components/common/CategoryBadge";
+import { Modal } from "../../../Components/common/Modal";
+import { Pagination } from "../../../Components/common/Pagination";
 
 // ── Modal Crear Tablero ───────────────────────────────────────────────────────
 
@@ -18,8 +21,11 @@ interface CreateBoardModalProps {
 function AccesoDenegado({ portalId }: { portalId: string | undefined }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
-      <div className="max-w-md">
-        <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center mx-auto mb-6">
+      <div className="max-w-md portal-fade-up">
+        <div
+          className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center mx-auto mb-6"
+          style={{ boxShadow: "var(--portal-shadow-card)" }}
+        >
           <Lock className="w-8 h-8 text-muted-foreground" />
         </div>
         <h2 className="text-2xl font-semibold text-foreground mb-3">
@@ -31,8 +37,8 @@ function AccesoDenegado({ portalId }: { portalId: string | undefined }) {
         </p>
         <Link
           to={`/portal/${portalId}/solicitud`}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors"
-          style={{ borderRadius: "var(--radius)" }}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors portal-hoverable"
+          style={{ borderRadius: "var(--radius)", boxShadow: "var(--portal-shadow-card)" }}
         >
           <UserPlus className="w-5 h-5" />
           Enviar Solicitud
@@ -87,11 +93,10 @@ function CreateBoardModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card max-w-2xl w-full shadow-2xl" style={{ borderRadius: "var(--radius)" }}>
+    <Modal onClose={onClose} maxWidth="42rem">
         <div className="border-b border-border px-6 py-4 flex items-center justify-between">
           <h2 className="text-card-foreground">Crear Nuevo Tablero</h2>
-          <button onClick={onClose} className="p-2 hover:bg-accent transition-colors" style={{ borderRadius: "var(--radius)" }}>
+          <button onClick={onClose} className="p-2 hover:bg-accent transition-colors" style={{ borderRadius: "var(--radius-sm)" }}>
             <Plus className="w-5 h-5 rotate-45 text-muted-foreground" />
           </button>
         </div>
@@ -154,16 +159,15 @@ function CreateBoardModal({
             <button
               type="submit"
               disabled={cargando}
-              className="px-6 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors shadow-sm flex items-center gap-2 disabled:opacity-60"
-              style={{ borderRadius: "var(--radius)" }}
+              className="px-6 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 disabled:opacity-60 portal-hoverable"
+              style={{ borderRadius: "var(--radius)", boxShadow: "var(--portal-shadow-card)" }}
             >
               {cargando && <Loader2 className="w-4 h-4 animate-spin" />}
               Crear Tablero
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -187,6 +191,8 @@ export function ForumBoardsList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 6;
 
   useEffect(() => {
     const cargar = async () => {
@@ -217,6 +223,13 @@ export function ForumBoardsList() {
     return matchesSearch && matchesCategory;
   });
 
+  const totalPages = Math.max(1, Math.ceil(filteredBoards.length / PAGE_SIZE));
+  const pagedBoards = filteredBoards.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, selectedCategory]);
+
   const handleTableroCreado = (nuevo: TableroResponse) => {
     setTableros((prev) => [nuevo, ...prev]);
   };
@@ -228,17 +241,25 @@ export function ForumBoardsList() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Header */}
-      <div className="flex items-start justify-between mb-10">
-        <div>
-          <h1 className="mb-2 text-foreground">Foro de Discusión</h1>
-          <p className="text-foreground">Comparte dudas, recursos y experiencias con la comunidad</p>
+      <div className="flex items-start justify-between gap-4 mb-10 portal-fade-up">
+        <div className="flex items-start gap-4">
+          <div
+            className="hidden sm:flex w-12 h-12 flex-shrink-0 items-center justify-center bg-primary/10 text-primary"
+            style={{ borderRadius: "var(--radius-md)" }}
+          >
+            <MessageSquare className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="mb-1.5 text-foreground">Foro de Discusión</h1>
+            <p className="text-muted-foreground">Comparte dudas, recursos y experiencias con la comunidad</p>
+          </div>
         </div>
         {/* Solo admins pueden crear tableros */}
         {puedeCrearTablero && (
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 shadow-sm"
-            style={{ borderRadius: "var(--radius)" }}
+            className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary-dim transition-colors flex items-center gap-2 flex-shrink-0 portal-hoverable"
+            style={{ borderRadius: "var(--radius)", boxShadow: "var(--portal-shadow-card)" }}
           >
             <Plus className="w-5 h-5" />
             Crear Tablero
@@ -246,10 +267,13 @@ export function ForumBoardsList() {
         )}
       </div>
 
-      <div className="grid lg:grid-cols-[240px_1fr] gap-8">
+      <div className="grid lg:grid-cols-[240px_1fr] gap-8 portal-fade-up-delay">
         {/* Sidebar */}
         <aside className="space-y-6">
-          <div className="bg-surface-container-lowest p-5 shadow-sm" style={{ borderRadius: "var(--radius)" }}>
+          <div
+            className="bg-card p-5 border border-border"
+            style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-card)" }}
+          >
             <h3 className="mb-4 text-foreground">Categorías</h3>
             <div className="space-y-1.5">
               {categories.map((category) => (
@@ -258,10 +282,10 @@ export function ForumBoardsList() {
                   onClick={() => setSelectedCategory(category)}
                   className={`w-full text-left px-3 py-2 text-sm text-foreground transition-colors ${
                     selectedCategory === category
-                      ? "bg-primary text-primary-foreground shadow-sm"
+                      ? "bg-primary text-primary-foreground font-medium"
                       : "hover:bg-surface-container text-foreground"
                   }`}
-                  style={{ borderRadius: "var(--radius)" }}
+                  style={{ borderRadius: "var(--radius-sm)" }}
                 >
                   {category}
                 </button>
@@ -274,14 +298,14 @@ export function ForumBoardsList() {
         <main>
           <div className="mb-6">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Buscar tableros..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 border border-border bg-input-background focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-                style={{ borderRadius: 'var(--radius)' }}
+                style={{ borderRadius: 'var(--radius)', boxShadow: 'var(--portal-shadow-card)' }}
               />
             </div>
           </div>
@@ -299,7 +323,7 @@ export function ForumBoardsList() {
               <p className="text-destructive">{error}</p>
               <button
                 onClick={() => window.location.reload()}
-                className="mt-4 px-4 py-2 border border-border hover:bg-accent transition-colors text-sm"
+                className="mt-4 px-4 py-2 border border-border hover:bg-accent transition-colors text-sm portal-hoverable"
                 style={{ borderRadius: "var(--radius)" }}
               >
                 Reintentar
@@ -309,18 +333,18 @@ export function ForumBoardsList() {
 
           {!cargando && !error && (
             <div className="space-y-3">
-              {filteredBoards.map((tablero) => (
+              {pagedBoards.map((tablero) => (
                 <Link
                   key={tablero.id}
                   to={`/portal/${portalId}/foro/${tablero.id}`}
-                  className="block bg-surface-container-lowest hover:shadow-md transition-all group"
-                  style={{ borderRadius: "var(--radius)" }}
+                  className="block bg-card border border-border transition-all group portal-hoverable"
+                  style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-card)" }}
                 >
                   <div className="p-5 flex gap-4">
                     <div className="flex-shrink-0">
                       <div
                         className="w-12 h-12 bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors"
-                        style={{ borderRadius: "var(--radius)" }}
+                        style={{ borderRadius: "var(--radius-md)" }}
                       >
                         <MessageSquare className="w-6 h-6 text-primary" />
                       </div>
@@ -331,12 +355,7 @@ export function ForumBoardsList() {
                           {tablero.nombre}
                           <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </h4>
-                        <span
-                          className="px-2.5 py-1 bg-accent text-accent-foreground text-xs whitespace-nowrap"
-                          style={{ borderRadius: "var(--radius)" }}
-                        >
-                          {tablero.etiqueta.nombre}
-                        </span>
+                        <CategoryBadge label={tablero.etiqueta.nombre} />
                       </div>
 
                       {tablero.descripcion && (
@@ -369,6 +388,8 @@ export function ForumBoardsList() {
                   <p className="text-on-surface-variant">No se encontraron tableros</p>
                 </div>
               )}
+
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
             </div>
           )}
         </main>
