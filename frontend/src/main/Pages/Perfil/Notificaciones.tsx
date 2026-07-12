@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { 
-    Bell, BellOff, Check, CheckCheck, Trash2, 
+    BellOff, Check, CheckCheck, 
     BookOpen, MessageSquare, UserPlus, Info, Loader2 
 } from "lucide-react";
 import { notificacionService } from "../../services/NotificacionService";

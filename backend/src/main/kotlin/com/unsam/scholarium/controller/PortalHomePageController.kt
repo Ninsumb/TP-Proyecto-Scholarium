@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/portales/{portalId}/home")
-@CrossOrigin(origins = ["http://localhost:5173"])
 class PortalHomePageController(
     private val portalHomePageService: PortalHomePageService
 ) {

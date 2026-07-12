@@ -89,9 +89,21 @@ class CloudinaryFileStorageService(
 
     override fun delete(publicId: String): Boolean {
         return try {
+            val extension = publicId
+                .substringAfterLast(".", "")
+                .lowercase()
+
+            val resourceType = when (extension) {
+                "jpg", "jpeg", "png", "gif", "webp" -> "image"
+                "pdf" -> "image"    // los PDFs se suben como image
+                else -> "raw"      // docx, pptx, etc.
+            }
+
             val result = cloudinary.uploader().destroy(
                 publicId,
-                ObjectUtils.emptyMap()
+                ObjectUtils.asMap(
+                    "resource_type", resourceType
+                )
             )
 
             result["result"] == "ok"
