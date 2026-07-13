@@ -24,7 +24,6 @@ export default defineConfig([
       import: importPlugin, 
     },
     rules: {
-      'import/case-sensitive': 'error', 
       'import/no-unresolved': 'error',
       'import/extensions': ['error', 'ignorePackages'],
     },

@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Users, History, Vote,
   ChevronUp, ChevronDown, Check, X, Clock, Loader2,
-  BlocksIcon,
   Lock,
   Unlock,
   UserMinus,
@@ -11,13 +10,13 @@ import {
 } from "lucide-react";
 import { adminService } from "../../../services/AdminService";
 import { authService } from "../../../services/AuthService";
-import { usePortalContext } from "../../../hooks/usePortalContext";
-import { useToast } from "../../../hooks/useToast";
+import { usePortalContext } from "../../../Hooks/usePortalContext";
+import { useToast } from "../../../Hooks/useToast";
 import { Toast } from "../../../Components/common/Toast";
 import { Modal } from "../../../Components/common/Modal";
 import { ContextMenu } from "../../../Components/common/ContextMenu";
 import { Pagination } from "../../../Components/common/Pagination";
-import type { AccionAdminResponse, PageAccionAdminResponse } from "../../../types/Admin/Admin";
+import type { AccionAdminResponse } from "../../../types/Admin/Admin";
 
 import type {
   MiembroResponse,
@@ -484,13 +483,6 @@ function relTime(isoString: string): string {
   return new Date(isoString).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
 }
 
-function absTime(isoString: string): string {
-  return new Date(isoString).toLocaleString('es-ES', {
-    day: '2-digit', month: '2-digit', year: '2-digit',
-    hour: '2-digit', minute: '2-digit',
-  });
-}
-
 // ─── AccionCard ───────────────────────────────────────────────────────────────
 
 interface AccionCardProps {
@@ -498,12 +490,6 @@ interface AccionCardProps {
   cfg: { label: string; pillClass: string; icon?: string; grupo: string };
   initials: string;
 }
-
-// Mapa de ícono de Lucide por tipo de acción — usamos los que ya importaste + algunos nuevos
-const ACCION_ICON_MAP: Record<string, React.ReactNode> = {
-  // Para no agregar 30 imports, usamos un SVG inline pequeño como fallback
-  // y los iconos de Lucide que ya están en scope para los casos comunes.
-};
 
 function absTimeStr(isoString: string): string {
   return new Date(isoString).toLocaleString('es-ES', {

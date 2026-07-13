@@ -4,7 +4,7 @@ import {
   Inbox, CheckCircle2, AlertCircle,
 } from "lucide-react";
 import { adminService } from "../../../services/AdminService";
-import { usePortalContext } from "../../../hooks/usePortalContext";
+import { usePortalContext } from "../../../Hooks/usePortalContext";
 import type { SolicitudResponse, MaterialPendienteDTO } from "../../../types/Admin/Admin";
 import { Modal } from "../../../Components/common/Modal";
 import { Pagination } from "../../../Components/common/Pagination";
