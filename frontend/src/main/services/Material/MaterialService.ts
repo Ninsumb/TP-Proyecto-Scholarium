@@ -1,5 +1,11 @@
 import apiClient from '../../services/apiClient';
-import type { MaterialResponse, SubirMaterialRequest } from '../../types/Material/Material';
+import type { MaterialResponse, SubirMaterialRequest, TipoMaterial } from '../../types/Material/Material';
+
+export interface EditarMaterialRequest {
+  nombre: string;
+  descripcion?: string;
+  tipo: TipoMaterial;
+}
 
 class MaterialService {
   async subirMaterial(materiaId: string, payload: SubirMaterialRequest): Promise<MaterialResponse> {
@@ -38,6 +44,18 @@ class MaterialService {
       `/material/${materialId}/descargar`
     );
     return data.url;
+  }
+
+  async editarMaterial(materialId: string, payload: EditarMaterialRequest): Promise<MaterialResponse> {
+    const { data } = await apiClient.put<MaterialResponse>(
+      `/material/${materialId}`,
+      payload
+    );
+    return data;
+  }
+
+  async eliminarMaterial(materialId: string): Promise<void> {
+    await apiClient.delete(`/material/${materialId}`);
   }
 }
 
