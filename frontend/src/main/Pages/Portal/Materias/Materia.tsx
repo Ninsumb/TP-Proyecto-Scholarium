@@ -3,16 +3,20 @@ import { useParams, Link, useOutletContext } from "react-router";
 import {
   Download, Upload, ArrowLeft, Calendar,
   User, Edit2, Save, X, Search, Loader2,
-  UserPlus, Lock, BookOpen, Inbox, AlertCircle
+  UserPlus, Lock, BookOpen, Inbox, AlertCircle,
+  Pencil, Trash2
 } from "lucide-react";
 import { UploadMaterialModal } from "./SubirMaterialModal";
 import { materialService } from "../../../services/Material/MaterialService";
 import { materiaService } from "../../../services/Portal/MateriaService";
 import type { MaterialResponse } from "../../../types/Material/Material";
+import { TIPO_MATERIAL_OPCIONES, type TipoMaterial } from "../../../types/Material/Material";
 import type { MateriaResponse } from "../../../types/Portal/Materia";
 import { getTipoColor, getExtensionColor } from "../../../Utils/tagColors";
 import { getExtensionIcon, getFileExtension } from "../../../Utils/materialIcons";
 import { Pagination } from "../../../Components/common/Pagination";
+import { ContextMenu } from "../../../Components/common/ContextMenu";
+import { Modal } from "../../../Components/common/Modal";
 
 interface PortalContext {
   isMember: boolean;
@@ -82,6 +86,16 @@ export function SubjectDetail() {
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 6;
 
+  // ── Edición / eliminación de material (solo admin) ─────────────────────
+  const [editingMaterial, setEditingMaterial] = useState<MaterialResponse | null>(null);
+  const [editMatNombre, setEditMatNombre] = useState("");
+  const [editMatDescripcion, setEditMatDescripcion] = useState("");
+  const [editMatTipo, setEditMatTipo] = useState<TipoMaterial>("OTRO");
+  const [savingMaterial, setSavingMaterial] = useState(false);
+
+  const [deletingMaterial, setDeletingMaterial] = useState<MaterialResponse | null>(null);
+  const [deletingMaterialLoading, setDeletingMaterialLoading] = useState(false);
+
   const TIPOS = ["all", "APUNTE", "PARCIAL", "FINAL", "GUIA_EJERCICIOS", "OTRO"];
   const EXTENSIONES = ["all", "img", "pdf", "docx", "pptx"];
 
@@ -121,6 +135,45 @@ export function SubjectDetail() {
       window.open(url, "_blank");
     } catch {
       alert("Error al intentar descargar el archivo.");
+    }
+  };
+
+  const openEditMaterial = (material: MaterialResponse) => {
+    setEditingMaterial(material);
+    setEditMatNombre(material.nombre);
+    setEditMatDescripcion(material.descripcion ?? "");
+    setEditMatTipo(material.tipo);
+  };
+
+  const handleSaveMaterialEdit = async () => {
+    if (!editingMaterial || !id) return;
+    setSavingMaterial(true);
+    try {
+      await materialService.editarMaterial(editingMaterial.id, {
+        nombre: editMatNombre,
+        descripcion: editMatDescripcion,
+        tipo: editMatTipo,
+      });
+      setEditingMaterial(null);
+      materialService.listarMaterialPublicado(id).then(setMaterials).catch(() => {});
+    } catch {
+      alert("Error al guardar los cambios del material.");
+    } finally {
+      setSavingMaterial(false);
+    }
+  };
+
+  const handleConfirmDeleteMaterial = async () => {
+    if (!deletingMaterial || !id) return;
+    setDeletingMaterialLoading(true);
+    try {
+      await materialService.eliminarMaterial(deletingMaterial.id);
+      setDeletingMaterial(null);
+      materialService.listarMaterialPublicado(id).then(setMaterials).catch(() => {});
+    } catch {
+      alert("Error al eliminar el material.");
+    } finally {
+      setDeletingMaterialLoading(false);
     }
   };
 
@@ -446,7 +499,7 @@ export function SubjectDetail() {
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2 flex-shrink-0">
+                <div className="flex gap-2 flex-shrink-0 items-center">
                   <button
                     onClick={() => handleDescargar(material.id)}
                     className="p-2.5 rounded-md bg-primary hover:bg-primary-dim transition-colors portal-hoverable"
@@ -454,6 +507,23 @@ export function SubjectDetail() {
                   >
                     <Download className="w-5 h-5 text-primary-foreground" />
                   </button>
+                  {isAdmin && (
+                    <ContextMenu
+                      items={[
+                        {
+                          label: "Editar material",
+                          icon: <Pencil className="w-4 h-4" />,
+                          onClick: () => openEditMaterial(material),
+                        },
+                        {
+                          label: "Eliminar material",
+                          icon: <Trash2 className="w-4 h-4" />,
+                          danger: true,
+                          onClick: () => setDeletingMaterial(material),
+                        },
+                      ]}
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -475,6 +545,106 @@ export function SubjectDetail() {
           if (id) materialService.listarMaterialPublicado(id).then(setMaterials).catch(() => {});
         }}
       />
+
+      {editingMaterial && (
+        <Modal onClose={() => setEditingMaterial(null)} maxWidth="28rem" className="p-6">
+          <h3
+            className="text-xl font-semibold text-foreground mb-4"
+            style={{ fontFamily: "Work Sans, sans-serif" }}
+          >
+            Editar Material
+          </h3>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-foreground mb-2">Nombre</label>
+            <input
+              type="text"
+              value={editMatNombre}
+              onChange={(e) => setEditMatNombre(e.target.value)}
+              className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary transition-shadow"
+              style={{ border: "1px solid var(--border)" }}
+              autoFocus
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-foreground mb-2">Descripción</label>
+            <textarea
+              value={editMatDescripcion}
+              onChange={(e) => setEditMatDescripcion(e.target.value)}
+              placeholder="Descripción del material (opcional)..."
+              className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary transition-shadow min-h-[80px]"
+              style={{ border: "1px solid var(--border)" }}
+            />
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-foreground mb-2">Categoría</label>
+            <select
+              value={editMatTipo}
+              onChange={(e) => setEditMatTipo(e.target.value as TipoMaterial)}
+              className="w-full px-4 py-3 bg-surface-container-lowest text-foreground rounded-sm focus:outline-none focus:ring-2 focus:ring-primary transition-shadow"
+              style={{ border: "1px solid var(--border)" }}
+            >
+              {TIPO_MATERIAL_OPCIONES.map((opcion) => (
+                <option key={opcion.value} value={opcion.value}>
+                  {opcion.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={handleSaveMaterialEdit}
+              disabled={savingMaterial || !editMatNombre.trim()}
+              className="flex-1 px-4 py-2 rounded-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed portal-hoverable"
+              style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
+            >
+              {savingMaterial ? "Guardando..." : "Guardar"}
+            </button>
+            <button
+              onClick={() => setEditingMaterial(null)}
+              disabled={savingMaterial}
+              className="flex-1 px-4 py-2 rounded-sm bg-muted text-muted-foreground hover:bg-accent hover:text-foreground transition-all disabled:opacity-40"
+            >
+              Cancelar
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {deletingMaterial && (
+        <Modal onClose={() => setDeletingMaterial(null)} maxWidth="28rem" className="p-6">
+          <h3
+            className="text-xl font-semibold text-foreground mb-4"
+            style={{ fontFamily: "Work Sans, sans-serif" }}
+          >
+            Eliminar Material
+          </h3>
+          <p className="text-foreground mb-6">
+            ¿Estás seguro de que querés eliminar{" "}
+            <strong>"{deletingMaterial.nombre}"</strong>? Esta acción no se puede deshacer.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={handleConfirmDeleteMaterial}
+              disabled={deletingMaterialLoading}
+              className="flex-1 px-4 py-2 rounded-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed portal-hoverable"
+              style={{ background: "var(--destructive)", color: "var(--destructive-foreground)" }}
+            >
+              {deletingMaterialLoading ? "Eliminando..." : "Eliminar"}
+            </button>
+            <button
+              onClick={() => setDeletingMaterial(null)}
+              disabled={deletingMaterialLoading}
+              className="flex-1 px-4 py-2 rounded-sm bg-muted text-muted-foreground hover:bg-accent hover:text-foreground transition-all disabled:opacity-40"
+            >
+              Cancelar
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
