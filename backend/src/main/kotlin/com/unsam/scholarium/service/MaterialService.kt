@@ -1,5 +1,6 @@
 package com.unsam.scholarium.service
 
+import com.unsam.scholarium.dto.EditarMaterialRequest
 import com.unsam.scholarium.dto.MaterialAceptadoEvent
 import com.unsam.scholarium.dto.MaterialPendienteDTO
 import com.unsam.scholarium.dto.MaterialPublicadoResponse
@@ -258,6 +259,37 @@ class MaterialService(
         }
 
         return material.url
+    }
+
+    @Transactional
+    fun editarMaterial(materialId: UUID, request: EditarMaterialRequest, email: String): Material {
+        val material = materialRepository.findById(materialId)
+            .orElseThrow { ElementDoesNotExistException("Material no encontrado") }
+
+        val portal = material.materia.carpeta.portal
+
+        val usuario = usuarioRepository.findByEmail(email)
+            ?: throw ElementDoesNotExistException("Usuario no encontrado")
+
+        val esAdmin = membresiaRepository
+            .existsByUsuarioAndPortalAndRol(usuario, portal, RolMembresia.ADMIN)
+
+        if (!esAdmin) throw NotAdminException("No sos ADMIN del portal del material.")
+
+        material.nombre = request.nombre
+        material.descripcion = request.descripcion ?: ""
+        material.tipo = request.tipo
+        val guardado = materialRepository.save(material)
+
+        accionAdminService.registrar(
+            portal             = portal,
+            admin              = usuario,
+            tipo               = TipoAccionAdmin.MATERIAL_EDITADO,
+            entidadId          = materialId.toString(),
+            entidadDescripcion = material.nombre,
+        )
+
+        return guardado
     }
 
     fun deleteMaterial(materialId: UUID, email: String) {

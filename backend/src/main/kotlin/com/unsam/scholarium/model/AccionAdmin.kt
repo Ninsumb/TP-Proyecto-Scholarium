@@ -14,6 +14,7 @@ enum class TipoAccionAdmin {
     MATERIAL_APROBADO,
     MATERIAL_RECHAZADO,
     MATERIAL_ELIMINADO,
+    MATERIAL_EDITADO,
 
     // Miembros
     MIEMBRO_ASCENDIDO,

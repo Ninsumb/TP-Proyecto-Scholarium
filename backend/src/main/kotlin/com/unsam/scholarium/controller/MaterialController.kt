@@ -1,5 +1,6 @@
 package com.unsam.scholarium.controller
 
+import com.unsam.scholarium.dto.EditarMaterialRequest
 import com.unsam.scholarium.dto.MaterialResponse
 import com.unsam.scholarium.dto.RechazarMaterialRequest
 import com.unsam.scholarium.model.TipoMaterial
@@ -84,6 +85,20 @@ class MaterialController(private val materialService: MaterialService) {
         val email = authentication.name
         val url = materialService.descargarMaterial(materialId, email)
         return ResponseEntity.ok(mapOf("url" to url))
+    }
+
+    @PutMapping("/{materialId}")
+    fun editarMaterial(
+        @PathVariable materialId: UUID,
+        @Valid @RequestBody request: EditarMaterialRequest,
+        authentication: Authentication
+    ): ResponseEntity<MaterialResponse> {
+        val email = authentication.name
+
+        val material = materialService.editarMaterial(materialId, request, email)
+
+        val response = MaterialResponse.fromEntity(material)
+        return ResponseEntity.ok(response)
     }
 
     @DeleteMapping("/{materialId}")
