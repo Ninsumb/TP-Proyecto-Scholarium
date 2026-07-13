@@ -25,13 +25,13 @@ import {
     type LucideIcon,
 } from "lucide-react";
 import { adminService } from "../../../services/AdminService";
-import { usePortalContext } from "../../../hooks/usePortalContext";
+import { usePortalContext } from "../../../Hooks/usePortalContext";
 import type { TipoAcceso } from "../../../types/Portal/Portal";
 import type {
     PlantillaSolicitudResponse,
     CrearVotacionRequest,
 } from "../../../types/Admin/Admin";
-import { useToast } from "../../../hooks/useToast";
+import { useToast } from "../../../Hooks/useToast";
 import { Toast } from "../../../Components/common/Toast";
 import { Modal } from "../../../Components/common/Modal";
 import apiClient from "../../../services/apiClient";

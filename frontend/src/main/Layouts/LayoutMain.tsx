@@ -1,13 +1,13 @@
 import { Outlet } from "react-router-dom";
 import { useMemo } from "react";
-import { useToast } from "../hooks/useToast";
+import { useToast } from "../Hooks/useToast";
 import { Toast } from "../Components/common/Toast";
 import { MainContext } from "../types/MainContext";
 import type { MainContextType } from "../types/MainContext";
 import { Header } from "../Components/Header/Header";
 import { Footer } from "../Components/Footer/Footer";
-import { useSwitchTheme } from "../hooks/useSwitchTheme";
-import { useOnInit } from "../hooks/useOnInit";
+import { useSwitchTheme } from "../Hooks/useSwitchTheme";
+import { useOnInit } from "../Hooks/useOnInit";
 
 export const LayoutMain = () => {
     const { toast, showToast } = useToast();

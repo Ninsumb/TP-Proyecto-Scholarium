@@ -1,7 +1,7 @@
 // Components/common/Toast.tsx
 import React from 'react'
 import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react'
-import type { ToastMessage } from '../../hooks/useToast'
+import type { ToastMessage } from '../../Hooks/useToast'
 
 interface ToastProps {
   toast: ToastMessage | null
