@@ -10,8 +10,8 @@ import {
 } from "lucide-react";
 import { adminService } from "../../../services/AdminService";
 import { authService } from "../../../services/AuthService";
-import { usePortalContext } from "../../../Hooks/usePortalContext";
-import { useToast } from "../../../Hooks/useToast";
+import { usePortalContext } from "../../../hooks/usePortalContext";
+import { useToast } from "../../../hooks/useToast";
 import { Toast } from "../../../Components/common/Toast";
 import { Modal } from "../../../Components/common/Modal";
 import { ContextMenu } from "../../../Components/common/ContextMenu";
