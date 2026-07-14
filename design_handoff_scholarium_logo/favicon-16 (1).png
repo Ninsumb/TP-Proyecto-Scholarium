@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: #f4f5f7; }
+    .checker {
+      background-image:
+        linear-gradient(45deg, #ddd 25%, transparent 25%),
+        linear-gradient(-45deg, #ddd 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #ddd 75%),
+        linear-gradient(-45deg, transparent 75%, #ddd 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+    }
+  </style>
+</helmet>
+
+<div style="font-family: 'Space Grotesk', sans-serif; padding: 56px 40px; max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 48px;">
+
+  <div>
+    <div style="font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #8a93a3; font-weight: 500;">Scholarium — sistema de marca</div>
+    <div style="font-size: 28px; font-weight: 700; color: #24334f; margin-top: 6px;">Logotipo</div>
+  </div>
+
+  <!-- ICON MARK -->
+  <div>
+    <div style="font-size: 14px; font-weight: 700; color: #24334f; margin-bottom: 16px;">Ícono (favicon / avatar)</div>
+    <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end;">
+
+      <div class="checker" style="width: 220px; height: 220px; border-radius: 24px; display: flex; align-items: center; justify-content: center;">
+        <svg viewBox="0 0 120 120" width="60%" height="60%" xmlns="http://www.w3.org/2000/svg">
+          <rect x="15" y="45" width="60" height="60" rx="16" fill="#243d63"></rect>
+          <rect x="35" y="25" width="60" height="60" rx="16" fill="#3a5f94"></rect>
+          <rect x="55" y="5" width="45" height="45" rx="14" fill="oklch(82.8% .189 84.429)"></rect>
+        </svg>
+      </div>
+
+      <div style="width: 220px; height: 220px; border-radius: 24px; background: #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(16,24,40,0.08);">
+        <svg viewBox="0 0 120 120" width="60%" height="60%" xmlns="http://www.w3.org/2000/svg">
+          <rect x="15" y="45" width="60" height="60" rx="16" fill="#243d63"></rect>
+          <rect x="35" y="25" width="60" height="60" rx="16" fill="#3a5f94"></rect>
+          <rect x="55" y="5" width="45" height="45" rx="14" fill="oklch(82.8% .189 84.429)"></rect>
+        </svg>
+      </div>
+
+      <div style="width: 220px; height: 220px; border-radius: 24px; background: #3a5f94; display: flex; align-items: center; justify-content: center;">
+        <svg viewBox="0 0 120 120" width="60%" height="60%" xmlns="http://www.w3.org/2000/svg">
+          <rect x="15" y="45" width="60" height="60" rx="16" fill="rgba(255,255,255,0.35)"></rect>
+          <rect x="35" y="25" width="60" height="60" rx="16" fill="#ffffff"></rect>
+          <rect x="55" y="5" width="45" height="45" rx="14" fill="oklch(82.8% .189 84.429)"></rect>
+        </svg>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start;">
+        <div style="display: flex; align-items: center; gap: 10px; background: #fff; padding: 8px 14px 8px 10px; border-radius: 8px 8px 0 0; border: 1px solid #e4e7ec; border-bottom: none;">
+          <svg viewBox="0 0 120 120" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+            <rect x="15" y="45" width="60" height="60" rx="16" fill="#243d63"></rect>
+            <rect x="35" y="25" width="60" height="60" rx="16" fill="#3a5f94"></rect>
+            <rect x="55" y="5" width="45" height="45" rx="14" fill="oklch(82.8% .189 84.429)"></rect>
+          </svg>
+          <span style="font-size: 12px; color: #475467; font-family: -apple-system, sans-serif;">Scholarium</span>
+          <span style="color: #98a2b3; font-size: 14px; margin-left: 6px;">×</span>
+        </div>
+        <div style="font-size: 11px; color: #98a2b3; padding-left: 4px;">vista previa en pestaña</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- HORIZONTAL LOCKUP -->
+  <div>
+    <div style="font-size: 14px; font-weight: 700; color: #24334f; margin-bottom: 16px;">Logo completo — horizontal</div>
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+      <div class="checker" style="flex: 1; min-width: 320px; padding: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <svg viewBox="0 0 120 120" width="56" height="56" xmlns="http://www.w3.org/2000/svg">
+            <rect x="15" y="45" width="60" height="60" rx="16" fill="#243d63"></rect>
+            <rect x="35" y="25" width="60" height="60" rx="16" fill="#3a5f94"></rect>
+            <rect x="55" y="5" width="45" height="45" rx="14" fill="oklch(82.8% .189 84.429)"></rect>
+          </svg>
+          <div style="font-size: 32px; font-weight: 700; color: #3a5f94; letter-spacing: -0.01em;">Scholarium</div>
+        </div>
+      </div>
+      <div style="flex: 1; min-width: 320px; padding: 40px; border-radius: 20px; background: #3a5f94; display: flex; align-items: center; justify-content: center;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <svg viewBox="0 0 120 120" width="56" height="56" xmlns="http://www.w3.org/2000/svg">
+            <rect x="15" y="45" width="60" height="60" rx="16" fill="rgba(255,255,255,0.35)"></rect>
+            <rect x="35" y="25" width="60" height="60" rx="16" fill="#ffffff"></rect>
+            <rect x="55" y="5" width="45" height="45" rx="14" fill="oklch(82.8% .189 84.429)"></rect>
+          </svg>
+          <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: -0.01em;">Scholarium</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STACKED LOCKUP -->
+  <div>
+    <div style="font-size: 14px; font-weight: 700; color: #24334f; margin-bottom: 16px;">Logo completo — apilado</div>
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+      <div class="checker" style="width: 260px; padding: 36px 20px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; gap: 14px;">
+        <svg viewBox="0 0 120 120" width="72" height="72" xmlns="http://www.w3.org/2000/svg">
+          <rect x="15" y="45" width="60" height="60" rx="16" fill="#243d63"></rect>
+          <rect x="35" y="25" width="60" height="60" rx="16" fill="#3a5f94"></rect>
+          <rect x="55" y="5" width="45" height="45" rx="14" fill="oklch(82.8% .189 84.429)"></rect>
+        </svg>
+        <div style="font-size: 24px; font-weight: 700; color: #3a5f94; letter-spacing: -0.01em;">Scholarium</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="font-size: 13px; color: #8a93a3; line-height: 1.6; max-width: 640px;">
+    Marca: tres módulos apilados en ascenso — representa contenido académico construido de forma colaborativa, capa sobre capa. Azul principal <code>#3a5f94</code> con acento dorado para foco/resaltado. Fondo del ícono es transparente; funciona sobre blanco, sobre azul o sobre la pestaña del navegador.
+  </div>
+
+</div>
+
+</x-dc>
+</body>
+</html>

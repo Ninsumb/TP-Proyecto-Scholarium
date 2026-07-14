@@ -1,9 +1,10 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { GraduationCap, User, LogOut, Bell } from "lucide-react";
+import { User, LogOut, Bell } from "lucide-react";
 import { Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { authService } from "../../services/AuthService";
 import { notificacionService } from "../../services/NotificacionService";
+import { Logo } from "../common/Logo";
 
 export type HeaderProps = {
     darkTheme: Boolean;
@@ -51,13 +52,7 @@ export const Header = (props: HeaderProps) => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     <Link to="/home" className="flex items-center gap-2">
-                        <GraduationCap className="w-8 h-8 text-primary-foreground" />
-                        <span
-                            className="text-xl font-semibold text-primary-foreground"
-                            style={{ fontFamily: "Work Sans, sans-serif" }}
-                        >
-                            Scholarium
-                        </span>
+                        <Logo variant="on-dark" markClassName="w-8 h-8" textClassName="text-xl" />
                     </Link>
 
                     <div className="flex items-center gap-2">

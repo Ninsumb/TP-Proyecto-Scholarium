@@ -1,0 +1,79 @@
+# Handoff: Logo Scholarium
+
+## Overview
+Marca original para Scholarium (plataforma de portales académicos colaborativos): un ícono geométrico + wordmark, para reemplazar en todas las pantallas donde aparece el logo actual (favicon, header, splash/login, etc.).
+
+## About the Design Files
+Los archivos de este paquete son **referencias de diseño hechas en HTML** (un prototipo que muestra el look final), no código de producción para copiar tal cual. La tarea es **recrear este diseño en el entorno real del proyecto** (React, Vue, lo que ya esté en uso), usando sus componentes y convenciones existentes — el ícono en sí (SVG/PNG) sí se puede usar directamente como asset.
+
+## Fidelity
+**Alta fidelidad (hifi)**: colores, proporciones y tipografía son finales. Implementar pixel-perfect.
+
+## El ícono
+Marca geométrica: tres cuadrados redondeados apilados en escalera ascendente (de atrás/abajo hacia adelante/arriba), sin usar el clásico ícono de gorro de graduación. Representa contenido académico construido en capas, de forma colaborativa.
+
+**SVG base** (`assets/icon-default.svg`) — para fondos claros/transparentes:
+```html
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <rect x="15" y="45" width="60" height="60" rx="16" fill="#243d63"/>
+  <rect x="35" y="25" width="60" height="60" rx="16" fill="#3a5f94"/>
+  <rect x="55" y="5" width="45" height="45" rx="14" fill="#eab84e"/>
+</svg>
+```
+
+**SVG sobre fondo oscuro/azul** (`assets/icon-on-dark.svg`) — ícono en blanco + dorado, para usar sobre el azul principal (`#3a5f94`) o cualquier fondo oscuro:
+```html
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <rect x="15" y="45" width="60" height="60" rx="16" fill="rgba(255,255,255,0.35)"/>
+  <rect x="35" y="25" width="60" height="60" rx="16" fill="#ffffff"/>
+  <rect x="55" y="5" width="45" height="45" rx="14" fill="#eab84e"/>
+</svg>
+```
+
+Regla de uso: sobre fondos claros o transparentes, usar la versión `icon-default`. Sobre el azul de marca o fondos oscuros, usar `icon-on-dark`. El fondo del ícono siempre es transparente (sin cuadro/contenedor).
+
+## Wordmark
+Texto "Scholarium" en **Space Grotesk**, peso 700, `letter-spacing: -0.01em`. Color `#3a5f94` sobre fondo claro, blanco (`#ffffff`) sobre fondo azul/oscuro. Cargar la fuente desde Google Fonts:
+```html
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+```
+
+## Header lockup (ícono + texto), ejemplo de referencia
+```html
+<div style="display: flex; align-items: center; gap: 12px;">
+  <svg viewBox="0 0 120 120" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
+    <!-- usar icon-default o icon-on-dark según el fondo del header -->
+  </svg>
+  <span style="font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: #3a5f94;">Scholarium</span>
+</div>
+```
+
+## Favicon
+PNGs ya renderizados en `assets/`:
+- `favicon-16.png`, `favicon-32.png`, `favicon-48.png` — pestaña del navegador
+- `favicon-180.png` — Apple touch icon (iOS home screen)
+- `favicon-512.png` — PWA / app icon
+
+Todos usan la versión `icon-default` (fondo transparente).
+
+```html
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" href="/favicon-180.png">
+```
+
+Nota sobre caché: los navegadores cachean el favicon agresivamente. Si al reemplazarlo no se actualiza, forzar hard refresh o renombrar el archivo.
+
+## Design Tokens
+- Azul principal: `#3a5f94`
+- Azul oscuro (capa trasera del ícono): `#243d63`
+- Dorado/acento: `#eab84e` (aprox. de `oklch(82.8% .189 84.429)`, el amarillo ya usado en la UI para resaltar)
+- Tipografía: Space Grotesk (500, 700)
+
+## Dónde reemplazar
+Buscar en el código todas las apariciones del logo/ícono actual: favicon del `<head>`, header/navbar, pantalla de login/splash, cualquier avatar o loading screen que use el ícono. Reemplazar por el nuevo ícono/wordmark según el fondo (claro → `icon-default`, oscuro/azul → `icon-on-dark`).
+
+## Files
+- `assets/icon-default.svg` — ícono, fondo claro/transparente
+- `assets/icon-on-dark.svg` — ícono, fondo oscuro/azul
+- `assets/favicon-16.png` / `-32.png` / `-48.png` / `-180.png` / `-512.png`
+- `Scholarium Logo (reference).dc.html` — prototipo original con todas las variantes visuales
