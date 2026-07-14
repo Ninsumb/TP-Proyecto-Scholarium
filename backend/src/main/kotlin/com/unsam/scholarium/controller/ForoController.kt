@@ -2,6 +2,7 @@ package com.unsam.scholarium.controller
 
 import com.unsam.scholarium.dto.CrearTableroRequest
 import com.unsam.scholarium.dto.EditarTableroRequest
+import com.unsam.scholarium.dto.EtiquetaSimpleResponse
 import com.unsam.scholarium.dto.TableroResponse
 import com.unsam.scholarium.service.ForoService
 import jakarta.validation.Valid
@@ -48,6 +49,15 @@ class ForoController(
         )
 
         return ResponseEntity.ok(tableros)
+    }
+
+    @GetMapping("/etiquetas")     // GET /api/portales/{portalId}/foros/etiquetas
+    fun obtenerEtiquetas(
+        @PathVariable portalId: Long,
+        authentication: Authentication
+    ): ResponseEntity<List<EtiquetaSimpleResponse>> {
+        val etiquetas = foroService.obtenerEtiquetasDePortal(portalId, authentication.name)
+        return ResponseEntity.ok(etiquetas)
     }
 
     @PutMapping("/{tableroId}")   // PUT /api/portales/{portalId}/foros/{tableroId}

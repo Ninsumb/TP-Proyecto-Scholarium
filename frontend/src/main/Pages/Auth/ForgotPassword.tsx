@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom"; 
-import { GraduationCap, ArrowLeft } from "lucide-react";
-import { authService } from "../../services/AuthService"; 
+import { ArrowLeft } from "lucide-react";
+import { authService } from "../../services/AuthService";
+import { Logo } from "../../Components/common/Logo";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -30,8 +31,7 @@ export default function ForgotPassword() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <GraduationCap className="w-12 h-12 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground">Scholarium</h1>
+            <Logo variant="default" markClassName="w-12 h-12" textClassName="text-3xl" />
           </div>
           <p className="text-muted-foreground">Recuperación de contraseña</p>
         </div>

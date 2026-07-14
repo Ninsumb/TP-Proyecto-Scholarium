@@ -1,6 +1,7 @@
-import { GraduationCap, Mail } from "lucide-react"
+import { Mail } from "lucide-react"
 import { FaInstagram, FaPaypal } from "react-icons/fa"
 import { useState } from "react"
+import { LogoMark } from "../common/Logo"
 
 export const Footer = () => {
 const [showEmail, setShowEmail] = useState(false);
@@ -11,10 +12,13 @@ const [showEmail, setShowEmail] = useState(false);
 
                 {/* Parte superior */}
                 <div className="flex items-center gap-3">
-                    <GraduationCap className="w-14 h-14 shrink-0" />
+                    <LogoMark variant="on-dark" className="w-14 h-14 shrink-0" />
 
                     <div>
-                        <h1 className="text-xl font-semibold text-primary-foreground">
+                        <h1
+                            className="text-xl font-bold text-primary-foreground"
+                            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: "-0.01em" }}
+                        >
                             Scholarium
                         </h1>
 

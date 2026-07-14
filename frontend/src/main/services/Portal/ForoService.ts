@@ -8,12 +8,18 @@ import type {
   EditarPostRequest,
   OcultarPostRequest,
   EditarTableroRequest,
+  EtiquetaResponse,
 } from '../../types/Portal/Foro';
 
 class ForoService {
   async listarTableros(portalId: number, etiqueta?: string): Promise<TableroResponse[]> {
     const params = etiqueta ? { etiqueta } : {};
     const response = await apiClient.get<TableroResponse[]>(`/portales/${portalId}/foros`, { params });
+    return response.data;
+  }
+
+  async listarEtiquetas(portalId: number): Promise<EtiquetaResponse[]> {
+    const response = await apiClient.get<EtiquetaResponse[]>(`/portales/${portalId}/foros/etiquetas`);
     return response.data;
   }
 

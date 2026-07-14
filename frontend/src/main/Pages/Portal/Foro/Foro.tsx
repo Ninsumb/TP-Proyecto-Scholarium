@@ -1,9 +1,9 @@
 // ForumBoardsList.tsx
 import { useState, useEffect } from "react";
-import { MessageSquare, Search, Plus, ChevronRight, MessageCircle, Loader2, UserPlus, Lock } from "lucide-react";
+import { MessageSquare, Search, Plus, ChevronRight, ChevronDown, MessageCircle, Loader2, UserPlus, Lock } from "lucide-react";
 import { Link, useOutletContext, useParams } from "react-router";
 import { foroService } from "../../../services/Portal/ForoService";
-import type { TableroResponse, CrearTableroRequest } from "../../../types/Portal/Foro";
+import type { TableroResponse, CrearTableroRequest, EtiquetaResponse } from "../../../types/Portal/Foro";
 import { CategoryBadge } from "../../../Components/common/CategoryBadge";
 import { Modal } from "../../../Components/common/Modal";
 import { Pagination } from "../../../Components/common/Pagination";
@@ -186,13 +186,17 @@ export function ForumBoardsList() {
   const portalIdNum = Number(portalId);
 
   const [tableros, setTableros] = useState<TableroResponse[]>([]);
+  const [etiquetas, setEtiquetas] = useState<EtiquetaResponse[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 6;
+  const CHIP_LIMIT = 8;
 
   useEffect(() => {
     const cargar = async () => {
@@ -210,9 +214,27 @@ export function ForumBoardsList() {
     cargar();
   }, [portalIdNum]);
 
-  // Las categorías se derivan dinámicamente de los tableros reales
-  const etiquetas = Array.from(new Set(tableros.map((t) => t.etiqueta.nombre)));
-  const categories = ["Todos", ...etiquetas];
+  useEffect(() => {
+    const cargarEtiquetas = async () => {
+      try {
+        const data = await foroService.listarEtiquetas(portalIdNum);
+        setEtiquetas(data);
+      } catch {
+        // Si falla, "Todos" sigue funcionando; simplemente no hay chips de categoría.
+      }
+    };
+    if (portalIdNum) cargarEtiquetas();
+  }, [portalIdNum]);
+
+  // Las categorías vienen del portal (etiquetas reales), no solo de los tableros ya creados
+  const categoryNames = etiquetas.map((e) => e.nombre);
+  const filteredCategoryNames = categoryFilter
+    ? categoryNames.filter((c) => c.toLowerCase().includes(categoryFilter.toLowerCase()))
+    : categoryNames;
+  const shownCategoryNames = showAllCategories
+    ? filteredCategoryNames
+    : filteredCategoryNames.slice(0, CHIP_LIMIT);
+  const hiddenCategoryCount = filteredCategoryNames.length - shownCategoryNames.length;
 
   const filteredBoards = tableros.filter((tablero) => {
     const matchesSearch =
@@ -267,32 +289,79 @@ export function ForumBoardsList() {
         )}
       </div>
 
-      <div className="grid lg:grid-cols-[240px_1fr] gap-8 portal-fade-up-delay">
-        {/* Sidebar */}
-        <aside className="space-y-6">
-          <div
-            className="bg-card p-5 border border-border"
-            style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-card)" }}
-          >
-            <h3 className="mb-4 text-foreground">Categorías</h3>
-            <div className="space-y-1.5">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`w-full text-left px-3 py-2 text-sm text-foreground transition-colors ${
-                    selectedCategory === category
-                      ? "bg-primary text-primary-foreground font-medium"
-                      : "hover:bg-surface-container text-foreground"
-                  }`}
-                  style={{ borderRadius: "var(--radius-sm)" }}
-                >
-                  {category}
-                </button>
-              ))}
+      <div className="portal-fade-up-delay">
+        {/* Categorías */}
+        <div
+          className="bg-card p-4 border border-border mb-4"
+          style={{ borderRadius: "var(--radius-lg)", boxShadow: "var(--portal-shadow-card)" }}
+        >
+          {categoryNames.length > CHIP_LIMIT && (
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Buscar categoría..."
+                value={categoryFilter}
+                onChange={(e) => {
+                  setCategoryFilter(e.target.value);
+                  setShowAllCategories(false);
+                }}
+                className="w-full pl-9 pr-3 py-2 text-sm border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                style={{ borderRadius: "var(--radius-sm)" }}
+              />
             </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedCategory("Todos")}
+              className={`px-3.5 py-1.5 text-sm transition-colors ${
+                selectedCategory === "Todos"
+                  ? "bg-primary text-primary-foreground font-medium"
+                  : "bg-surface-container text-foreground hover:bg-accent"
+              }`}
+              style={{ borderRadius: "999px" }}
+            >
+              Todos
+            </button>
+            {shownCategoryNames.map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-3.5 py-1.5 text-sm transition-colors ${
+                  selectedCategory === category
+                    ? "bg-primary text-primary-foreground font-medium"
+                    : "bg-surface-container text-foreground hover:bg-accent"
+                }`}
+                style={{ borderRadius: "999px" }}
+              >
+                {category}
+              </button>
+            ))}
+            {hiddenCategoryCount > 0 && (
+              <button
+                onClick={() => setShowAllCategories(true)}
+                className="px-3.5 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                style={{ borderRadius: "999px" }}
+              >
+                +{hiddenCategoryCount} más <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {showAllCategories && filteredCategoryNames.length > CHIP_LIMIT && (
+              <button
+                onClick={() => setShowAllCategories(false)}
+                className="px-3.5 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                style={{ borderRadius: "999px" }}
+              >
+                Ver menos
+              </button>
+            )}
+            {categoryFilter && filteredCategoryNames.length === 0 && (
+              <span className="px-1 py-1.5 text-sm text-muted-foreground">
+                No hay categorías que coincidan con "{categoryFilter}".
+              </span>
+            )}
           </div>
-        </aside>
+        </div>
 
         {/* Contenido principal */}
         <main>
@@ -398,7 +467,7 @@ export function ForumBoardsList() {
       <CreateBoardModal
         isOpen={showCreateModal}
         portalId={portalIdNum}
-        etiquetasExistentes={etiquetas}
+        etiquetasExistentes={categoryNames}
         onClose={() => setShowCreateModal(false)}
         onCreado={handleTableroCreado}
       />
