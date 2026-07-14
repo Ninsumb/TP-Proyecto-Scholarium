@@ -102,6 +102,23 @@ class ForoService(
     }
 
     @Transactional(readOnly = true)
+    fun obtenerEtiquetasDePortal(
+        portalId: Long,
+        emailUsuario: String
+    ): List<EtiquetaSimpleResponse> {
+        portalRepository.findById(portalId)
+            .orElseThrow { ElementDoesNotExistException("El portal no existe") }
+
+        val usuario = usuarioRepository.findByEmail(emailUsuario)
+            ?: throw ElementDoesNotExistException("El usuario autenticado no existe")
+
+        validarAccesoLectura(usuario.id!!, portalId)
+
+        return etiquetaRepository.findByPortalId(portalId)
+            .map { EtiquetaSimpleResponse(id = it.id!!, nombre = it.nombre) }
+    }
+
+    @Transactional(readOnly = true)
     fun obtenerTablerosDePortal(
         portalId: Long,
         emailUsuario: String,
