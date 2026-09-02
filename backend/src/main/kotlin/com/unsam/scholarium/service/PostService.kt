@@ -158,7 +158,7 @@ class PostService(
             autor = usuario
         )
 
-        val admin = esAdmin(usuario.id!!, tablero.portal.id!!)
+        val admin = esAdmin(usuario.id, tablero.portal.id!!)
         return toResponse(postRepository.save(post), admin)
     }
 
@@ -168,7 +168,7 @@ class PostService(
         val tablero = resolverTablero(tableroId)
         validarAccesoLecturaDesdePortalId(usuario.id!!, tablero.portal.id!!, tablero.portal)
 
-        val admin = esAdmin(usuario.id!!, tablero.portal.id!!)
+        val admin = esAdmin(usuario.id, tablero.portal.id!!)
         return postRepository
             .findByTableroIdAndPostPadreIsNullAndEliminadoFalseOrderByCreatedAtDesc(tableroId)
             .map { toResponse(it, admin) }
@@ -193,7 +193,7 @@ class PostService(
             postPadre = postPadre
         )
 
-        val admin = esAdmin(usuario.id!!, respuesta.tablero.portal.id!!)
+        val admin = esAdmin(usuario.id, respuesta.tablero.portal.id!!)
         return toResponse(postRepository.save(respuesta), admin)
     }
 
@@ -205,7 +205,7 @@ class PostService(
 
         validarAccesoLecturaDesdePortalId(usuario.id!!, post.tablero.portal.id!!, post.tablero.portal)
 
-        val admin = esAdmin(usuario.id!!, post.tablero.portal.id!!)
+        val admin = esAdmin(usuario.id, post.tablero.portal.id!!)
         return postRepository.findAllRespuestasRecursivas(postId).map { toResponse(it, admin) }
     }
 
@@ -273,7 +273,7 @@ class PostService(
 
         if (tokens.isEmpty()) return emptyList()
 
-        val admin = esAdmin(usuario.id!!, tablero.portal.id!!)
+        val admin = esAdmin(usuario.id, tablero.portal.id!!)
         return postRepository.buscarPostsEnTablero(tableroId, tokens)
             .map { toResponse(it, admin) }
     }

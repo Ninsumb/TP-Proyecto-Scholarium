@@ -171,7 +171,7 @@ class MateriaService(
 
         val portal = materia.carpeta.portal
         val esMiembro = membresiaRepository.existsByUsuarioIdAndPortalIdAndRol(usuario.id!!, portal.id!!, RolMembresia.MIEMBRO)
-        val esAdmin   = membresiaRepository.existsByUsuarioIdAndPortalIdAndRol(usuario.id!!, portal.id!!, RolMembresia.ADMIN)
+        val esAdmin   = membresiaRepository.existsByUsuarioIdAndPortalIdAndRol(usuario.id, portal.id, RolMembresia.ADMIN)
 
         if (!esMiembro && !esAdmin) {
             // No es miembro — solo puede pasar si el portal es ABIERTO
