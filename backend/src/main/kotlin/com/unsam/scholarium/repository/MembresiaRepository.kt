@@ -49,10 +49,4 @@ interface MembresiaRepository : JpaRepository<Membresia, Long> {
     // Spring Data JPA infiere la query automáticamente a partir del nombre.
 // Devuelve todas las membresias de un portal (ADMIN y MIEMBRO).
     fun findAllByPortalId(portalId: Long): List<Membresia>
-
-// Si la entidad Membresia tiene un campo `activo: Boolean`, podés filtrar así:
-// fun findAllByPortalIdAndActivoIsTrue(portalId: Long): List<Membresia>
-// Revisando el modelo: activo = true por defecto, así que ese filtro es recomendable
-// si en algún momento las membresias se desactivan en lugar de eliminarse.
-// Por ahora, con findAllByPortalId alcanza porque removerMiembro hace hard delete.
 }

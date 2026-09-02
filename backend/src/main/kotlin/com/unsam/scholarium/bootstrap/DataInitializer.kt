@@ -34,13 +34,6 @@ class DataInitializer {
 
         if (usuarioRepo.count() == 0L) {
 
-
-            // ═══════════════════════════════════════════════════════════════════════════════
-            // BLOQUE 1 — USUARIOS
-            // Pegar dentro del if (usuarioRepo.count() == 0L), al principio.
-            // Reemplaza el bloque "// ── Usuarios ──" existente.
-            // ═══════════════════════════════════════════════════════════════════════════════
-
             fun subirFotoBootstrap(rutaRecurso: String, usuarioId: Long): String? {
                 return try {
                     val inputStream = DataInitializer::class.java
@@ -520,7 +513,7 @@ class DataInitializer {
             val portalElectronica = portalRepo.save(Portal(
                 universidad = "UTN",
                 carrera = "Ingeniería Electrónica",
-                descripcion = "xD.",
+                descripcion = "Circuitos, señales y sistemas embebidos.",
                 iconoPortal = "Cpu",
                 colorPortal = "#0891B2",
                 tipoAcceso = TipoAcceso.CERRADO,

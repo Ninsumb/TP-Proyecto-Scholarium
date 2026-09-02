@@ -24,8 +24,6 @@ interface PortalContext {
   isOpen: boolean;
 }
 
-//TODO: Este componente en realidad se puede abstraer... por cuestiones de tiempo lo dejo acá
-
 function AccesoDenegado({ portalId }: { portalId: string | undefined }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">

@@ -25,7 +25,6 @@ data class ObtenerTablerosRequest(
     val etiquetaNombre: String? = null
 )
 
-//TODO: acá podría ir una posible imagen de perfil, no?
 data class AutorDTO(
     val id: Long,
     val nombre: String,
@@ -41,8 +40,8 @@ data class PostResponse(
     val postPadreId: UUID?,
     val cantidadRespuestas: Long,
     val eliminado: Boolean,
-    val ocultado: Boolean,           // NUEVO
-    val ocultadoMotivo: String?,     // NUEVO — solo se puebla para admins
+    val ocultado: Boolean,
+    val ocultadoMotivo: String?,     // solo se puebla para admins
     val createdAt: Instant,
     val updatedAt: Instant,
 )

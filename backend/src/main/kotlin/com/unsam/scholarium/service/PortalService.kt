@@ -339,7 +339,7 @@ class PortalService(
         val membresiaObjetivo = membresiaRepository.findByUsuarioIdAndPortalId(usuarioObjetivoId, portalId)
             ?: throw ElementDoesNotExistException("El usuario no es miembro de este portal")
 
-        val portal = membresiaObjetivo.portal!! //xD
+        val portal = membresiaObjetivo.portal!!
         membresiaRepository.delete(membresiaObjetivo)
 
         applicationEventPublisher.publishEvent(

@@ -1,6 +1,4 @@
 import { createContext } from 'react'
-//import type { Usuario } from './Usuario'
-
 
 
 export type MainContextType = {

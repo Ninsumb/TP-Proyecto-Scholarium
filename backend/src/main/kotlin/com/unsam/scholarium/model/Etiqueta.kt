@@ -5,15 +5,6 @@ import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import java.util.*
 
-//TODO: Endpoints futuros (bonus)
-//Con este modelo, después podemos agregar:
-//GET /api/portales/{portalId}/etiquetas
-//Listar todas las etiquetas disponibles en un portal.
-//POST /api/portales/{portalId}/foros
-//Crear un nuevo foro eligiendo entre las etiquetas existentes.
-//GET /api/portales/{portalId}/foros?etiqueta=PHM
-//Filtrar foros por etiqueta.
-
 
 @Entity
 @Table(

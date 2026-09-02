@@ -1,6 +1,5 @@
 package com.unsam.scholarium.controller
 
-import com.unsam.scholarium.dto.ChangeEmailRequest
 import com.unsam.scholarium.dto.ChangePasswordRequest
 import com.unsam.scholarium.dto.ForgotPasswordRequest
 import com.unsam.scholarium.dto.GoogleLoginRequest
@@ -89,14 +88,4 @@ class AuthController(
         authService.changePassword(email, request)
         return ResponseEntity.noContent().build()
     }
-
-/*    @PostMapping("/change-email")
-    fun changeEmail(
-        @RequestBody request: ChangeEmailRequest,
-        authentication: Authentication
-    ): ResponseEntity<Map<String, String>> {
-        val email = authentication.name
-        val newEmail = authService.changeEmail(email, request)
-        return ResponseEntity.ok(mapOf("newEmail" to newEmail))
-    }*/
 }
