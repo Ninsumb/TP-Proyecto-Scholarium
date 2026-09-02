@@ -11,7 +11,7 @@ import org.springframework.boot.CommandLineRunner
 import org.springframework.security.crypto.password.PasswordEncoder
 
 @Configuration
-@Profile("dev")
+@Profile("!prod")
 class DataInitializer {
 
     @Bean
