@@ -10,7 +10,7 @@ import java.util.Collections
 
 @Service
 class GoogleAuthService(
-    @Value("\${google.client-id}") private val googleClientId: String
+    @param:Value("\${google.client-id}") private val googleClientId: String
 ) {
 
     private val verifier = GoogleIdTokenVerifier.Builder(NetHttpTransport(), GsonFactory())
