@@ -72,6 +72,12 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter:1.19.7")
 }
 
+// commons-logging entra transitivamente (httpclient 4.5.14 vía google-api-client
+// y cloudinary-http44); Spring usa spring-jcl y avisa si está en el classpath.
+configurations.all {
+    exclude(group = "commons-logging", module = "commons-logging")
+}
+
 tasks.withType<KotlinCompile> {
     compilerOptions {
         freeCompilerArgs = listOf("-Xjsr305=strict")
