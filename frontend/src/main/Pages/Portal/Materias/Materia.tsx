@@ -129,6 +129,11 @@ export function SubjectDetail() {
       .finally(() => setLoadingMaterials(false));
   }, [id, searchTerm, puedeAcceder]);
 
+  // ── Reset de paginación al cambiar filtros o búsqueda ─────────────────
+  useEffect(() => {
+    setPage(1);
+  }, [filterTipo, filterExtension, searchTerm]);
+
   const handleDescargar = async (materialId: string) => {
     try {
       const url = await materialService.obtenerUrlDescarga(materialId);
@@ -227,10 +232,6 @@ export function SubjectDetail() {
 
   const totalPages = Math.max(1, Math.ceil(filteredMaterials.length / PAGE_SIZE));
   const pagedMaterials = filteredMaterials.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  useEffect(() => {
-    setPage(1);
-  }, [filterTipo, filterExtension, searchTerm]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
