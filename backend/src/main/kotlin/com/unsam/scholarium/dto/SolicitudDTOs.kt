@@ -36,3 +36,41 @@ data class PlantillaSolicitudResponse(
     val requisitos: String?,
     val abierta: Boolean,
 )
+
+/**
+ * Request para crear una Solicitud de membresía.
+ *
+ * Cambios respecto a la versión anterior:
+ * - Se eliminó `titulo`.
+ * - Se agregó `nombreCompleto` (opcional): nombre real del solicitante.
+ * - `descripcion` sigue siendo el campo principal de texto libre.
+ */
+data class SolicitudRequest(
+    /** Nombre completo real del solicitante. Opcional, pero los admins pueden pedirlo. */
+    val nombreCompleto: String? = null,
+    /** Respuesta del usuario a los requisitos del portal. Obligatorio. */
+    val descripcion: String,
+)
+
+/**
+ * Request para actualizar la PlantillaSolicitud de un portal.
+ * Permite a un admin:
+ *   - Cambiar el texto de requisitos que ven los usuarios antes de solicitar.
+ *   - Abrir o cerrar el portal a nuevas solicitudes.
+ *
+ * Ambos campos son opcionales: si se manda null no se toca ese campo.
+ */
+data class ActualizarPlantillaRequest(
+    val requisitos: String?,
+    val abierta: Boolean?,
+)
+
+data class ActualizarPlantillaSolicitudRequest(
+    val requisitos: String,
+    val abierta: Boolean
+)
+
+data class PuedeSolicitarResponse(
+    val puede: Boolean,
+    val motivo: String? // "BLOQUEADO" | "YA_MIEMBRO" | "PENDIENTE" | null
+)
