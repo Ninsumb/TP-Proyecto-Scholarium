@@ -21,11 +21,24 @@ export default defineConfig([
       globals: globals.browser,
     },
     plugins: {
-      import: importPlugin, 
+      import: importPlugin,
+    },
+    settings: {
+      'import/resolver': {
+        typescript: {
+          alwaysTryTypes: true,
+          project: ['./tsconfig.app.json', './tsconfig.node.json'],
+        },
+      },
     },
     rules: {
       'import/no-unresolved': 'error',
-      'import/extensions': ['error', 'ignorePackages'],
+      'import/extensions': ['error', 'ignorePackages', {
+        ts: 'never',
+        tsx: 'never',
+        js: 'never',
+        jsx: 'never',
+      }],
     },
   },
 ])
