@@ -132,7 +132,7 @@ class SolicitudService(
 
         val yaEsMiembro = membresiaRepository.existsByUsuarioIdAndPortalId(
             solicitud.usuario.id!!,
-            solicitud.portal.id!!
+            solicitud.portal.id
         )
 
         if (!yaEsMiembro) {

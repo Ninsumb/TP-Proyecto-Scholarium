@@ -11,8 +11,8 @@ import javax.crypto.SecretKey
 
 @Service
 class JwtService(
-    @Value("\${jwt.secret}") private val secret: String,
-    @Value("\${jwt.expiration-ms}") private val expirationMs: Long
+    @param:Value("\${jwt.secret}") private val secret: String,
+    @param:Value("\${jwt.expiration-ms}") private val expirationMs: Long
 ) {
 
     private fun getSigningKey(): SecretKey {

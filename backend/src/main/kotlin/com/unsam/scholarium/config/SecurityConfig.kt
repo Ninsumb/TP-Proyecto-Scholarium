@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Value
 @Configuration
 @EnableWebSecurity
 class SecurityConfig(
-    @Value("\${app.cors.allowed-origins}") private val allowedOrigins: String,
+    @param:Value("\${app.cors.allowed-origins}") private val allowedOrigins: String,
 ){
 
     @Bean

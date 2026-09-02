@@ -36,9 +36,9 @@ class VotacionAdminService(
     private val portalRepository: PortalRepository,
     private val usuarioRepository: UsuarioRepository,
     private val membresiaRepository: MembresiaRepository,
-    @Lazy private val portalService: PortalService,
-    @Lazy private val materiaService: MateriaService,
-    @Lazy private val foroService: ForoService,
+    @param:Lazy private val portalService: PortalService,
+    @param:Lazy private val materiaService: MateriaService,
+    @param:Lazy private val foroService: ForoService,
     private val objectMapper: com.fasterxml.jackson.databind.ObjectMapper,
     private val applicationEventPublisher: ApplicationEventPublisher,
     private val accionAdminService: AccionAdminService,
@@ -400,7 +400,7 @@ class VotacionAdminService(
                 val portalActual = portalRepository.findById(votacion.portal.id!!).getOrNull()
                 val tipoAnterior = portalActual?.tipoAcceso?.name ?: "—"
 
-                portalService.cambiarTipoAcceso(portalId = votacion.portal.id!!, nuevoTipo = nuevoTipo)
+                portalService.cambiarTipoAcceso(portalId = votacion.portal.id, nuevoTipo = nuevoTipo)
 
                 val labelAnterior = if (tipoAnterior == "ABIERTO") "Abierto" else "Cerrado"
                 val labelNuevo    = if (nuevoTipoStr == "ABIERTO") "Abierto" else "Cerrado"
@@ -445,7 +445,7 @@ class VotacionAdminService(
                 val portalActual = portalRepository.findById(votacion.portal.id!!).getOrNull()
                 val valorAnterior = portalActual?.carrera ?: "—"
 
-                portalService.cambiarCarrera(portalId = votacion.portal.id!!, nuevaCarrera = nuevoValor)
+                portalService.cambiarCarrera(portalId = votacion.portal.id, nuevaCarrera = nuevoValor)
 
                 accionAdminService.registrar(
                     portal             = votacion.portal,
