@@ -39,21 +39,6 @@ class NotificacionEventListener(
     private val membresiaRepository: MembresiaRepository,
 ) {
 
-    /*
-    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
-    fun onComentarioEnPost(event: ComentarioEnPostEvent) {
-        notificacionService.crearNotificacion(
-            usuario = event.post.autor,
-            tipo = TipoNotificacion.COMENTARIO_POST,
-            titulo = "Nuevo comentario en tu post",
-            descripcion = "${event.autorComentario.nombre} comentó en tu post \"${event.post.titulo}\"",
-            portal = event.portal,
-            entidadId = event.post.id,
-            entidadTipo = "POST"
-        )
-    }
-     */
-
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     fun onSolicitudAprobada(event: SolicitudAprobadaEvent) {
         notificacionService.crearNotificacion(
