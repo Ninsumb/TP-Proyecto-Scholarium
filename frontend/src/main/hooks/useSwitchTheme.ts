@@ -6,8 +6,11 @@ export const useSwitchTheme = () => {
     const [darkTheme, setDarkTheme] = useState(false)
 
     const switchTheme = () => {
-        setDarkTheme(!darkTheme)
-        localStorage.setItem("darkTheme", String(darkTheme ? "true" : "")) //amo los tipos de javascript
+        setDarkTheme((prev) => {
+            const next = !prev
+            localStorage.setItem("darkTheme", String(next))
+            return next
+        })
     }
 
     return {

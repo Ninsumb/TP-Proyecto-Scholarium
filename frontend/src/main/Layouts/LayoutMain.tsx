@@ -19,8 +19,8 @@ export const LayoutMain = () => {
     );
 
     useOnInit(() => {
-        var storedTheme = Boolean(localStorage.getItem("darkTheme"))
-        setDarkTheme(!storedTheme)
+        const storedTheme = localStorage.getItem("darkTheme") === "true"
+        setDarkTheme(storedTheme)
     })
 
     return (
