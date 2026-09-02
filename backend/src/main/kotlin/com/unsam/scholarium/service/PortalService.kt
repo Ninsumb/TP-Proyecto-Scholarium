@@ -323,11 +323,6 @@ class PortalService(
     }
 
     @Transactional(rollbackOn = [Exception::class])
-    fun patch(portal: Portal) {
-        portalRepository.save(portal)
-    }
-
-    @Transactional(rollbackOn = [Exception::class])
     fun removerMiembro(portalId: Long, usuarioObjetivoId: Long, emailAdmin: String) {
         val admin = validarUsuario(emailAdmin)
 

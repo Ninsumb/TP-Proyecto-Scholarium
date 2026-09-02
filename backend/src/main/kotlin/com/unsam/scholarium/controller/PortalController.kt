@@ -13,7 +13,6 @@ import com.unsam.scholarium.dto.PortalResponse
 import com.unsam.scholarium.dto.MiembroResponse
 import com.unsam.scholarium.dto.ActualizarPortalRequest
 import com.unsam.scholarium.mapper.PortalMapper
-import com.unsam.scholarium.model.Portal
 import com.unsam.scholarium.model.RolMembresia
 import com.unsam.scholarium.service.CloudinaryFileStorageService
 import com.unsam.scholarium.service.MaterialService
@@ -145,13 +144,6 @@ class PortalController(
         portalService.actualizarPlantillaSolicitud(id, email, request)
 
         return ResponseEntity.ok().build()
-    }
-
-    @PatchMapping
-    fun patchPortal(
-        @RequestBody portal: Portal
-    ) {
-        portalService.patch(portal)
     }
 
     @GetMapping("/buscar")
