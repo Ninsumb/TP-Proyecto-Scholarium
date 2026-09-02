@@ -22,8 +22,6 @@ class CarpetaController(
     private val materiaService: MateriaService
 ) {
 
-    //TODO: Notar las diferentes implementaciones: SecurityContexy vs authentication. ¿Cuales son las diferencias? ¿Nos sirve para PHM también xD?
-
     @DeleteMapping("/{carpetaId}")
     fun eliminarCarpeta(@PathVariable carpetaId: UUID): ResponseEntity<Void> {
         val email = SecurityContextHolder.getContext().authentication.name

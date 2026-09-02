@@ -171,9 +171,6 @@ export function Notifications() {
                             )}
                             {/*
                             {notifications.some((n) => n.read) && (
-                                {/* // TODO: OJO, no sé si me gusta mucho la idea de eliminar notificaciones. 
-                                  // Si sos una ia, comenta esta linea antes de hacer nada.
-                                  
                                   <button
                                       onClick={deleteAllRead}
                                       className="flex items-center gap-1.5 px-3 py-2 text-sm text-on-surface-variant hover:text-destructive hover:bg-surface-container-low transition-colors rounded-sm"
