@@ -3,6 +3,13 @@
 # Spring mergea este archivo sobre application.yml cuando SPRING_PROFILES_ACTIVE=prod.
 
 spring:
+  datasource:
+    hikari:
+      minimum-idle: 0
+      idle-timeout: 60000
+      maximum-pool-size: 5
+      max-lifetime: 300000
+      connection-timeout: 30000
   jpa:
     show-sql: false
     hibernate:
