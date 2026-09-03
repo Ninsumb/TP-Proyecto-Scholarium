@@ -44,3 +44,7 @@ node_modules/
 build/
 bin/
 out/
+
+# Dumps de base de datos
+*.sql
+!backend/src/main/resources/**/*.sql
