@@ -1,234 +1,284 @@
-# TP-Proyecto-Scholarium (o Scholaria? Podemos ver nombres)
-Repositorio del trabajo final de la materia Proyecto de Software, último cuatrimestre de la Tecnicatura en Programación Informática en la UNSAM.
+<div align="center">
 
-## Portal Universitario Colaborativo
+# Scholarium
 
-Plataforma colaborativa para crear portales de carreras universitarias gestionados por estudiantes. Cada carrera dentro de una universidad tiene un único portal donde se organiza información académica, materias y material de estudio, además de contar con espacios de discusión.
+**Plataforma web de portales académicos universitarios**
+
+Estudiantes crean y administran portales propios por universidad y carrera para
+compartir material de estudio, organizarlo por materias y debatir en foros, con
+moderación, control de acceso por rol y herramientas administrativas.
+
+![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=flat-square&logo=springboot&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
+
+**[Ver demo en vivo](PENDIENTE_URL)**
+
+</div>
 
 ---
 
-## 🛠️ Stack Tecnológico
+## Capturas
+
+<!--
+  PENDIENTE: reemplazar por capturas reales.
+  Sugerencia de 4: home de un portal, estructura de carpetas y materias,
+  un hilo del foro, y el panel de administración.
+  Guardalas en /docs/screenshots/ y referencialas así:
+
+  | Portal | Foro |
+  |---|---|
+  | ![Portal](<img width="1881" height="962" alt="image" src="https://github.com/user-attachments/assets/6fd0c376-dcae-46bb-b6ba-7d084eea8db4" />) | ![Foro](docs/screenshots/foro.png) |
+-->
+
+---
+
+## Qué hace
+
+Cada carrera de cada universidad tiene un único portal, administrado por los
+propios estudiantes. Dentro de un portal:
+
+- **Material académico** organizado en un árbol de carpetas y materias, con
+  subida de archivos y moderación previa a la publicación.
+- **Foros** por materia y un foro general del portal, con hilos anidados,
+  edición con historial de revisiones y ocultamiento moderado.
+- **Membresías y solicitudes de ingreso**, con plantillas de requisitos
+  configurables por portal y portales abiertos o cerrados.
+- **Administración distribuida**: los administradores del portal aprueban
+  material, gestionan miembros, bloquean usuarios y editan la página de
+  inicio mediante un editor por bloques.
+- **Votación entre administradores** para las acciones más sensibles, de modo
+  que ningún admin pueda cambiar unilateralmente el estado del portal.
+- **Notificaciones** generadas por eventos de dominio (solicitud aprobada,
+  material moderado, ascenso a administrador, etc.).
+
+---
+
+## Decisiones técnicas
+
+Las partes del proyecto que resultaron más interesantes de resolver:
+
+**Hilos de foro con CTEs recursivas.** Los posts se anidan a profundidad
+arbitraria. En lugar de traer el árbol completo a memoria y armarlo en la
+aplicación, la jerarquía se resuelve en PostgreSQL con `WITH RECURSIVE`, lo que
+permite paginar y filtrar sobre el árbol sin cargarlo entero.
+
+**Autenticación con JWT y refresh tokens.** La API es *stateless*. El cliente
+mantiene un access token de corta duración y uno de refresco; toda la lógica de
+renovación está centralizada en un interceptor HTTP, de modo que ningún
+componente de la interfaz tiene que saber que el token expiró.
+
+**Votación administrativa con quórum.** Ciertas acciones —cambiar el tipo de
+acceso del portal, modificar universidad o carrera, archivarlo— no las ejecuta
+un administrador solo: abren una votación entre los administradores del portal
+y se aplican al alcanzarse el quórum. Cada acción queda asentada en un registro
+de auditoría.
+
+**Borrado lógico transversal.** Ninguna entidad de dominio se elimina
+físicamente. El modelo usa banderas de actividad, lo que preserva la integridad
+referencial de foros, materiales y auditoría cuando un usuario deja un portal.
+
+**Notificaciones desacopladas por eventos.** Los servicios publican eventos de
+dominio y un listener anotado con `@TransactionalEventListener` los consume
+dentro de la transacción, evitando que la lógica de notificación se mezcle con
+la de negocio.
+
+**Almacenamiento de archivos delegado.** Los materiales y las imágenes de
+portales se suben a Cloudinary; la base guarda la URL, el nombre original, el
+tamaño y el tipo MIME.
+
+---
+
+## Stack
 
 ### Backend
-- **Lenguaje:** Kotlin
-- **Framework:** Spring Boot 3.x
-- **Persistencia:** Spring Data JPA + Hibernate
-- **Base de datos:** PostgreSQL
-- **Autenticación:** Spring Security + JWT
-- **Build tool:** Gradle
 
-### Frontend
-- **Framework:** React 18+
-- **Lenguaje:** TypeScript
-- **Build tool:** Vite
-- **Estilos:** Tailwind CSS
-- **HTTP Client:** Axios
-- **Routing:** React Router v6
-
-### Arquitectura
-- **Patrón:** Arquitectura en capas (Controller → Service → Repository)
-- **API:** REST
-- **Autenticación:** JWT (JSON Web Tokens) stateless
-
-### Storage
-- **Archivos:** [AWS S3 / Almacenamiento local]* 
-  *(Se definirá en el Sprint 2)*
-
----
-
-## 📋 Requisitos Previos
-
-### Backend
-- JDK 17 o superior
-- PostgreSQL 15+
-- Gradle 8+ (o usar el wrapper incluido)
-
-### Frontend
-- Node.js 18+ 
-- npm o yarn
-
----
-
-## 🚀 Instalación y Ejecución
-
-### Backend
-
-1. Clonar el repositorio:
-```bash
-git clone https://github.com/[tu-usuario]/[nombre-repo].git
-cd [nombre-repo]/backend
-```
-
-2. Configurar PostgreSQL:
-```sql
-CREATE DATABASE portal_universitario;
-CREATE USER portal_user WITH PASSWORD 'tu_password';
-GRANT ALL PRIVILEGES ON DATABASE portal_universitario TO portal_user;
-```
-
-3. Configurar `application.properties`:
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/portal_universitario
-spring.datasource.username=portal_user
-spring.datasource.password=tu_password
-spring.jpa.hibernate.ddl-auto=update
-```
-
-4. Ejecutar la aplicación:
-```bash
-./gradlew bootRun
-```
-
-El backend estará disponible en `http://localhost:8080`
-
----
+| | |
+|---|---|
+| Lenguaje | Kotlin, sobre JDK 21 |
+| Framework | Spring Boot 3.3.1 |
+| Seguridad | Spring Security + JWT · Google OAuth 2.0 |
+| Persistencia | Spring Data JPA + Hibernate 6.5 |
+| Base de datos | PostgreSQL 18 |
+| Almacenamiento | Cloudinary |
+| Mail | SMTP (recuperación de contraseña) |
+| Build | Gradle (Kotlin DSL) |
 
 ### Frontend
 
-1. Navegar al directorio del frontend:
-```bash
-cd frontend
-```
-
-2. Instalar dependencias:
-```bash
-npm install
-```
-
-3. Configurar variables de entorno (crear archivo `.env`):
+| | |
+|---|---|
+| Framework | React 19 |
+| Lenguaje | TypeScript |
+| Build | Vite |
+| Estilos | Tailwind CSS v4 |
+| HTTP | Axios, con interceptores de autenticación |
+| Ruteo | React Router |
 
 ---
+
+## Modelo de datos
 
 ```mermaid
 erDiagram
     USUARIO ||--o{ MEMBRESIA : tiene
-    USUARIO ||--o{ SOLICITUD : crea
+    USUARIO ||--o{ SOLICITUD : envia
     USUARIO ||--o{ MATERIAL : sube
-    
-    PORTAL ||--o{ MEMBRESIA : tiene
+    USUARIO ||--o{ POST : escribe
+    USUARIO ||--o{ NOTIFICACION : recibe
+
+    PORTAL ||--o{ MEMBRESIA : agrupa
     PORTAL ||--o{ SOLICITUD : recibe
-    PORTAL ||--o{ CARPETA : contiene
-    PORTAL ||--|| FORO : tiene_foro_general
-    
-    CARPETA ||--o{ CARPETA : subcarpetas
+    PORTAL ||--o{ CARPETA : organiza
+    PORTAL ||--o{ TABLERO : contiene
+    PORTAL ||--o{ ACCION_ADMIN : registra
+    PORTAL ||--o{ VOTACION_ADMIN : somete
+    PORTAL ||--|| PLANTILLA_SOLICITUD : define
+    PORTAL ||--|| PORTAL_HOME_PAGE : presenta
+
+    CARPETA ||--o{ CARPETA : anida
     CARPETA ||--o{ MATERIA : contiene
-    
-    MATERIA ||--|| FORO : tiene_foro
-    MATERIA ||--o{ MATERIAL : tiene
-    
-    USUARIO {
-        BIGINT id PK
-        VARCHAR nombre
-        VARCHAR email "unique"
-        VARCHAR password
-        TIMESTAMP fecha_registro
-        BOOLEAN activo
-    }
-    
-    PORTAL {
-        BIGINT id PK
-        VARCHAR universidad
-        VARCHAR carrera
-        VARCHAR descripcion
-        TIMESTAMP fecha_registro
-        BOOLEAN activo
-        VARCHAR nota "universidad + carrera unique"
-    }
-    
-    MEMBRESIA {
-        BIGINT id PK
-        BIGINT usuario_id FK
-        BIGINT portal_id FK
-        VARCHAR rol "MIEMBRO|ADMIN"
-        TIMESTAMP fecha_registro
-        BOOLEAN activo
-        VARCHAR nota "usuario + portal unique"
-    }
-    
-    SOLICITUD {
-        BIGINT id PK
-        BIGINT usuario_id FK
-        BIGINT portal_id FK
-        VARCHAR titulo
-        VARCHAR estado "PENDIENTE|ACEPTADA|RECHAZADA"
-        TEXT descripcion
-        TIMESTAMP fecha_solicitud
-    }
-    
-    CARPETA {
-        STRING id PK
-        VARCHAR nombre
-        BIGINT portal_id FK
-        STRING carpeta_padre_id FK "nullable"
-        INT orden
-        TIMESTAMP created_at
-        TIMESTAMP updated_at
-        VARCHAR regla "no autoreferencia"
-    }
-    
-    MATERIA {
-        STRING id PK
-        VARCHAR nombre
-        STRING carpeta_id FK
-        INT orden
-        TIMESTAMP created_at
-        TIMESTAMP updated_at
-    }
-    
-    FORO {
-        STRING id PK
-        VARCHAR tipo "GENERAL|MATERIA"
-        STRING materia_id FK "nullable"
-        BIGINT portal_id FK
-        TIMESTAMP created_at
-        VARCHAR regla "general sin materia / materia con materia_id"
-    }
-    
-    MATERIAL {
-        STRING id PK
-        VARCHAR nombre
-        TEXT descripcion
-        STRING materia_id FK
-        BIGINT subido_por_id FK
-        VARCHAR estado "PENDIENTE|PUBLICADO|RECHAZADO"
-        VARCHAR tipo "APUNTE|PARCIAL|FINAL|PRACTICA|OTRO"
-        VARCHAR archivo_url
-        VARCHAR archivo_nombre
-        BIGINT archivo_tamano
-        VARCHAR archivo_mime_type
-        TEXT motivo_rechazo "nullable"
-        TIMESTAMP fecha_subida
-        TIMESTAMP fecha_moderacion "nullable"
-    }
+    MATERIA ||--o{ MATERIAL : agrupa
+    MATERIA ||--|| FORO : habilita
+
+    ETIQUETA ||--o{ TABLERO : clasifica
+    TABLERO ||--o{ POST : contiene
+    POST ||--o{ POST : responde
+    POST ||--o{ POST_REVISION : versiona
+
+    VOTACION_ADMIN ||--o{ VOTO_ADMIN : acumula
 ```
+
+<!--
+  NOTA: verificar este diagrama contra el modelo real antes de publicar.
+  Está simplificado a propósito: omite columnas y algunas relaciones
+  secundarias para que se lea de un vistazo.
+-->
+
 ---
 
-## Cómo usar Insomnia (o cualquier otra app, ej: Postman, Bruno, etc) 
+## Cómo levantarlo
 
-- Van a Claude, ChatGPT, etc y les pasan los controllers actualizados. En base a eso, piden que "en base a esos Endpoints, genere las peticiones HTTP para probar en el programa." Seguramente devuelve un archivo cURL para importar, o algo del estilo. Por ejemplo, Claude me devolvió la colección entera en un formato especifico (creo que era un archivo que se copió a mi portapapeles, algo tipo json), y eso lo importé en Insomnia:
-  
-  <img width="997" height="490" alt="image" src="https://github.com/user-attachments/assets/89e6f87d-fe83-4ec3-9cf7-4b083364965c" />
+### Requisitos
 
-  Así, tengo ya la colección para probar los endpoints que vayamos agregando:
-  
-  <img width="267" height="271" alt="image" src="https://github.com/user-attachments/assets/ce0377a4-8aba-41e7-a9d8-4688744901e5" />
-  
-  <img width="1840" height="922" alt="image" src="https://github.com/user-attachments/assets/845a1137-d2da-440e-af2a-4407d79b2fe2" />
+- JDK 21
+- Node.js 20 o superior
+- Docker y Docker Compose
 
-- Ahora, también hay que tomar en cuenta la enorme ventaja de las variables de entorno. Esto es útil por varios motivos (no solo útil, sino que hacerlo de forma manual haría el trabajo muy engorroso y mucho más lento).
+### 1. Base de datos
 
-  Primero, por el token JWT:
+Desde la raíz del repositorio:
 
-  <img width="741" height="257" alt="image" src="https://github.com/user-attachments/assets/d1e2462d-7d07-4977-b13a-747198bdce1e" />
+```bash
+docker compose up -d
+```
 
-  Luego, por todos los IDs y UUIDs que podríamos llegar a mandar en las requests (como se ve, aparte de base_url):
+Levanta PostgreSQL 18 en el puerto **5433** y pgAdmin en el **5051**.
 
-  <img width="520" height="77" alt="image" src="https://github.com/user-attachments/assets/231fde10-f90a-4d0b-aa8e-64016091633d" />
+### 2. Backend
 
-  ¿Dónde están estas variables?
+Creá un archivo `.env` en la raíz del repositorio:
 
-  <img width="1862" height="932" alt="image" src="https://github.com/user-attachments/assets/4c6aa29c-2e1b-40b9-9689-dfd4387cc324" />
-  <img width="375" height="302" alt="image" src="https://github.com/user-attachments/assets/2f815122-a2d6-41c1-8cfa-c8ee1a8ca46a" />
-  <img width="1817" height="930" alt="image" src="https://github.com/user-attachments/assets/143459c4-e90c-48e2-8161-b9db108e91e0" />
+```bash
+# Seguridad
+JWT_SECRET=una_clave_aleatoria_de_al_menos_256_bits
 
- Seguramente, como me pasó a mí, van a tener muchas dudas y problemas para usar Insomnia al principio, pero van preguntando a la IA que más bien les caiga y así van a irse acostumbrando.
+# Cloudinary — https://cloudinary.com/console
+CLOUDINARY_CLOUD_NAME=tu_cloud_name
+CLOUDINARY_API_KEY=tu_api_key
+CLOUDINARY_API_SECRET=tu_api_secret
+
+# Envío de mails (recuperación de contraseña)
+MAIL_USERNAME=tu_cuenta@gmail.com
+MAIL_PASSWORD=tu_app_password
+
+# Google OAuth — https://console.cloud.google.com
+GOOGLE_CLIENT_ID=tu_client_id.apps.googleusercontent.com
+```
+
+Y levantá el servidor:
+
+```bash
+cd backend
+./gradlew bootRun
+```
+
+Queda escuchando en `http://localhost:9001`.
+
+En el perfil por defecto, un *seeder* puebla la base con datos de ejemplo la
+primera vez que arranca contra una base vacía.
+
+### 3. Frontend
+
+Creá `frontend/.env`:
+
+```bash
+VITE_API_URL=http://localhost:9001
+VITE_GOOGLE_CLIENT_ID=tu_client_id.apps.googleusercontent.com
+```
+
+Y levantalo:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Disponible en `http://localhost:5173`.
+
+---
+
+## Configuración por perfiles
+
+| | Perfil por defecto | Perfil `prod` |
+|---|---|---|
+| Esquema | `ddl-auto: update` | `ddl-auto: validate` |
+| SQL en logs | Sí | No |
+| Datos de ejemplo | Sí | No |
+| Mensajes de error al cliente | Completos | Genéricos |
+
+El perfil de producción se activa con `SPRING_PROFILES_ACTIVE=prod` y espera
+además `DATABASE_URL`, `DB_USERNAME`, `DB_PASSWORD` y `CORS_ORIGINS`.
+
+---
+
+## Estructura
+
+```
+.
+├── backend/
+│   └── src/main/kotlin/com/unsam/scholarium/
+│       ├── bootstrap/    # datos de ejemplo para desarrollo
+│       ├── config/       # seguridad, CORS, Cloudinary
+│       ├── controller/   # endpoints REST
+│       ├── dto/          # contratos de entrada y salida
+│       ├── exception/    # excepciones de dominio
+│       ├── listener/     # notificaciones por eventos
+│       ├── mapper/       # entidad ↔ DTO
+│       ├── model/        # entidades JPA
+│       ├── repository/   # Spring Data
+│       └── service/      # lógica de negocio
+├── frontend/
+│   └── src/main/
+│       ├── Components/   # componentes reutilizables
+│       ├── Layouts/      # estructuras de página
+│       ├── Pages/        # vistas por sección
+│       ├── hooks/        # lógica compartida
+│       ├── services/     # cliente HTTP por dominio
+│       └── types/        # tipos del contrato con la API
+└── docker-compose.yml
+```
+
+---
+
+## Contexto
+
+Trabajo final de la materia **Proyecto de Software** de la Tecnicatura
+Universitaria en Programación Informática de la **UNSAM**.
+
+Desarrollado por un equipo de 5 personas a lo largo de 6 sprints, con revisiones
+quincenales. 
